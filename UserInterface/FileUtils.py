@@ -13,7 +13,7 @@ USER_INPUT_PATH = os.path.join(ROOT_DIR_PATH, "StoredValues", "UserInput.txt")
 
 #says the prompt and returns the file path that the user inputs.
 def getFilePath(prompt):
-    print(print)
+    print(prompt)
 
     file_path = filedialog.askopenfilename(
             filetypes=[("MIDI Files", "*.txt *.mcdp")]
@@ -23,7 +23,7 @@ def getFilePath(prompt):
 
 #says the prompt and returns the file path that the user inputs
 def getDirPath(prompt):
-    print(print)
+    print(prompt)
 
     folder_path = filedialog.askdirectory()
     return folder_path
