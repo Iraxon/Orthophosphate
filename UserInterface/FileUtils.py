@@ -30,8 +30,12 @@ def getDirPath(prompt):
 
 #creates a new copy of the file if there currently is none
 def createFile(path):
-    f = open(path)
-    f.close()
+    try:
+        with open(path, "x") as f: # Using a with block is safer than open() and then close()
+            # because it ensures close() is always executed even if there are errors
+            pass
+    except FileExistsError: # "x" mode for opening raises this error if the file already exists
+        pass
 
 #STRING: reads from a text file, returns the first string after the given key
 def fileValueFromKey(key, path):  
