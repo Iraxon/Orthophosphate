@@ -8,9 +8,8 @@ root.withdraw()
 
 #various important file/folder names. They are put here so they can be easily refactored
 #the name of the directory folder
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-STORED_VALUES_FOLDER_NAME = "StoredValues"
-
+ROOT_DIR_PATH = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
+USER_INPUT_PATH = os.path.join(ROOT_DIR_PATH, "StoredValues", "UserInput.txt")
 
 #says the prompt and returns the file path that the user inputs.
 def getFilePath(prompt):
@@ -67,3 +66,69 @@ def fileKeyExists(key, path):
     
     #default return value
     return False
+
+
+#INTEGER: gets the index of the givne key in string terms, is best used in class
+def fileIndexOfKey(key, path):
+
+    keyIndex = 0
+
+    #loops through every line and checks if it lines up right
+    with open(path, "r") as f:
+        for i in f:
+            if(i.split(":")[0] == key):
+                return keyIndex
+            
+
+    #default value of -1
+    return -1
+        
+
+#VOID: deletes ALL occurrences of a key found in the file, will not remove whitespace
+def fileKeyDelete(key, path):
+
+    lines = ""
+
+    #gets the file in list form
+    with open(path, "r") as f:
+        lines = f.readlines()
+    
+    with open(path, "w") as f:
+
+        #rewrites all the lines except for the one we want to delete
+        for line in lines:
+            if(line.split(":")[0] != key):
+                f.write(line)
+
+#VOID: writes the string to the file, will go to the nearest available spot
+def fileStringWrite(input, path):
+
+    lines = ""
+    alreadyWrote = False
+
+    with open(path, "r") as f:
+        lines = f.readlines()
+
+    with open(path, "w") as f:
+        
+        #goes through and makes sure there is no whitespace it can go to first
+        for line in lines:
+            #writes it if it sees a blank line and it hasn't already been written
+            if(not line and not alreadyWrote):
+                f.write(input)
+                alreadyWrote = True
+            else:
+                f.write(line)
+
+            #write if not written already
+            if(not alreadyWrote):
+                f.write(input)
+
+#puts the key into the file. Will replace and delete any other key values
+def fileKeyPut(key, value, path):
+    fileKeyDelete(key, path)
+    fileStringWrite(key + ":" + value, path)
+
+
+
+#am having problems with testing rn bc the userinput doesn't get written to for some reason. IDK why
