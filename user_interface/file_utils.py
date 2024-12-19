@@ -9,7 +9,7 @@ root.withdraw()
 #various important file/folder names. They are put here so they can be easily refactored
 #the name of the directory folder
 ROOT_DIR_PATH = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
-USER_INPUT_PATH = os.path.join(ROOT_DIR_PATH, "StoredValues", "UserInput.txt")
+USER_INPUT_PATH = os.path.join(ROOT_DIR_PATH, "stored_values", "user_input.txt")
 
 #says the prompt and returns the file path that the user inputs.
 def getFilePath(prompt):
@@ -136,3 +136,5 @@ def fileKeyPut(key, value, path):
 
 
 #am having problems with testing rn bc the userinput doesn't get written to for some reason. IDK why
+
+fileStringWrite("testingwrite", USER_INPUT_PATH)
