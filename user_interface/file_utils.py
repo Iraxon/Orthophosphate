@@ -9,7 +9,7 @@ root.withdraw()
 #various important file/folder names. They are put here so they can be easily refactored
 #the name of the directory folder
 ROOT_DIR_PATH = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
-USER_INPUT_PATH = os.path.join(ROOT_DIR_PATH, "stored_values", "user_input.txt")
+USER_INPUT_PATH = os.path.join(ROOT_DIR_PATH, "stored_values", "user_input.log")
 
 #says the prompt and returns the file path that the user inputs.
 def getFilePath(prompt):
@@ -107,6 +107,8 @@ def fileKeyDelete(key, path):
 #VOID: writes the string to the file, will go to the nearest available spot
 def fileStringWrite(input, path):
 
+    print("testing")
+
     lines = ""
     alreadyWrote = False
 
@@ -118,15 +120,19 @@ def fileStringWrite(input, path):
         #goes through and makes sure there is no whitespace it can go to first
         for line in lines:
             #writes it if it sees a blank line and it hasn't already been written
-            if(not line and not alreadyWrote):
+            if(len(line) == 0 and not alreadyWrote):
                 f.write(input)
                 alreadyWrote = True
+
+                print("writing specific line: " + input)
             else:
                 f.write(line)
+                print("writing line: " + line)
 
-            #write if not written already
-            if(not alreadyWrote):
-                f.write(input)
+        #write if not written already
+        if(not alreadyWrote):
+            f.write(input)
+            print("writing specifc line *2: " + input)
 
 #puts the key into the file. Will replace and delete any other key values
 def fileKeyPut(key, value, path):
