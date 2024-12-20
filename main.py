@@ -15,8 +15,15 @@ def browse_for_file():
     (which puts it in the entry box
     as well)
     """
+    global file_path
 
-    file_path.set(filedialog.askopenfilename(filetypes=[("<ProjectName> Files", "*.txt")]))
+    file_path_str = filedialog.askopenfilename(filetypes=[("<ProjectName> Files", "*.txt")])
+    
+    if file_path_str:
+        pass
+    else:
+        file_path_str = "No file selected"
+    file_path.set(file_path_str)
 
 if __name__ == "__main__":
 
@@ -25,7 +32,7 @@ if __name__ == "__main__":
 
     (mainframe := ttk.Frame(root, padding="3 3 12 12")).grid(column=0, row=0, sticky=NSEW) # Main grid;
     # Walrus operator := is just assignment. You use it instead of =
-    # inside expressions. Python is like this to avoid errors
+    # inside expressions. Python has this to prevent errors
     # arising from confusion of = and ==
 
     root.columnconfigure(0, weight=1)
@@ -33,10 +40,11 @@ if __name__ == "__main__":
     # The Tkinter tutorial says this is necessary
     # to make things scale or something. Idk
 
-    input_label = ttk.Label(mainframe, text="Input", justify="center").grid(column=1, row=1, columnspan=2, sticky=NSEW)
+    ttk.Label(mainframe, text="Input", justify="center").grid(column=1, row=1, columnspan=2, sticky=NSEW)
     ttk.Button(mainframe, text="Select file", command=browse_for_file).grid(column=1, row=2, sticky=NSEW)
-    file_path = StringVar()
-    (file_path_entry := ttk.Entry(mainframe, textvariable=file_path)).grid(column=2, row=2, sticky=NSEW)
+    
+    file_path = StringVar() # If-blocks don't create scope in Python, so no need for global keyword
+    (file_path_entry := ttk.Entry(mainframe, textvariable=file_path, width=20)).grid(column=2, row=2, sticky=NSEW)
 
     file_path_entry.focus()
     root.mainloop()
