@@ -59,12 +59,13 @@ if __name__ == "__main__":
     for x in (1, 2, 3):
         for y in (1, 2, 3):
             mainframe.columnconfigure(x, weight=1)
-            mainframe.rowconfigure(y, weight=1)
+            mainframe.rowconfigure(y)
 
     ttk.Label(mainframe, text="Input File", justify="center").grid(column=1, row=1, columnspan=2, sticky=NSEW)
     ttk.Button(mainframe, text="Select file", command=browse_for_file_in).grid(column=1, row=2, sticky=EW)
     file_path_in = StringVar(value="No file selected") # Variable obviously set to "No file selected"
     (file_path_entry := ttk.Entry(mainframe, textvariable=file_path_in, width=100)).grid(column=2, row=2, sticky=EW)
+
 
     ttk.Label(mainframe, text="Output Directory", justify="center").grid(column=1, row=3, columnspan=2, sticky=NSEW)
     ttk.Button(mainframe, text="Select directory", command=browse_for_file_out).grid(column=1, row=4, sticky=EW)
@@ -75,5 +76,8 @@ if __name__ == "__main__":
               "The datapack .zip will go inside the output directory. "
               "If you want it\n to compile straight into a world, select "
               "that world's datapacks folder.").grid(column=2, row=5, sticky=NSEW)
+    
+    ttk.Button(mainframe, text="This button will eventually compile the file,\nbut it does nothing right now").grid(column=2,row=6, sticky=EW)
+
 
     root.mainloop()
