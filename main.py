@@ -3,6 +3,11 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 
+# These functions take arbitrary *args
+# because the Tkinter tutorial's function
+# did. The tutorial didn't say why,
+# but I assume there's a reason.
+
 # VOID, changes file_path_in Tkinter variable
 def browse_for_file_in(*args):
     """
@@ -63,13 +68,13 @@ if __name__ == "__main__":
 
     ttk.Label(mainframe, text="Input File", justify="center").grid(column=1, row=1, columnspan=2, sticky=NSEW)
     ttk.Button(mainframe, text="Select file", command=browse_for_file_in).grid(column=1, row=2, sticky=EW)
-    file_path_in = StringVar(value="No file selected") # Variable obviously set to "No file selected"
+    file_path_in = StringVar(value="No file selected")
     (file_path_entry := ttk.Entry(mainframe, textvariable=file_path_in, width=100)).grid(column=2, row=2, sticky=EW)
 
 
     ttk.Label(mainframe, text="Output Directory", justify="center").grid(column=1, row=3, columnspan=2, sticky=NSEW)
     ttk.Button(mainframe, text="Select directory", command=browse_for_file_out).grid(column=1, row=4, sticky=EW)
-    file_path_out = StringVar(value="No directory selected") # Variable obviously set to "No file selected"
+    file_path_out = StringVar(value="No directory selected")
     (file_path_entry := ttk.Entry(mainframe, textvariable=file_path_out, width=100)).grid(column=2, row=4, sticky=EW)
 
     ttk.Label(mainframe, text="- Leave this blank to use input file compileTo line.\n- "
