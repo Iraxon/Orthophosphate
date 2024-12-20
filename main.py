@@ -1,6 +1,5 @@
 # Eventual entry point of the program here
 
-import user_interface.file_utils
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
@@ -34,6 +33,8 @@ if __name__ == "__main__":
     # inside expressions. Python has this to prevent errors
     # arising from confusion of = and ==
 
+
+    # Make everything stretch with the window if it is enlarged
     root.columnconfigure(0, weight=1)
     root.rowconfigure(0, weight=1)
 
@@ -42,17 +43,13 @@ if __name__ == "__main__":
             mainframe.columnconfigure(x, weight=1)
             mainframe.rowconfigure(y, weight=1)
 
-    # The Tkinter tutorial says this is necessary
-    # to make things scale or something. Idk
-
     ttk.Label(mainframe, text="Input", justify="center").grid(column=1, row=1, columnspan=2, sticky=NSEW)
 
     ttk.Button(mainframe, text="Select file", command=browse_for_file).grid(column=1, row=2, sticky=EW)
     
     file_path_in = StringVar(value="No file selected") # Variable obviously set to "No file selected"
     
-    (file_path_entry := ttk.Entry(mainframe, textvariable=file_path_in, width=30)).grid(column=2, row=2, sticky=EW)
-    (file_path_label := ttk.Label(mainframe, textvariable=file_path_in, width=30)).grid(column=2, row=3, sticky=NSEW)
+    (file_path_entry := ttk.Entry(mainframe, textvariable=file_path_in, width=100)).grid(column=2, row=2, sticky=EW)
 
     print(file_path_in.get()) # Prints "No file selected" as expected
 
