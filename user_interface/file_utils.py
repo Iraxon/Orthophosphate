@@ -2,10 +2,6 @@
 from tkinter import Tk, filedialog
 import os
 
-#prep boiler plate for file functionality
-root = Tk()
-root.withdraw()
-
 #various important file/folder names. They are put here so they can be easily refactored
 #the name of the directory folder
 ROOT_DIR_PATH = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
@@ -143,4 +139,10 @@ def fileKeyPut(key, value, path):
 
 #am having problems with testing rn bc the userinput doesn't get written to for some reason. IDK why
 if __name__ == "__main__":
+
+        
+    #prep boiler plate for file functionality
+    root = Tk()
+    root.withdraw()
+
     fileStringWrite("testingwrite", USER_INPUT_PATH)
