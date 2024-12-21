@@ -131,7 +131,7 @@ def fileStringWrite(input, path):
 
         #write if not written already
         if(not alreadyWrote):
-            f.write(input)
+            f.write("\n" + input)
             print("writing specifc line *2: " + input)
 
 #puts the key into the file. Will replace and delete any other key values
