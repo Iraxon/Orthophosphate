@@ -56,41 +56,39 @@ def open_window(root):
     """
     root.title("Orthophosphate")
 
-    (mainframe := ttk.Frame(root)).grid(column=0, row=0, sticky=NSEW) # Main grid;
-    # Walrus operator := is just assignment. You use it instead of =
-    # inside expressions. Python has this to prevent errors
-    # arising from confusion of = and ==
-
+    # Main grid
+    (mainframe := ttk.Frame(root)).grid(column=0, row=0, sticky=NSEW)
 
     # Make everything stretch with the window if it is enlarged
     root.columnconfigure(0, weight=1)
     root.rowconfigure(0, weight=1)
-
     for x in (1, 2, 3):
         for y in (1, 2, 3):
             mainframe.columnconfigure(x, weight=1)
             mainframe.rowconfigure(y)
     
+    # Input button, entry, and labels
     global file_path_in
-
     ttk.Label(mainframe, text="Input File", justify="center").grid(column=1, row=1, columnspan=2, sticky=NSEW)
     ttk.Button(mainframe, text="Select file", command=browse_for_file_in).grid(column=1, row=2, sticky=EW)
     file_path_in = StringVar(value="No file selected")
     (file_path_entry := ttk.Entry(mainframe, textvariable=file_path_in, width=100)).grid(column=2, row=2, sticky=EW)
 
+    # Output button, entry, and labels
     global file_path_out
-
     ttk.Label(mainframe, text="Output Directory", justify="center").grid(column=1, row=3, columnspan=2, sticky=NSEW)
     ttk.Button(mainframe, text="Select directory", command=browse_for_file_out).grid(column=1, row=4, sticky=EW)
     file_path_out = StringVar(value="No directory selected")
     (file_path_entry := ttk.Entry(mainframe, textvariable=file_path_out, width=100)).grid(column=2, row=4, sticky=EW)
 
+    # User instructions
     ttk.Label(mainframe, text="- Leave this blank to use input file compileTo line.\n- "
               "The datapack .zip will go inside the output directory. "
               "If you want it\n to compile straight into a world, select "
               "that world's datapacks folder.").grid(column=2, row=5, sticky=NSEW)
     
+    # Compilation button (and maybe settings in the future)
     ttk.Button(mainframe, text="This button will eventually compile the file,\nbut it does nothing right now").grid(column=2,row=6, sticky=EW)
 
-
+    # Required Tkinter thing
     root.mainloop()
