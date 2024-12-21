@@ -142,5 +142,5 @@ def fileKeyPut(key, value, path):
 
 
 #am having problems with testing rn bc the userinput doesn't get written to for some reason. IDK why
-
-fileStringWrite("testingwrite", USER_INPUT_PATH)
+if __name__ == "__main__":
+    fileStringWrite("testingwrite", USER_INPUT_PATH)
