@@ -2,6 +2,8 @@
 from tkinter import Tk, filedialog
 import os
 
+#this file is used to store all the file functions that are used in the program.
+
 #various important file/folder names. They are put here so they can be easily refactored
 #the name of the directory folder
 ROOT_DIR_PATH = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
@@ -103,10 +105,7 @@ def fileKeyDelete(key, path):
 #VOID: writes the string to the file, will go to the nearest available spot
 def fileStringWrite(input, path):
 
-    print("testing")
-
     lines = ""
-    alreadyWrote = False
 
     with open(path, "r") as f:
         lines = f.readlines()
@@ -115,34 +114,26 @@ def fileStringWrite(input, path):
         
         #goes through and makes sure there is no whitespace it can go to first
         for line in lines:
-            #writes it if it sees a blank line and it hasn't already been written
-            if(len(line) == 0 and not alreadyWrote):
-                f.write(input)
-                alreadyWrote = True
 
-                print("writing specific line: " + input)
-            else:
+            line=line.replace("\\\\n", "")
+
+            # writes it if it sees a blank line and it hasn't already been written
+            if len(line.strip()) != 0:
                 f.write(line)
-                print("writing line: " + line)
 
+                #only adds a blank line if the line is not already blank
+                if len(line.strip()) != 0:
+                    f.write("\n")
+    
         #write if not written already
-        if(not alreadyWrote):
-            f.write("\n" + input)
-            print("writing specifc line *2: " + input)
+        f.write(input)
 
 #puts the key into the file. Will replace and delete any other key values
 def fileKeyPut(key, value, path):
     fileKeyDelete(key, path)
     fileStringWrite(key + ":" + value, path)
 
-
-
-#am having problems with testing rn bc the userinput doesn't get written to for some reason. IDK why
 if __name__ == "__main__":
-
-        
-    #prep boiler plate for file functionality
+    # prep boiler plate for file functionality
     root = Tk()
     root.withdraw()
-
-    fileStringWrite("testingwrite", USER_INPUT_PATH)
