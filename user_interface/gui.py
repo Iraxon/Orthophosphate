@@ -46,13 +46,11 @@ def browse_for_file_out(*args):
     file_path_out.set(file_path_str)
 
 # VOID
-def open_window(root):
+def set_up_window(root):
     """
-    Opens the GUI for
+    Sets up the GUI for
     choosing input and output
-    paths; sets up
-    file_path_in and file_path_out
-    Tkinter variables
+    paths
     """
     root.title("Orthophosphate")
 
@@ -89,6 +87,3 @@ def open_window(root):
     
     # Compilation button (and maybe settings in the future)
     ttk.Button(mainframe, text="This button will eventually compile the file,\nbut it does nothing right now").grid(column=2,row=6, sticky=EW)
-
-    # Required Tkinter thing
-    root.mainloop()
