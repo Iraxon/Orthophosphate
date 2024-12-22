@@ -7,8 +7,7 @@ from tkinter import filedialog
 # did. The tutorial didn't say why,
 # but I assume there's a reason.
 
-# VOID, changes file_path_in Tkinter variable
-def browse_for_file_in(*args):
+def browse_for_file_in(*args) -> None:
     """
     Opens system file dialog
     and assigns the user-selected
@@ -26,8 +25,7 @@ def browse_for_file_in(*args):
         file_path_str = "No file selected"
     file_path_in.set(file_path_str)
 
-# VOID, changes file_path_out Tkinter variable
-def browse_for_file_out(*args):
+def browse_for_file_out(*args) -> None:
     """
     Opens system file dialog
     and assigns the user-selected
@@ -45,8 +43,7 @@ def browse_for_file_out(*args):
         file_path_str = "No file selected"
     file_path_out.set(file_path_str)
 
-# VOID
-def set_up_window(root):
+def set_up_window(root) -> None:
     """
     Sets up the GUI for
     choosing input and output
