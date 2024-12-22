@@ -1,5 +1,6 @@
 import tkinter
 import user_interface.gui
+import datapack_directory_management
 
 if __name__ == "__main__":
 
