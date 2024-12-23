@@ -7,7 +7,9 @@ import os
 #various important file/folder names. They are put here so they can be easily refactored
 #the name of the directory folder
 ROOT_DIR_PATH = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
-USER_INPUT_PATH = os.path.join(ROOT_DIR_PATH, "stored_values", "user_input.log")
+USER_INPUT_PATH = os.path.join(ROOT_DIR_PATH, "stored_values", "user_input.log")  
+
+splittingChar = "╠" #the character that splits the key and the value in the file
 
 #says the prompt and returns the file path that the user inputs.
 def getFilePath(prompt):
@@ -44,7 +46,7 @@ def fileValueFromKey(key, path):
         
         #iterates through every line and scans for the key
         for i in f:
-            splitString = i.split(":")
+            splitString = i.split(splittingChar)
 
             if(splitString[0] == key):
                 return splitString[1]
@@ -61,7 +63,7 @@ def fileKeyExists(key, path):
         
         #iterates through every line and scans for the key
         for i in f:
-            splitString = i.split(":")
+            splitString = i.split(splittingChar)
 
             if(splitString[0] == key):
                 return True
@@ -78,7 +80,7 @@ def fileIndexOfKey(key, path):
     #loops through every line and checks if it lines up right
     with open(path, "r") as f:
         for i in f:
-            if(i.split(":")[0] == key):
+            if(i.split(splittingChar)[0] == key):
                 return keyIndex
             
 
@@ -99,7 +101,7 @@ def fileKeyDelete(key, path):
 
         #rewrites all the lines except for the one we want to delete
         for line in lines:
-            if(line.split(":")[0] != key):
+            if(line.split(splittingChar)[0] != key):
                 f.write(line)
 
 #VOID: writes the string to the file, will go to the nearest available spot
@@ -131,7 +133,7 @@ def fileStringWrite(input, path):
 #puts the key into the file. Will replace and delete any other key values
 def fileKeyPut(key, value, path):
     fileKeyDelete(key, path)
-    fileStringWrite(key + ":" + value, path)
+    fileStringWrite(key + splittingChar + value, path)
 
 if __name__ == "__main__":
     # prep boiler plate for file functionality
