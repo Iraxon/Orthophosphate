@@ -9,7 +9,7 @@ import os
 ROOT_DIR_PATH = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
 USER_INPUT_PATH = os.path.join(ROOT_DIR_PATH, "stored_values", "user_input.log")  
 
-splittingChar = "╠" #the character that splits the key and the value in the file
+splittingChar = "&" #the character that splits the key and the value in the file
 
 #says the prompt and returns the file path that the user inputs.
 def getFilePath(prompt):
