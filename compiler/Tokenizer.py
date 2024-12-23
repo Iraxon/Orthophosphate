@@ -7,7 +7,7 @@ from TestToken2 import *
 #one character sub for tokens in the code
 
 #the list of all the recognized tokens. Used this to add new tokens
-tokens = (TestToken1, TestToken2, TestToken3)
+tokens = (NumberToken, WhiteSpaceToken)
 
 #helper data set. Stores every token string to the token it is a part of
 tokenStrings = dict() 
@@ -15,7 +15,7 @@ tokenStrings = dict()
 #adds a dictionary that stores each specific token string to the overall token it is a part of
 def initTokenMap():
     for token in tokens:
-        for string in token.tokens:
+        for string in token.matches:
             tokenStrings[string] = token
 
 initTokenMap()
@@ -93,7 +93,10 @@ def isTerminatingToken(token):
 #helper function to print all the tokens
 def printTokens(compiledTokens : list[Token]):
     for token in compiledTokens:
-        print("token: " + token.type)
-        print("value: " + token.value)
+        print(token)
 
+
+compiledTokens = tokenize("323 034 233")
+
+printTokens(compiledTokens)
 
