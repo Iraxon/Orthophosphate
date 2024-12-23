@@ -1,8 +1,6 @@
-from modules.TestToken1 import TestToken1
-from modules.TestToken2 import TestToken2
+from TestToken2 import TestToken2
+from TestToken2 import TestToken1
 from TokenizerModuleBase import TokenizerModuleBase
-from helper.TokenizerInfo import TokenizerInfo
-from helper.TokenizerOutput import TokenizerOutput
 from Token import Token
 
 #NEEDED CHANGES:
@@ -21,6 +19,8 @@ def initTokenMap():
         for string in token.tokens:
             tokenStrings[string] = token
 
+initTokenMap()
+
 #all of the compiled tokens
 compiledTokens: list[Token] = []
 
@@ -37,26 +37,18 @@ def tokenize(data):
 
         #if the next character is a space, then we need to run the token regardless if it is a token or not, errors will be handled in the run token method
         if(nextChar.isTerminating()):
+            # takes the output and sets all the values
             #takes the output and sets all the values
-            output : TokenizerOutput = runToken(token, TokenizerInfo(data, cursor, compiledTokens))
+            cursor, compiledTokens, data = runToken(token, data, cursor, compiledTokens)
 
-            cursor = output.cursor
-            compiledTokens = output.tokens
-            data = output.data
-
-            #reset the token
             token = ""
-
+        
         token += nextChar
 
         #if the token is a terminating token we run it regardless of the spaces
         if(isTerminatingToken(token)):
             #takes the output and sets all the values
-            output : TokenizerOutput = runToken(token, TokenizerInfo(data, cursor, compiledTokens))
-
-            cursor = output.cursor
-            compiledTokens = output.tokens
-            data = output.data
+            cursor, compiledTokens, data = runToken(token, data, cursor, compiledTokens)
 
             token = ""
 
@@ -65,12 +57,12 @@ def tokenize(data):
     return compiledTokens
 
 #runs the specific token string, will return an error if not a token
-def runToken(token, info):
+def runToken(token, cursor, compiledTokens, data):
     #run token if it is in the token base
     if(token in tokenStrings):
         compiledToken : TokenizerModuleBase = tokenStrings[token]
 
-        compiledToken.calculate(info)
+        compiledToken.calculate(cursor, compiledTokens, data)
     
     #if not throw error
     else:
@@ -90,5 +82,15 @@ def isTerminatingToken(token):
     #returns wether the final token is terminating
     return compiledToken.isTerminating
 
+#helper function to print all the tokens
+def printTokens():
+    for token in compiledTokens:
+        print("token: " + token.type)
+        print("value: " + token.value)
 
+input = input("Enter the data to tokenize: ")
+
+tokenize(input)
+
+printTokens()
 
