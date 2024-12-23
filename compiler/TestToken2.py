@@ -35,3 +35,59 @@ class WhiteSpaceToken(TokenizerModuleBase):
 
         return cursor, compiledTokens, data
     
+class StatementEndingToken(TokenizerModuleBase):
+    matches = (";")
+
+    isTerminating = True
+
+    def calculate(cursor: int, compiledTokens: list[Token], data: str):
+
+        compiledTokens.append(Token("statementEnding", ";"))
+
+        return cursor, compiledTokens, data
+
+class StringToken(TokenizerModuleBase):
+
+    matches = ("\"")
+
+    isTerminating = True
+
+    def calculate(cursor, compiledTokens, data):
+
+        #getting past first token
+        cursor += 1
+
+        fullString = ""
+
+        while(data[cursor] != "\""):
+
+            fullString += data[cursor]
+            cursor += 1
+
+        compiledTokens.append(Token("string", fullString))
+
+        return cursor, compiledTokens, data
+
+class MCFunctionLiteralToken(TokenizerModuleBase):
+
+    matches = (":")
+
+    isTerminating = True
+
+    def calculate(cursor, compiledTokens, data):
+        #getting past the first character
+        cursor += 1
+
+        fullString = ""
+    
+        while(data[cursor] != ":"):
+            
+            #making this command valid by removing backslash n's
+            if(data[cursor] != "\n"):
+                fullString += data[cursor]
+            
+            cursor += 1
+
+        compiledTokens.append(Token("literal", fullString))
+
+        return cursor, compiledTokens, data
