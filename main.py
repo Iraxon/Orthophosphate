@@ -3,20 +3,7 @@ import user_interface.file_utils
 import user_interface.gui
 import datapack_directory_management
 
-from user_interface.file_utils import fileKeyPut
-from user_interface.file_utils import fileValueFromKey
-
-def save_in(path: str) -> None:
-    fileKeyPut("file_path_in", path, user_interface.file_utils.USER_INPUT_PATH)
-
-def save_out(path: str) -> None:
-    fileKeyPut("file_path_out", path, user_interface.file_utils.USER_INPUT_PATH)
-
-def load_in() -> str:
-    return fileValueFromKey("file_path_in", user_interface.file_utils.USER_INPUT_PATH)
-
-def load_out() -> str:
-    return fileValueFromKey("file_path_out", user_interface.file_utils.USER_INPUT_PATH)
+from user_interface.prompting import save_in, save_out, load_in, load_out
 
 if __name__ == "__main__":
 
