@@ -6,14 +6,11 @@ class NumberToken(TokenizerModuleBase):
 
     def calculate(cursor: int, compiledTokens: list[Token], data: str):
         
-        print("len(data): ", len(data))
-
         fullNum = ""
 
         #adds the whole number
         while(cursor < len(data) and data[cursor] in NumberToken.matches):
 
-            print("cursor: ", cursor)
             fullNum += data[cursor]
             cursor += 1
 
