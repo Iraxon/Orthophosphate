@@ -1,6 +1,4 @@
-from helper.TokenizerInfo import TokenizerInfo
-
-from helper.TokenizerOutput import TokenizerOutput
+from Token import Token
 
 class TokenizerModuleBase:
     """
@@ -16,7 +14,7 @@ class TokenizerModuleBase:
 
     #OUTPUT: tokenizer output
     #calculates the tokenizer output given the data
-    def calculate(info: TokenizerInfo) -> TokenizerOutput:
+    def calculate(cursor: int, compiledTokens: list[Token], data: str) -> tuple:
         """
         OUTPUT: tokenizer output
         calculates the tokenizer output given the data
