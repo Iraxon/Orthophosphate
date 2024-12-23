@@ -22,8 +22,7 @@ def initTokenMap():
             tokenStrings[string] = token
 
 #all of the compiled tokens
-compiledTokens: list[Token]
-
+compiledTokens: list[Token] = []
 
 def tokenize(data):
     #where the tokenizer is in the data
@@ -90,3 +89,6 @@ def isTerminatingToken(token):
 
     #returns wether the final token is terminating
     return compiledToken.isTerminating
+
+
+
