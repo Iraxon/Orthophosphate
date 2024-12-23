@@ -1,4 +1,7 @@
-class TokenizerOutput:
+import typing
+from compiler.Token import Token
+
+class TokenizerOutput(typing.NamedTuple):
     """
     the output from the tokenizer module base class. Allows expandability
     """
@@ -10,4 +13,4 @@ class TokenizerOutput:
     cursor: int
 
     #the tokens that have been found
-    tokens: list[str]
+    tokens: list[Token]

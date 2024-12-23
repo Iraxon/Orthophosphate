@@ -1,4 +1,7 @@
-class TokenizerInfo:
+import typing
+from compiler.Token import Token
+
+class TokenizerInfo(typing.NamedTuple):
     """
     the input into the tokenizer module base class. Allows expandability
     """
@@ -10,5 +13,7 @@ class TokenizerInfo:
     cursor: int
 
     #the tokens that have been found
-    tokens: list[str]
+    tokens: list[Token]
+
+    
 
