@@ -82,7 +82,7 @@ class ParserTarget(enum.Enum):
     STATEMENT_BODY = enum.auto()
     OTHER = enum.auto()
 
-def _parse_individual(tokens: list, cursor: int, target=ParserTarget.STATEMENT_START, nodes = tuple()) -> Node:
+def _parse_individual(tokens: list, cursor: int=0, target=ParserTarget.STATEMENT_START) -> typing.Union[Node, tuple[Node]]:
     """
     Private, recursive function for processing each token individually
     """
@@ -118,9 +118,6 @@ def _parse_individual(tokens: list, cursor: int, target=ParserTarget.STATEMENT_S
             )
         case _:
             raise ValueError(f"Token {t} unknown to parser")
-    if len(nodes) == 0:
-        return node
-    return nodes
 
 def parse(tokens: list) -> Node:
     """
@@ -130,12 +127,14 @@ def parse(tokens: list) -> Node:
     representing the program specified
     """
 
+    raise NotImplementedError("The parser is not yet implemented")
+
     ast = Node(
         type=NodeType.ROOT,
         # We do not care about the tokens themselves; we only
         # want to run _parse_individual the right number of times.
         # Therefore, we use _ and subsequently ignore it
-        value=root_value
+        value=_parse_individual(tokens=tokens)
     )
     return ast
 
