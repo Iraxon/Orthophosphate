@@ -28,8 +28,8 @@ def tokenize(input : str) -> list[Token]:
 
     #the currently compiled tokens
     compiledTokens : list[Token] = []
-    compiledTokens.append(Token("file_start", ""))
-    compiledTokens.append(Token("start", "start"))
+    compiledTokens.append(Token("punc", "file_start"))
+    compiledTokens.append(Token("punc", "start"))
 
     #logic
     while(cursor < len(data)):
@@ -59,9 +59,9 @@ def tokenize(input : str) -> list[Token]:
     
     # to get rid of the excess start token
     # that will follow the last semicolon the programmer wrote
-    if compiledTokens[-1].type == "start":
+    if compiledTokens[-1].type == "punc" and compiledTokens[-1].value == "start":
         compiledTokens.pop()
-    compiledTokens.append(Token("EOF", ""))
+    compiledTokens.append(Token("punc", "EOF"))
 
     return compiledTokens
 
@@ -99,6 +99,10 @@ def isTerminatingToken(token):
     return compiledToken.isTerminating
 
 def handleUnkownToken(token: str, cursor: int, compiledTokens : list[Token], data : str) -> tuple:
+
+    # This still needs to be replaced
+    raise NotImplementedError(f"Proper name token logic is still forthcoming")
+
     compiledTokens.append(Token("name", token))
     return cursor, compiledTokens, data
 

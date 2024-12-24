@@ -110,7 +110,7 @@ def _resolve_finite_tuple(tokens: list, cursor: int, description: tuple[tuple[st
     return tuple(node_list), iterating_cursor # No +1 because no closing token to skip
         
 
-def _resolve_node_tuple(tokens: list, cursor: int, end_token=VirtualToken("EOF", "*")):
+def _resolve_node_tuple(tokens: list, cursor: int, end_token):
     """
     Makes a flat tuple of nodes from the tokens
     until it hits the specfied end token or EOF
@@ -161,7 +161,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
             value=_resolve_node_tuple(
                 tokens=tokens,
                 cursor=0,
-                end_token=VirtualToken("EOF", "*")
+                end_token=VirtualToken("punc", "EOF")
             )[0]
         )
     
@@ -176,7 +176,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
             value, new_cursor = _resolve_node_tuple(
                 tokens=tokens,
                 cursor=_cursor,
-                end_token=VirtualToken("statementEnding", ";")
+                end_token=VirtualToken("punc", ";")
             )
             node = Node(
                 type=NodeType.STATEMENT,
@@ -197,7 +197,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 type=NodeType.MCFUNCTION_LITERAL,
                 value=t.value
             )
-        case ("loop", "while"):
+        case ("keyword", "while"):
             value, new_cursor = _resolve_finite_tuple(
                 tokens=tokens,
                 cursor=_cursor,
@@ -211,7 +211,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 value=value
             )
             pass
-        case ("function", x):
+        case ("keyword", "func"):
             value, new_cursor = _resolve_finite_tuple(
                 tokens=tokens,
                 cursor=_cursor,
@@ -224,27 +224,27 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 type=NodeType.FUNC_DEF,
                 value=value
             )
-        case ("curlyBrackets", "open"):
+        case ("punc", "{"):
             value, new_cursor = _resolve_node_tuple(
                 tokens=tokens,
                 cursor=_cursor,
-                end_token=VirtualToken("curlyBrackets", "close")
+                end_token=VirtualToken("punc", "}")
             )
             node = Node(
                 type=NodeType.BLOCK,
                 value=value
             )
-        case ("parantheses", "open"):
+        case ("punc", ")"):
             value, new_cursor = _resolve_node_tuple(
                 tokens=tokens,
                 cursor=_cursor,
-                end_token=VirtualToken("parantheses", "close")
+                end_token=VirtualToken("punc", ")")
             )
             node = Node(
                 type=NodeType.GROUPED_EXPRESSION,
                 value=value
             )
-        case ("statementEnding", ";") | ("curlyBrackets", "close") | ("parantheses", "close") | ("EOF", ""):
+        case ("punc", ";") | ("punc", "}") | ("punc", ")") | ("punc", "EOF"):
             raise ValueError(
                 f"Found unexpected closing token:\n"
                 f"\t{tokens[_cursor - 10] if _cursor - 10 >= 0 else ''}\n"

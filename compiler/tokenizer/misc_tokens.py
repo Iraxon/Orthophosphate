@@ -47,8 +47,8 @@ class StatementEndingToken(TokenizerModuleBase):
 
     def calculate(cursor: int, compiledTokens: list[Token], data: str):
 
-        compiledTokens.append(Token("statementEnding", ";"))
-        compiledTokens.append(Token("start", "start"))
+        compiledTokens.append(Token("punc", ";"))
+        compiledTokens.append(Token("punc", "start"))
         
         return cursor, compiledTokens, data
 
@@ -107,9 +107,9 @@ class ParanthesesToken(TokenizerModuleBase):
     def calculate(cursor, compiledTokens, data):
 
         if(data[cursor] == "("):
-            compiledTokens.append(Token("parantheses", "open"))
+            compiledTokens.append(Token("punc", "("))
         else:
-            compiledTokens.append(Token("parantheses", "close"))
+            compiledTokens.append(Token("punc", ")"))
 
 
         return cursor, compiledTokens, data
@@ -123,14 +123,14 @@ class CurlyBracketsToken(TokenizerModuleBase):
     def calculate(cursor, compiledTokens, data):
 
         if(data[cursor] == "{"):
-            compiledTokens.append(Token("curlyBrackets", "open"))
-            compiledTokens.append(Token("start", "start"))
+            compiledTokens.append(Token("punc", "{"))
+            compiledTokens.append(Token("punc", "start"))
         else:
-            if compiledTokens[-1].type == "start":
+            if compiledTokens[-1].type == "punc" and compiledTokens[-1].value == "start":
                 compiledTokens.pop() # Remove start token from the last curly brace if there was one
-            compiledTokens.append(Token("curlyBrackets", "close"))
-            compiledTokens.append(Token("statementEnding", ";"))
-            compiledTokens.append(Token("start", "start"))
+            compiledTokens.append(Token("punc", "}"))
+            compiledTokens.append(Token("punc", ";"))
+            compiledTokens.append(Token("punc", "start"))
         return cursor, compiledTokens, data
     
 
