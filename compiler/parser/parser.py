@@ -9,6 +9,8 @@ class NodeType(enum.Enum):
     ROOT = enum.auto()
     MCFUNCTION_LITERAL = enum.auto()
 
+    INT = enum.auto()
+
     SCOREBOARD_OPERATION = enum.auto()
     SCORE = enum.auto()
     SCOREBOARD_ENTITY = enum.auto()
@@ -71,24 +73,6 @@ EXAMPLE_AST = Node(
     )
 )
 
-def _parse_individual(t: Token.Token) -> Node:
-    """
-    Private function: accepts a single token
-    and returns a Node representing it and
-    applicable sub-tokens;
-
-    this function is recursive
-    """
-
-    match t.type:
-        case "Literal":
-            return Node(
-                type=NodeType.MCFUNCTION_LITERAL,
-                value=t.value
-            )
-        case _: # else case
-            raise ValueError(f"Token {t} unknown to parser")
-
 def parse(tokens: list[Token.Token]) -> Node:
     """
     Accepts a list of tokens from the tokenizer
@@ -97,9 +81,50 @@ def parse(tokens: list[Token.Token]) -> Node:
     representing the program specified
     """
 
+    cursor = 0
+    # A cursor is used because some tokens
+    # may need to be processed as a group
+
+    def _parse_individual(tokens) -> Node:
+        """
+        Private function: accepts a single token
+        and returns a Node representing it and
+        applicable sub-tokens;
+
+        this function is recursive;
+
+        this function ACCESSES and MUTATES the
+        cursor variable from the parent function.
+        """
+
+        t = tokens[cursor]
+
+        match t.type:
+            case "number":
+                cursor += 1
+                return Node(
+                    type=NodeType.INT,
+                    value=int(t.value)
+                )
+            case "statementEnding":
+                cursor += 1
+            case "string":
+                cursor += 1
+            case "literal":
+                cursor += 1
+                return Node(
+                    type=NodeType.MCFUNCTION_LITERAL,
+                    value=t.value
+                )
+            case _:
+                raise ValueError(f"Token {t} unknown to parser")
+
     ast = Node(
         type=NodeType.ROOT,
+        # We do not care about the tokens themselves; we only
+        # want to run _parse_individual the right number of times.
+        # Therefore, we use _ and subsequently ignore it
         value=tuple(
-            _parse_individual(t) for t in tokens
+            _parse_individual(tokens) for _ in tokens
         )
     )
