@@ -108,3 +108,35 @@ class ParanthesesToken(TokenizerModuleBase):
             compiledTokens.append(Token("parantheses", "close"))
 
         return cursor, compiledTokens, data
+    
+class CurlyBracketsToken(TokenizerModuleBase):
+    
+    matches = ("{", "}")
+
+    isTerminating = True
+
+    def calculate(cursor, compiledTokens, data):
+
+        if(data[cursor] == "{"):
+            compiledTokens.append(Token("curlyBrackets", "open"))
+        else:
+            compiledTokens.append(Token("curlyBrackets", "close"))
+
+        return cursor, compiledTokens, data
+    
+
+class CommentToken(TokenizerModuleBase):
+
+    matches = ("#")
+
+    isTerminating = True
+
+
+    def calculate(cursor, compiledTokens, data):
+
+        cursor += 1
+
+        while(cursor < len(data) and data[cursor] != "\n"):
+            cursor += 1
+
+        return cursor, compiledTokens, data
