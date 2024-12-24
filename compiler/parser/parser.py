@@ -1,5 +1,5 @@
 import typing
-import Token
+import compiler.tokenizer.Token as Token
 import enum
 
 class NodeType(enum.Enum):
