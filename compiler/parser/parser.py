@@ -8,6 +8,7 @@ class NodeType(enum.Enum):
     ROOT = enum.auto()
 
     STATEMENT = enum.auto()
+    GROUPED_EXPRESSION = enum.auto()
 
     STRING_LITERAL = enum.auto()
     INT_LITERAL = enum.auto()
@@ -163,6 +164,16 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
             )
             node = Node(
                 type=NodeType.BLOCK,
+                value=value
+            )
+        case ("parantheses", "open"):
+            value, new_cursor = _resolve_node_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                end_token=VirtualToken("parantheses", "close")
+            )
+            node = Node(
+                type=NodeType.GROUPED_EXPRESSION,
                 value=value
             )
         case ("statementEnding", ";"):
