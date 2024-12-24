@@ -67,11 +67,8 @@ def tokenize(input : str) -> list[Token]:
 #runs the specific token string, will return an error if not a token
 def runToken(token: str, cursor: int, compiledTokens : list[Token], data : str) -> tuple:
     #run token if it is in the token base
-    print("running token: " + token)
 
     if(token in tokenStrings):
-
-        print("token is in tokenStrings")
 
         compiledToken : TokenizerModuleBase = tokenStrings[token]
 
@@ -83,7 +80,9 @@ def runToken(token: str, cursor: int, compiledTokens : list[Token], data : str) 
     #if not throw error
     else:
         #fix this later
-        raise TypeError("Token |" + token + "| is not a valid token") 
+        compiledToken : TokenizerModuleBase = tokenStrings[token]
+
+        cursor, compiledTokens, data = compiledToken.calculate(cursor, compiledTokens, data)
     
 #checks if a token is terminating
 def isTerminatingToken(token):
@@ -98,12 +97,14 @@ def isTerminatingToken(token):
     #returns wether the final token is terminating
     return compiledToken.isTerminating
 
+def handleUnkownToken(token: str, cursor: int, compiledTokens : list[Token], data : str) -> tuple:
+    compiledTokens.append(Token("named", token))
+    return cursor, compiledTokens, data
+
 #helper function to print all the tokens
 def printTokens(compiledTokens : list[Token]):
     for token in compiledTokens:
         print(token)
 
-output = tokenize("")
 
-printTokens(output)
 

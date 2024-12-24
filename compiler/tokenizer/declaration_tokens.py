@@ -40,3 +40,19 @@ class LoopToken(TokenizerModuleBase):
 
 
         return cursor, compiledTokens, data
+    
+class ReturnToken(TokenizerModuleBase):
+    
+    matches = ("return",)
+
+    isTerminating = False
+
+    def calculate(cursor: int, compiledTokens: list[Token], data: str):        
+
+        compiledTokens.append(Token("return", "return"))
+
+
+        return cursor, compiledTokens, data
+    
+
+
