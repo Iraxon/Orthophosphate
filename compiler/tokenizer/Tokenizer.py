@@ -99,7 +99,7 @@ def isTerminatingToken(token):
     return compiledToken.isTerminating
 
 def handleUnkownToken(token: str, cursor: int, compiledTokens : list[Token], data : str) -> tuple:
-    compiledTokens.append(Token("named", token))
+    compiledTokens.append(Token("name", token))
     return cursor, compiledTokens, data
 
 #helper function to print all the tokens
