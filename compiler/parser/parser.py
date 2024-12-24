@@ -110,6 +110,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
     # print(f"cursor at {_cursor}-- parse(), selecting {tokens[_cursor]}")
     t = tokens[_cursor]
 
+    # inits root node
     if _cursor == 0:
         return Node(
             type=NodeType.ROOT,
