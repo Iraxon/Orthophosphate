@@ -20,8 +20,10 @@ class NumberToken(TokenizerModuleBase):
                 fullNum = fullNum[1:]
             else:
                 break
+        
+        cursor -= 1
 
-        compiledTokens.append(Token("number", fullNum))
+        compiledTokens.append(Token("int", fullNum))
 
         return cursor, compiledTokens, data
 
@@ -89,5 +91,20 @@ class MCFunctionLiteralToken(TokenizerModuleBase):
             cursor += 1
 
         compiledTokens.append(Token("literal", fullString))
+
+        return cursor, compiledTokens, data
+
+class ParanthesesToken(TokenizerModuleBase):
+
+    matches = ("(", ")")
+
+    isTerminating = True
+
+    def calculate(cursor, compiledTokens, data):
+
+        if(data[cursor] == "("):
+            compiledTokens.append(Token("parantheses", "open"))
+        else:
+            compiledTokens.append(Token("parantheses", "close"))
 
         return cursor, compiledTokens, data

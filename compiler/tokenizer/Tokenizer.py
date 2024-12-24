@@ -7,7 +7,7 @@ from MiscTokens import *
 #one character sub for tokens in the code
 
 #the list of all the recognized tokens. Used this to add new tokens
-tokens = (NumberToken, WhiteSpaceToken, StatementEndingToken, StringToken, MCFunctionLiteralToken)
+tokens = (NumberToken, WhiteSpaceToken, StatementEndingToken, StringToken, MCFunctionLiteralToken, ParanthesesToken)
 
 #helper data set. Maps every token string to the token it is a part of
 tokenStrings = {
@@ -88,4 +88,8 @@ def isTerminatingToken(token):
 def printTokens(compiledTokens : list[Token]):
     for token in compiledTokens:
         print(token)
+
+output = tokenize("()")
+
+printTokens(output)
 
