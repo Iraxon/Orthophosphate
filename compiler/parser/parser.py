@@ -33,6 +33,37 @@ class Node(typing.NamedTuple):
 
     def __repr__(self) -> str:
         return f"Node(type={self.type}, value={self.value})"
+    
+    def __str__(self) -> str:
+        return self.render()
+    
+    def render(self, pre="") -> str:
+        """
+        Provides a nice readable string
+        rep of the AST with nesting
+
+        This function is recursive and
+        dangerous to the sanity of anyone
+        who works on it
+        """
+        line_tuple = tuple(
+            element.render(pre + ("║ " if i < len(self.value) - 1 else "  "))
+            if isinstance(element, Node)
+            else "═ " + str(element)
+            for i, element in enumerate(self.value)
+        ) if isinstance(self.value, tuple) else ("═ " + str(self.value),)
+
+        return (
+            f"{"" if pre == "" else'═'}{self.type.name}\n"
+            + "".join(
+                    tuple(
+                        f"{pre}╠{element}\n"
+                        if i < len(line_tuple) - 1
+                        else f"{pre}╚{element}"
+                        for i, element in enumerate(line_tuple)
+                    )
+                )
+        )
 
 # Example AST for:
 #
