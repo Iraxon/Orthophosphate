@@ -17,7 +17,7 @@ def browse_for_file_in(*args) -> None:
     as well)
     """
 
-    file_path_str = filedialog.askopenfilename(filetypes=[("Orthophosphate Files", "*.txt *.orph")])
+    file_path_str = filedialog.askopenfilename(filetypes=[("Orthophosphate Files", "*.txt *.opo4")])
     
     if file_path_str:
         pass
