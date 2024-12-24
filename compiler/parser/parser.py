@@ -7,9 +7,13 @@ class NodeType(enum.Enum):
     The types of nodes in the abstract syntax tree
     """
     ROOT = enum.auto()
+
+    STRING_LITERAL = enum.auto()
     MCFUNCTION_LITERAL = enum.auto()
 
     INT = enum.auto()
+
+    STATEMENT = enum.auto()
 
     SCOREBOARD_OPERATION = enum.auto()
     SCORE = enum.auto()
@@ -73,6 +77,50 @@ EXAMPLE_AST = Node(
     )
 )
 
+class ParserTarget(enum.Enum):
+    STATEMENT_START = enum.auto()
+    OTHER = enum.auto()
+
+def _parse_individual(tokens: list[Token.Token], cursor: int, target=ParserTarget.STATEMENT, nodes = tuple()) -> Node:
+    """
+    Private, recursive function for processing each token individually
+    """
+
+    t = tokens[cursor]
+
+    if target == ParserTarget.STATEMENT_START:
+        if t.type == "start":
+            node = _parse_individual(tokens, cursor + 1, target=ParserTarget.STATEMENT)
+        else:
+            raise ValueError(f"Token {t} begins statement instead of start token")
+    match t.type:
+        case "start" | "statementEnding":
+            node_value = []
+            while t.type != "statementEnding":
+                node_value.append(_parse_individual(tokens, cursor))
+        case "number":
+            node = Node(
+                type=NodeType.INT,
+                value=int(t.value)
+            )
+        case "statementEnding":
+            pass
+        case "string":
+            node = Node(
+                type=NodeType.STRING_LITERAL,
+                value = t.value
+            )
+        case "literal":
+            node = Node(
+                type=NodeType.MCFUNCTION_LITERAL,
+                value=t.value
+            )
+        case _:
+            raise ValueError(f"Token {t} unknown to parser")
+    if len(nodes) == 0:
+        return node
+    return nodes
+
 def parse(tokens: list[Token.Token]) -> Node:
     """
     Accepts a list of tokens from the tokenizer
@@ -81,50 +129,23 @@ def parse(tokens: list[Token.Token]) -> Node:
     representing the program specified
     """
 
-    cursor = 0
-    # A cursor is used because some tokens
-    # may need to be processed as a group
-
-    def _parse_individual(tokens) -> Node:
-        """
-        Private function: accepts a single token
-        and returns a Node representing it and
-        applicable sub-tokens;
-
-        this function is recursive;
-
-        this function ACCESSES and MUTATES the
-        cursor variable from the parent function.
-        """
-
-        t = tokens[cursor]
-
-        match t.type:
-            case "number":
-                cursor += 1
-                return Node(
-                    type=NodeType.INT,
-                    value=int(t.value)
-                )
-            case "statementEnding":
-                cursor += 1
-            case "string":
-                cursor += 1
-            case "literal":
-                cursor += 1
-                return Node(
-                    type=NodeType.MCFUNCTION_LITERAL,
-                    value=t.value
-                )
-            case _:
-                raise ValueError(f"Token {t} unknown to parser")
-
     ast = Node(
         type=NodeType.ROOT,
         # We do not care about the tokens themselves; we only
         # want to run _parse_individual the right number of times.
         # Therefore, we use _ and subsequently ignore it
-        value=tuple(
-            _parse_individual(tokens) for _ in tokens
-        )
+        value=root_value
     )
+    return ast
+
+if __name__ == "__main__":
+    from ..tokenizer import Tokenizer
+    parse([
+        Tokenizer.tokenize(
+            """
+            :say hello:;
+            123;
+            "hello";
+            """
+        ),
+    ])
