@@ -7,6 +7,7 @@ func _TICK_module247
     :scoreboard objectives add my_very_cool_datapack.constants dummy:;
     :scoreboard players set C3 my_very_cool_datapack.constants 3:;
     :scoreboard players set C20 my_very_cool_datapack.constants 20:;
+    :scoreboard players set C24000 my_very_cool_datapack.constants 24000:;
 
     :scoreboard objectives add my_very_cool_datapack.tickers dummy:;
 
@@ -17,6 +18,6 @@ func _TICK_module247
     :scoreboard players operation $T20 my_very_cool_datapack.tickers %= C3 my_very_cool_datapack.constants:;
 
     :scoreboard players add $T24000 my_very_cool_datapack.tickers 1:; # 1 cycle per MC Day
-    :scoreboard players operation $T24000 my_very_cool_datapack.tickers %= C20 my_very_cool_datapack.constants:;
+    :scoreboard players operation $T24000 my_very_cool_datapack.tickers %= C24000 my_very_cool_datapack.constants:;
 
 }
