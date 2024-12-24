@@ -9,6 +9,7 @@ class NodeType(enum.Enum):
 
     STATEMENT = enum.auto()
     GROUPED_EXPRESSION = enum.auto()
+    NAME = enum.auto()
 
     STRING_LITERAL = enum.auto()
     INT_LITERAL = enum.auto()
@@ -215,7 +216,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 tokens=tokens,
                 cursor=_cursor,
                 description=(
-                    (NodeType.GROUPED_EXPRESSION,), # Needs to be changed to a function header or something
+                    (NodeType.NAME,), # Needs to be changed to a function header or something
                     (NodeType.BLOCK,),
                 )
             )
