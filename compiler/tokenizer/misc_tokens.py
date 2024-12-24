@@ -1,5 +1,5 @@
-from TokenizerModuleBase import TokenizerModuleBase
-from Token import Token
+from .tokenizer_module_base import TokenizerModuleBase
+from .token import Token
 
 class NumberToken(TokenizerModuleBase):
     matches = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")

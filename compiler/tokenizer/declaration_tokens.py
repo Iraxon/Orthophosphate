@@ -1,5 +1,5 @@
-from TokenizerModuleBase import TokenizerModuleBase
-from Token import Token
+from .tokenizer_module_base import TokenizerModuleBase
+from .token import Token
 
 class FunctionToken(TokenizerModuleBase):
 

@@ -1,5 +1,5 @@
 import typing
-import compiler.tokenizer.Token as Token
+# from ..tokenizer import token as Token
 import enum
 
 class NodeType(enum.Enum):
@@ -79,9 +79,10 @@ EXAMPLE_AST = Node(
 
 class ParserTarget(enum.Enum):
     STATEMENT_START = enum.auto()
+    STATEMENT_BODY = enum.auto()
     OTHER = enum.auto()
 
-def _parse_individual(tokens: list[Token.Token], cursor: int, target=ParserTarget.STATEMENT, nodes = tuple()) -> Node:
+def _parse_individual(tokens: list, cursor: int, target=ParserTarget.STATEMENT_START, nodes = tuple()) -> Node:
     """
     Private, recursive function for processing each token individually
     """
@@ -90,7 +91,7 @@ def _parse_individual(tokens: list[Token.Token], cursor: int, target=ParserTarge
 
     if target == ParserTarget.STATEMENT_START:
         if t.type == "start":
-            node = _parse_individual(tokens, cursor + 1, target=ParserTarget.STATEMENT)
+            node = _parse_individual(tokens, cursor + 1, target=ParserTarget.STATEMENT_BODY)
         else:
             raise ValueError(f"Token {t} begins statement instead of start token")
     match t.type:
@@ -121,7 +122,7 @@ def _parse_individual(tokens: list[Token.Token], cursor: int, target=ParserTarge
         return node
     return nodes
 
-def parse(tokens: list[Token.Token]) -> Node:
+def parse(tokens: list) -> Node:
     """
     Accepts a list of tokens from the tokenizer
 
@@ -139,13 +140,14 @@ def parse(tokens: list[Token.Token]) -> Node:
     return ast
 
 if __name__ == "__main__":
-    from ..tokenizer import Tokenizer
-    parse([
-        Tokenizer.tokenize(
-            """
-            :say hello:;
-            123;
-            "hello";
-            """
-        ),
-    ])
+    pass
+#    from ..tokenizer import tokenizer
+#   parse([
+#       tokenizer.tokenize(
+#           """
+#           :say hello:;
+#           123;
+#           "hello";
+#           """
+#       ),
+#   ])

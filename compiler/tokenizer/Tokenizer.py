@@ -1,7 +1,7 @@
-from TokenizerModuleBase import TokenizerModuleBase
-from Token import Token
-from MiscTokens import *
-from DeclarationTokens import *
+from .tokenizer_module_base import TokenizerModuleBase
+from .token import Token
+from .misc_tokens import *
+from .declaration_tokens import *
 
 #NEEDED CHANGES:
 #finish class lol

@@ -1,5 +1,5 @@
 import parser.parser as parser
-import tokenizer.Tokenizer as Tokenizer
+import tokenizer.tokenizer as tokenizer
 
 import tkinter
 from tkinter import filedialog
@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     with open(file_path, 'r') as file:
         src = file.read()
-        tokens = Tokenizer.tokenize(src)
+        tokens = tokenizer.tokenize(src)
         print(tokens)
         ast = parser.parse(tokens)
         print(ast)

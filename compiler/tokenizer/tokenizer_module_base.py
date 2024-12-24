@@ -1,4 +1,4 @@
-from Token import Token
+from .token import Token
 
 class TokenizerModuleBase:
     """
