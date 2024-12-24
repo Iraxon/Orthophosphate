@@ -9,16 +9,10 @@ from MiscTokens import *
 #the list of all the recognized tokens. Used this to add new tokens
 tokens = (NumberToken, WhiteSpaceToken, StatementEndingToken, StringToken, MCFunctionLiteralToken)
 
-#helper data set. Stores every token string to the token it is a part of
-tokenStrings = dict() 
-
-#adds a dictionary that stores each specific token string to the overall token it is a part of
-def initTokenMap():
-    for token in tokens:
-        for string in token.matches:
-            tokenStrings[string] = token
-
-initTokenMap()
+#helper data set. Maps every token string to the token it is a part of
+tokenStrings = {
+    string: token for token in tokens for string in token.matches
+}
 
 def tokenize(input : str) -> list[Token]:
 

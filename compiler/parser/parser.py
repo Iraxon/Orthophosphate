@@ -27,8 +27,8 @@ class Node(typing.NamedTuple):
 
 # Example AST for:
 #
-# | /say hello;
-# | @a <<NS>>.test = 1
+# | /say hello
+# | @a <<NS>>.test = 1;
 # | /execute as @e at @s if score @s test matches 1.. run say my score is positive!
 
 EXAMPLE_AST = Node(
@@ -71,6 +71,24 @@ EXAMPLE_AST = Node(
     )
 )
 
+def _parse_individual(t: Token.Token) -> Node:
+    """
+    Private function: accepts a single token
+    and returns a Node representing it and
+    applicable sub-tokens;
+
+    this function is recursive
+    """
+
+    match t.type:
+        case "Literal":
+            return Node(
+                type=NodeType.MCFUNCTION_LITERAL,
+                value=t.value
+            )
+        case _: # else case
+            raise ValueError(f"Token {t} unknown to parser")
+
 def parse(tokens: list[Token.Token]) -> Node:
     """
     Accepts a list of tokens from the tokenizer
@@ -78,9 +96,6 @@ def parse(tokens: list[Token.Token]) -> Node:
     Returns the root node of an abstract syntax tree
     representing the program specified
     """
-
-    def _parse_individual(t: Token.Token) -> Node:
-        pass
 
     ast = Node(
         type=NodeType.ROOT,
