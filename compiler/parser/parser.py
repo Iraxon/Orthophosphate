@@ -82,30 +82,47 @@ class ParserTarget(enum.Enum):
     STATEMENT_BODY = enum.auto()
     OTHER = enum.auto()
 
-def _parse_individual(tokens: list, cursor: int=0, target=ParserTarget.STATEMENT_START) -> typing.Union[Node, tuple[Node]]:
+def _parse_individual(tokens: list, cursor: int=0, seek_multiple=False, end_token_type=None) -> typing.Union[Node, tuple[Node]]:
     """
-    Private, recursive function for processing each token individually
+    Private, recursive function for processing each token individually;
+    tokens and cursor are self-explanatory; if seek_multiple is true,
+    this function will return a tuple of nodes instead of one; the end_token
+    is used with seek_multiple to determine when the series of tokens is over
+
+    Returns tuple [Node | tuple[Node]], cursor: int
     """
 
+    if seek_multiple:
+        nodes = []
+        # Make a tuple of all the nodes ahead until either end of file or
+        # the end token
+        while cursor < len(tokens) and tokens[cursor].type != end_token_type:
+            next_token, new_cursor = _parse_individual(tokens, cursor)
+            nodes.append(next_token)
+        return tuple(nodes), new_cursor + 1
+    
     t = tokens[cursor]
 
-    if target == ParserTarget.STATEMENT_START:
-        if t.type == "start":
-            node = _parse_individual(tokens, cursor + 1, target=ParserTarget.STATEMENT_BODY)
-        else:
-            raise ValueError(f"Token {t} begins statement instead of start token")
+    default_return = True
+
     match t.type:
         case "start" | "statementEnding":
-            node_value = []
-            while t.type != "statementEnding":
-                node_value.append(_parse_individual(tokens, cursor))
+            node = None(
+                type=NodeType.STATEMENT,
+                value=_parse_individual(tokens, cursor + 1, seek_multiple=True)
+            )
         case "number":
             node = Node(
                 type=NodeType.INT,
                 value=int(t.value)
             )
         case "statementEnding":
-            pass
+            raise ValueError(
+                f"Unexpected end token: "
+                f"{tokens[cursor - 1] if cursor > 0 else ""} "
+                f">>> {t} <<< "
+                f"{tokens[cursor + 1] if cursor < len(tokens) - 1 else ""}"
+            )
         case "string":
             node = Node(
                 type=NodeType.STRING_LITERAL,
@@ -118,6 +135,8 @@ def _parse_individual(tokens: list, cursor: int=0, target=ParserTarget.STATEMENT
             )
         case _:
             raise ValueError(f"Token {t} unknown to parser")
+    if default_return:
+        return node, cursor + 1
 
 def parse(tokens: list) -> Node:
     """
@@ -129,12 +148,13 @@ def parse(tokens: list) -> Node:
 
     raise NotImplementedError("The parser is not yet implemented")
 
+    root_value, cursor = _parse_individual(tokens, 0, seek_multiple=True, end_token_type="end_of_file")
+    # "end_of_file" is not a token type, so it will never match. This is fine,
+    # because seek_multiple will also stop at the end of the file if there is no end token.
+
     ast = Node(
         type=NodeType.ROOT,
-        # We do not care about the tokens themselves; we only
-        # want to run _parse_individual the right number of times.
-        # Therefore, we use _ and subsequently ignore it
-        value=_parse_individual(tokens=tokens)
+        value=root_value
     )
     return ast
 
