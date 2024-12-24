@@ -1,0 +1,22 @@
+func _TICK_module247
+{
+    # This is code that is ripped straight out of one of my datapacks, with
+    # just the namespace changed. Consider it a case study of why
+    # we want to have concise scoreboard statements.
+
+    :scoreboard objectives add my_very_cool_datapack.constants dummy:;
+    :scoreboard players set C3 my_very_cool_datapack.constants 3:;
+    :scoreboard players set C20 my_very_cool_datapack.constants 20:;
+
+    :scoreboard objectives add my_very_cool_datapack.tickers dummy:;
+
+    :scoreboard players add $T20 my_very_cool_datapack.tickers 1:; # 1 cycle per second
+    :scoreboard players operation $T20 my_very_cool_datapack.tickers %= C20 my_very_cool_datapack.constants:;
+
+    :scoreboard players add $T3 my_very_cool_datapack.tickers 1:; # Irregular ticker for pseudo-random operations
+    :scoreboard players operation $T20 my_very_cool_datapack.tickers %= C3 my_very_cool_datapack.constants:;
+
+    :scoreboard players add $T24000 my_very_cool_datapack.tickers 1:; # 1 cycle per MC Day
+    :scoreboard players operation $T24000 my_very_cool_datapack.tickers %= C20 my_very_cool_datapack.constants:;
+
+}
