@@ -13,6 +13,8 @@ class NodeType(enum.Enum):
     INT_LITERAL = enum.auto()
     MCFUNCTION_LITERAL = enum.auto()
 
+    BLOCK = enum.auto()
+
 class Node(typing.NamedTuple):
     """
     A node in the abstract syntax tree
@@ -151,6 +153,16 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
             node = Node(
                 type=NodeType.MCFUNCTION_LITERAL,
                 value=str(t.value)
+            )
+        case ("curlyBrackets", "open"):
+            value, new_cursor = _resolve_node_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                end_token=VirtualToken("curlyBrackets", "close")
+            )
+            node = Node(
+                type=NodeType.BLOCK,
+                value=value
             )
         case ("statementEnding", ";"):
             raise ValueError(
