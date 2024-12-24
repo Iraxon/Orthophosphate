@@ -1,20 +1,22 @@
 from TokenizerModuleBase import TokenizerModuleBase
 from Token import Token
 from MiscTokens import *
+from DeclarationTokens import *
 
 #NEEDED CHANGES:
 #finish class lol
 #one character sub for tokens in the code
 
 #the list of all the recognized tokens. Used this to add new tokens
-tokens = (NumberToken, WhiteSpaceToken, StatementEndingToken, StringToken, MCFunctionLiteralToken, ParanthesesToken)
+tokens = (NumberToken, WhiteSpaceToken, StatementEndingToken, StringToken, MCFunctionLiteralToken, ParanthesesToken, CurlyBracketsToken, FunctionToken, LoopToken, CommentToken)
 
 #helper data set. Maps every token string to the token it is a part of
-tokenStrings = {
-    string: token for token in tokens for string in token.matches
-}
+tokenStrings: dict[str, Token]= {    string: token for token in tokens for string in token.matches }
 
 def tokenize(input : str) -> list[Token]:
+
+    for k, v in tokenStrings.items():
+        print(f"key: {k}, value: {v}")
 
     data : str = input
 
@@ -26,6 +28,7 @@ def tokenize(input : str) -> list[Token]:
 
     #the currently compiled tokens
     compiledTokens : list[Token] = []
+    compiledTokens.append(Token("start", "start"))
 
     #logic
     while(cursor < len(data)):
@@ -58,7 +61,12 @@ def tokenize(input : str) -> list[Token]:
 #runs the specific token string, will return an error if not a token
 def runToken(token: str, cursor: int, compiledTokens : list[Token], data : str) -> tuple:
     #run token if it is in the token base
+    print("running token: " + token)
+
     if(token in tokenStrings):
+
+        print("token is in tokenStrings")
+
         compiledToken : TokenizerModuleBase = tokenStrings[token]
 
         cursor, compiledTokens, data = compiledToken.calculate(cursor, compiledTokens, data)
@@ -89,7 +97,7 @@ def printTokens(compiledTokens : list[Token]):
     for token in compiledTokens:
         print(token)
 
-output = tokenize("()")
+output = tokenize("")
 
 printTokens(output)
 
