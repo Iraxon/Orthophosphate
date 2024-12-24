@@ -31,6 +31,9 @@ class Node(typing.NamedTuple):
     # The data type of self.value depends on
     # the value of self.type
 
+    def __repr__(self) -> str:
+        return f"Node(type={self.type}, value={self.value})"
+
 # Example AST for:
 #
 # | /say hello
@@ -82,7 +85,7 @@ class ParserTarget(enum.Enum):
     STATEMENT_BODY = enum.auto()
     OTHER = enum.auto()
 
-def _parse_individual(tokens: list, cursor: int=0, seek_multiple=False, end_token_type=None) -> typing.Union[Node, tuple[Node]]:
+def _parse_individual(tokens: list, cursor: int=0, seek_multiple=False, end_token_type=None, end_token_value=None) -> typing.Union[Node, tuple[Node]]:
     """
     Private, recursive function for processing each token individually;
     tokens and cursor are self-explanatory; if seek_multiple is true,
@@ -96,8 +99,9 @@ def _parse_individual(tokens: list, cursor: int=0, seek_multiple=False, end_toke
         nodes = []
         # Make a tuple of all the nodes ahead until either end of file or
         # the end token
-        while cursor < len(tokens) and tokens[cursor].type != end_token_type:
-            next_token, new_cursor = _parse_individual(tokens, cursor)
+        new_cursor = cursor + 1
+        while new_cursor < len(tokens) and not (tokens[new_cursor].type == end_token_type and tokens[new_cursor].value == end_token_value):
+            next_token, new_cursor = _parse_individual(tokens, new_cursor)
             nodes.append(next_token)
         return tuple(nodes), new_cursor + 1
     
@@ -107,11 +111,11 @@ def _parse_individual(tokens: list, cursor: int=0, seek_multiple=False, end_toke
 
     match t.type:
         case "start" | "statementEnding":
-            node = None(
+            node = Node(
                 type=NodeType.STATEMENT,
                 value=_parse_individual(tokens, cursor + 1, seek_multiple=True)
             )
-        case "number":
+        case "int":
             node = Node(
                 type=NodeType.INT,
                 value=int(t.value)
@@ -146,8 +150,6 @@ def parse(tokens: list) -> Node:
     representing the program specified
     """
 
-    raise NotImplementedError("The parser is not yet implemented")
-
     root_value, cursor = _parse_individual(tokens, 0, seek_multiple=True, end_token_type="end_of_file")
     # "end_of_file" is not a token type, so it will never match. This is fine,
     # because seek_multiple will also stop at the end of the file if there is no end token.
@@ -159,14 +161,22 @@ def parse(tokens: list) -> Node:
     return ast
 
 if __name__ == "__main__":
-    pass
-#    from ..tokenizer import tokenizer
-#   parse([
-#       tokenizer.tokenize(
-#           """
-#           :say hello:;
-#           123;
-#           "hello";
-#           """
-#       ),
-#   ])
+
+
+    class VirtualToken(typing.NamedTuple):
+        type: str
+        value: str
+
+
+
+    print(
+        parse(
+            [
+                VirtualToken("start", ""),
+                VirtualToken("literal", "say hello world"),
+            ]
+        )
+    )
+    # It is preferred that tests be run from compiler.py,
+    # because that module can import token and other
+    # modules that are cousins to parser.py
