@@ -1,0 +1,12 @@
+while (1)
+{
+    :say hello world:;
+    123;
+    "456";
+}
+:say done looping!:;
+while (0)
+{
+    :say this never:;
+    "gets executed";
+}

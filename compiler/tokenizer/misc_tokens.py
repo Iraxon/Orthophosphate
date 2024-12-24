@@ -14,12 +14,15 @@ class NumberToken(TokenizerModuleBase):
             fullNum += data[cursor]
             cursor += 1
 
-        #remove leading zeros
+        #remove leading zeros; set value to "0" if this empties the string
+        #(because the number was 0)
         for i in range(len(fullNum)):
             if(fullNum[i] == "0"):
                 fullNum = fullNum[1:]
             else:
                 break
+        if fullNum == "":
+            fullNum = "0"
         
         cursor -= 1
 
@@ -108,6 +111,7 @@ class ParanthesesToken(TokenizerModuleBase):
         else:
             compiledTokens.append(Token("parantheses", "close"))
 
+
         return cursor, compiledTokens, data
     
 class CurlyBracketsToken(TokenizerModuleBase):
@@ -120,9 +124,13 @@ class CurlyBracketsToken(TokenizerModuleBase):
 
         if(data[cursor] == "{"):
             compiledTokens.append(Token("curlyBrackets", "open"))
+            compiledTokens.append(Token("start", "start"))
         else:
+            if compiledTokens[-1].type == "start":
+                compiledTokens.pop() # Remove start token from the last curly brace if there was one
             compiledTokens.append(Token("curlyBrackets", "close"))
-
+            compiledTokens.append(Token("statementEnding", ";"))
+            compiledTokens.append(Token("start", "start"))
         return cursor, compiledTokens, data
     
 

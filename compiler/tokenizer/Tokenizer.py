@@ -59,7 +59,8 @@ def tokenize(input : str) -> list[Token]:
     
     # to get rid of the excess start token
     # that will follow the last semicolon the programmer wrote
-    compiledTokens.pop()
+    if compiledTokens[-1].type == "start":
+        compiledTokens.pop()
     compiledTokens.append(Token("EOF", ""))
 
     return compiledTokens

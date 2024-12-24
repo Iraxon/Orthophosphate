@@ -16,6 +16,10 @@ class NodeType(enum.Enum):
 
     BLOCK = enum.auto()
 
+    WHILE = enum.auto()
+
+    FUNC_DEF = enum.auto()
+
 class Node(typing.NamedTuple):
     """
     A node in the abstract syntax tree
@@ -69,7 +73,43 @@ class VirtualToken(typing.NamedTuple):
     type: str
     value: str
 
-def _resolve_node_tuple(tokens: list, cursor: int=0, end_token=VirtualToken("EOF", "*")):
+def _resolve_finite_tuple(tokens: list, cursor: int, description: tuple[tuple[str]] = None, count: int = -1):
+    """
+    Makes a flat tuple of nodes from the tokens
+    until the tuple contains the specified count and
+    type of nodes
+
+    The description should be a tuple of tuples of NodeTypes
+    where each inner tupple contains all node types allowed
+    in that position or the string "*" if any should
+    be permitted
+
+    If a count is specified, the description will be auto-intialized
+    to accept the correct number of tokens of any type
+    """
+
+    if count != -1:
+        description = tuple(("*",) for _ in range(count))
+    
+    iterating_cursor = cursor + 1 # Skip opening token
+    node_list = []
+    counter = 0
+
+    while iterating_cursor < len(tokens):
+        if len(node_list) >= len(description):
+            break
+        next_node, iterating_cursor = parse(tokens, _cursor=iterating_cursor)
+
+        if next_node.type not in description[counter] and description[counter] != ("*",):
+            raise ValueError(f"Expected Node of a type in {description[counter]}; got {repr(next_node)}")
+        
+        node_list.append(next_node)
+        counter += 1
+    
+    return tuple(node_list), iterating_cursor # No +1 because no closing token to skip
+        
+
+def _resolve_node_tuple(tokens: list, cursor: int, end_token=VirtualToken("EOF", "*")):
     """
     Makes a flat tuple of nodes from the tokens
     until it hits the specfied end token or EOF
@@ -149,12 +189,39 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
         case ("string", s):
             node = Node(
                 type=NodeType.STRING_LITERAL,
-                value=str(t.value)
+                value=t.value
             )
         case ("literal", x):
             node = Node(
                 type=NodeType.MCFUNCTION_LITERAL,
-                value=str(t.value)
+                value=t.value
+            )
+        case ("loop", "while"):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.GROUPED_EXPRESSION,),
+                    (NodeType.BLOCK,),
+                )
+            )
+            node = Node(
+                type=NodeType.WHILE,
+                value=value
+            )
+            pass
+        case ("function", x):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.GROUPED_EXPRESSION,), # Needs to be changed to a function header or something
+                    (NodeType.BLOCK,),
+                )
+            )
+            node = Node(
+                type=NodeType.FUNC_DEF,
+                value=value
             )
         case ("curlyBrackets", "open"):
             value, new_cursor = _resolve_node_tuple(
@@ -176,9 +243,17 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 type=NodeType.GROUPED_EXPRESSION,
                 value=value
             )
-        case ("statementEnding", ";"):
+        case ("statementEnding", ";") | ("curlyBrackets", "close") | ("parantheses", "close") | ("EOF", ""):
             raise ValueError(
                 f"Found unexpected closing token:\n"
+                f"\t{tokens[_cursor - 10] if _cursor - 10 >= 0 else ''}\n"
+                f"\t{tokens[_cursor - 9] if _cursor - 9 >= 0 else ''}\n"
+                f"\t{tokens[_cursor - 8] if _cursor - 8 >= 0 else ''}\n"
+                f"\t{tokens[_cursor - 7] if _cursor - 7 >= 0 else ''}\n"
+                f"\t{tokens[_cursor - 6] if _cursor - 6 >= 0 else ''}\n"
+                f"\t{tokens[_cursor - 5] if _cursor - 5 >= 0 else ''}\n"
+                f"\t{tokens[_cursor - 4] if _cursor - 4 >= 0 else ''}\n"
+                f"\t{tokens[_cursor - 3] if _cursor - 3 >= 0 else ''}\n"
                 f"\t{tokens[_cursor - 2] if _cursor - 2 >= 0 else ''}\n"
                 f"\t{tokens[_cursor - 1] if _cursor - 1 >= 0 else ''}\n"
                 f"\t{t} <<< HERE\n"
