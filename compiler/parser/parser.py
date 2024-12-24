@@ -172,7 +172,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
     new_cursor = _cursor + 1
 
     match (t.type, t.value):
-        case ("start", x):
+        case ("punc", "start"):
             value, new_cursor = _resolve_node_tuple(
                 tokens=tokens,
                 cursor=_cursor,
@@ -195,6 +195,11 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
         case ("literal", x):
             node = Node(
                 type=NodeType.MCFUNCTION_LITERAL,
+                value=t.value
+            )
+        case ("name", n):
+            node = Node(
+                type=NodeType.NAME,
                 value=t.value
             )
         case ("keyword", "while"):
@@ -234,7 +239,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 type=NodeType.BLOCK,
                 value=value
             )
-        case ("punc", ")"):
+        case ("punc", "("):
             value, new_cursor = _resolve_node_tuple(
                 tokens=tokens,
                 cursor=_cursor,

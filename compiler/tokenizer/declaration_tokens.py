@@ -1,6 +1,15 @@
 from .tokenizer_module_base import TokenizerModuleBase
 from .token import Token
 
+# In the course of making the logic for
+# the name token, I ran into a conflict.
+# That has been solved with a match case
+# statement over in misc_tokens.NameToken
+
+# All of this is kept here in commented-out form
+# in case it needs to be used again later.
+
+"""
 class FunctionToken(TokenizerModuleBase):
 
     matches = ("func",)
@@ -61,3 +70,4 @@ class ReturnToken(TokenizerModuleBase):
     
 
 
+"""

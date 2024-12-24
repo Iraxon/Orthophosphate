@@ -1,5 +1,34 @@
 from .tokenizer_module_base import TokenizerModuleBase
 from .token import Token
+import string
+
+class NameToken(TokenizerModuleBase):
+
+    matches = tuple(char for char in string.ascii_letters) + ("_",)
+    can_contain = matches + tuple(char for char in string.digits) + (".",)
+
+    def calculate(cursor, compiledTokens, data):
+
+        fullString = ""
+
+        while(data[cursor] in NameToken.can_contain):
+
+            fullString += data[cursor]
+            cursor += 1
+        
+        # Reserved keywords will be picked up by the matches,
+        # so those are also handled here.
+        match fullString:
+            case "func":
+                compiledTokens.append(Token("keyword", "func"))
+            case "while":
+                compiledTokens.append(Token("keyword", "while"))
+            case "return":
+                compiledTokens.append(Token("keyword", "return"))
+            case _:
+                compiledTokens.append(Token("name", fullString))
+
+        return cursor, compiledTokens, data
 
 class NumberToken(TokenizerModuleBase):
     matches = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
