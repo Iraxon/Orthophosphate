@@ -1,6 +1,6 @@
 from TokenizerModuleBase import TokenizerModuleBase
 from Token import Token
-from TestToken2 import *
+from MiscTokens import *
 
 #NEEDED CHANGES:
 #finish class lol
