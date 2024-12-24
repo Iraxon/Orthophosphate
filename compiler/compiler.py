@@ -9,19 +9,21 @@ if __name__ == "__main__":
     root.withdraw()
     file_path = filedialog.askopenfilename(filetypes=[("Orthophosphate Files", "*.txt *.opo4")])
 
-    SEPARATOR = "\n--- --- ---\n"
+    SEPARATOR = "\n### ### ###\n"
+    LESSER_SEPERATOR = "\n--- --- ---\n"
 
     with open(file_path, 'r') as file:
         src = file.read()
 
-        print (SEPARATOR)
-
         tokens = tokenizer.tokenize(src)
-        print(tokens)
+        ast = parser.parse(tokens)
 
         print(SEPARATOR)
-
-        ast = parser.parse(tokens)
+        print(src)
+        print(SEPARATOR)
+        print(tokens)
+        print(SEPARATOR)
+        print(repr(ast))
+        print(LESSER_SEPERATOR)
         print(ast)
-
         print(SEPARATOR)

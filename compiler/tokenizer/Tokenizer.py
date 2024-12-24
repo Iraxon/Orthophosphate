@@ -28,6 +28,7 @@ def tokenize(input : str) -> list[Token]:
 
     #the currently compiled tokens
     compiledTokens : list[Token] = []
+    compiledTokens.append(Token("file_start", ""))
     compiledTokens.append(Token("start", "start"))
 
     #logic
@@ -55,7 +56,12 @@ def tokenize(input : str) -> list[Token]:
 
     #if the token is not empty, we need to run it
     cursor, compiledTokens, data = runToken(token=token, cursor=cursor, compiledTokens=compiledTokens, data=data)
-        
+    
+    # to get rid of the excess start token
+    # that will follow the last semicolon the programmer wrote
+    compiledTokens.pop()
+    compiledTokens.append(Token("EOF", ""))
+
     return compiledTokens
 
 #runs the specific token string, will return an error if not a token

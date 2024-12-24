@@ -1,5 +1,4 @@
 import typing
-# from ..tokenizer import token as Token
 import enum
 
 class NodeType(enum.Enum):
@@ -8,18 +7,11 @@ class NodeType(enum.Enum):
     """
     ROOT = enum.auto()
 
-    STRING_LITERAL = enum.auto()
-    MCFUNCTION_LITERAL = enum.auto()
-
-    INT = enum.auto()
-
     STATEMENT = enum.auto()
 
-    SCOREBOARD_OPERATION = enum.auto()
-    SCORE = enum.auto()
-    SCOREBOARD_ENTITY = enum.auto()
-    SCOREBOARD_OBJECTIVE = enum.auto()
-    SCOREBOARD_CONSTANT = enum.auto()
+    STRING_LITERAL = enum.auto()
+    INT_LITERAL = enum.auto()
+    MCFUNCTION_LITERAL = enum.auto()
 
 class Node(typing.NamedTuple):
     """
@@ -65,149 +57,117 @@ class Node(typing.NamedTuple):
                 )
         )
 
-# Example AST for:
-#
-# | /say hello
-# | @a <<NS>>.test = 1;
-# | /execute as @e at @s if score @s test matches 1.. run say my score is positive!
-
-EXAMPLE_AST = Node(
-    type=NodeType.ROOT,
-    value=(
-        Node(
-            type=NodeType.MCFUNCTION_LITERAL,
-            value="say hello"
-        ),
-        Node(
-            type=NodeType.SCOREBOARD_OPERATION,
-            value=(
-                Node(
-                    type=NodeType.SCORE,
-                    value=(
-                        Node(
-                            type=NodeType.SCOREBOARD_ENTITY,
-                            value="@a"
-                        ),
-                        Node(
-                            type=NodeType.SCOREBOARD_OBJECTIVE,
-                            value="<<NS>>.test"
-                        ),
-                    )
-                ),
-                Node(
-                    type=NodeType.SCOREBOARD_OPERATION,
-                    value="="
-                ),
-                Node(
-                    type=NodeType.SCOREBOARD_CONSTANT,
-                    value="1"
-                )
-            )
-        ),
-        Node(
-            type=NodeType.MCFUNCTION_LITERAL,
-            value="execute as @e at @s if score @s test matches 1.. run say my score is positive!"
-        ),
-    )
-)
-
-class ParserTarget(enum.Enum):
-    STATEMENT_START = enum.auto()
-    STATEMENT_BODY = enum.auto()
-    OTHER = enum.auto()
-
-def _parse_individual(tokens: list, cursor: int=0, seek_multiple=False, end_token_type=None, end_token_value=None) -> typing.Union[Node, tuple[Node]]:
+class VirtualToken(typing.NamedTuple):
     """
-    Private, recursive function for processing each token individually;
-    tokens and cursor are self-explanatory; if seek_multiple is true,
-    this function will return a tuple of nodes instead of one; the end_token
-    is used with seek_multiple to determine when the series of tokens is over
-
-    Returns tuple [Node | tuple[Node]], cursor: int
+    A fake token that provides the necessary
+    interface for the parser to understand
+    tokenizer.Token objects
     """
+    type: str
+    value: str
 
-    if seek_multiple:
-        nodes = []
-        # Make a tuple of all the nodes ahead until either end of file or
-        # the end token
-        new_cursor = cursor + 1
-        while new_cursor < len(tokens) and not (tokens[new_cursor].type == end_token_type and tokens[new_cursor].value == end_token_value):
-            next_token, new_cursor = _parse_individual(tokens, new_cursor)
-            nodes.append(next_token)
-        return tuple(nodes), new_cursor + 1
-    
-    t = tokens[cursor]
+def _resolve_node_tuple(tokens: list, cursor: int=0, end_token=VirtualToken("EOF", "*")):
+    """
+    Makes a flat tuple of nodes from the tokens
+    until it hits the specfied end token or EOF
+    """
+    iterating_cursor = cursor + 1 # Skip opening token
+    next_token = tokens[iterating_cursor]
+    node_list = []
 
-    default_return = True
+    # While not out of file and it is not the case
+    # that the current token matches end_token
 
-    match t.type:
-        case "start" | "statementEnding":
-            node = Node(
-                type=NodeType.STATEMENT,
-                value=_parse_individual(tokens, cursor + 1, seek_multiple=True)
-            )
-        case "int":
-            node = Node(
-                type=NodeType.INT,
-                value=int(t.value)
-            )
-        case "statementEnding":
-            raise ValueError(
-                f"Unexpected end token: "
-                f"{tokens[cursor - 1] if cursor > 0 else ""} "
-                f">>> {t} <<< "
-                f"{tokens[cursor + 1] if cursor < len(tokens) - 1 else ""}"
-            )
-        case "string":
-            node = Node(
-                type=NodeType.STRING_LITERAL,
-                value = t.value
-            )
-        case "literal":
-            node = Node(
-                type=NodeType.MCFUNCTION_LITERAL,
-                value=t.value
-            )
-        case _:
-            raise ValueError(f"Token {t} unknown to parser")
-    if default_return:
-        return node, cursor + 1
+    while iterating_cursor < len(tokens):
+        # print(f"cursor at {iterating_cursor}-- RNT(), selecting {tokens[iterating_cursor]}")
 
-def parse(tokens: list) -> Node:
+        # Check for end tokens
+        if next_token.type == end_token.type and (next_token.value == end_token.value or end_token.value == "*"):
+            break
+
+        next_node, iterating_cursor = parse(tokens, _cursor=iterating_cursor)
+        node_list.append(next_node)
+        next_token = tokens[iterating_cursor]
+
+    return tuple(node_list), iterating_cursor + 1 # Skip closing token
+
+def parse(tokens: list, _cursor: int = 0) -> Node:
     """
     Accepts a list of tokens from the tokenizer
 
     Returns the root node of an abstract syntax tree
     representing the program specified
+
+    This function is recursive, both itself and
+    mutually with _resolve_node_tuple; it uses the private cursor parameter
+    in the recursion calls; that parameter should not be set
+    by outsider callers
+
+    @reutrn Node [outside calls]
+
+    @return (Node, cursor) [recursive calls]
     """
+    # print(f"cursor at {_cursor}-- parse(), selecting {tokens[_cursor]}")
+    t = tokens[_cursor]
 
-    root_value, cursor = _parse_individual(tokens, 0, seek_multiple=True, end_token_type="end_of_file")
-    # "end_of_file" is not a token type, so it will never match. This is fine,
-    # because seek_multiple will also stop at the end of the file if there is no end token.
+    if _cursor == 0:
+        return Node(
+            type=NodeType.ROOT,
+            value=_resolve_node_tuple(
+                tokens=tokens,
+                cursor=0,
+                end_token=VirtualToken("EOF", "*")
+            )[0]
+        )
+    
+    # The recursive sorcery begins here
 
-    ast = Node(
-        type=NodeType.ROOT,
-        value=root_value
-    )
-    return ast
+    # This value might be changed by a case block;
+    # if it is not, then we default to cursor + 1 
+    new_cursor = _cursor + 1
+
+    match (t.type, t.value):
+        case ("start", x):
+            value, new_cursor = _resolve_node_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                end_token=VirtualToken("statementEnding", ";")
+            )
+            node = Node(
+                type=NodeType.STATEMENT,
+                value=value
+            )
+        case ("int", n):
+            node = Node(
+                type=NodeType.INT_LITERAL,
+                value=int(t.value)
+            )
+        case ("string", s):
+            node = Node(
+                type=NodeType.STRING_LITERAL,
+                value=str(t.value)
+            )
+        case ("literal", x):
+            node = Node(
+                type=NodeType.MCFUNCTION_LITERAL,
+                value=str(t.value)
+            )
+        case ("statementEnding", ";"):
+            raise ValueError(
+                f"Found unexpected closing token:\n"
+                f"\t{tokens[_cursor - 2] if _cursor - 2 >= 0 else ''}\n"
+                f"\t{tokens[_cursor - 1] if _cursor - 1 >= 0 else ''}\n"
+                f"\t{t} <<< HERE\n"
+                f"\t{tokens[_cursor + 1] if _cursor + 1 < len(tokens) else ''}\n"
+                f"\t{tokens[_cursor + 2] if _cursor + 2 < len(tokens) else ''}\n"
+            )
+        case _:
+            raise ValueError(f"Token {t} unknown to parser")
+
+    return node, new_cursor
 
 if __name__ == "__main__":
-
-
-    class VirtualToken(typing.NamedTuple):
-        type: str
-        value: str
-
-
-
-    print(
-        parse(
-            [
-                VirtualToken("start", ""),
-                VirtualToken("literal", "say hello world"),
-            ]
-        )
-    )
-    # It is preferred that tests be run from compiler.py,
+    pass
+    # It is prefered that tests be run from compiler.py,
     # because that module can import token and other
     # modules that are cousins to parser.py

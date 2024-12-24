@@ -45,7 +45,8 @@ class StatementEndingToken(TokenizerModuleBase):
     def calculate(cursor: int, compiledTokens: list[Token], data: str):
 
         compiledTokens.append(Token("statementEnding", ";"))
-
+        compiledTokens.append(Token("start", "start"))
+        
         return cursor, compiledTokens, data
 
 class StringToken(TokenizerModuleBase):
