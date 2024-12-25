@@ -8,7 +8,7 @@ from .declaration_tokens import *
 #one character sub for tokens in the code
 
 #the list of all the recognized tokens. Used this to add new tokens
-tokens = (NameToken, NumberToken, WhiteSpaceToken, StringToken, MCFunctionLiteralToken, PunctuationToken, CommentToken)
+tokens = (NameToken, NumberToken, WhiteSpaceToken, StringToken, MCFunctionLiteralToken, PunctuationToken, CommentToken, OperatorToken)
 
 #helper data set. Maps every token string to the token it is a part of
 tokenStrings: dict[str, Token]= {
@@ -92,7 +92,7 @@ def runToken(token: str, cursor: int, compiledTokens : list[Token], data : str) 
 #checks if a token is terminating
 def isTerminatingToken(token):
 
-    #it is not terminating if it is not a taken
+    #it is not terminating if it is not a token
     if(not token in tokenStrings):
         return False
     
@@ -101,7 +101,7 @@ def isTerminatingToken(token):
 
     #returns wether the final token is terminating
     return compiledToken.isTerminating
-
+"""
 def handleUnkownToken(token: str, cursor: int, compiledTokens : list[Token], data : str) -> tuple:
 
     # This still needs to be replaced
@@ -109,7 +109,7 @@ def handleUnkownToken(token: str, cursor: int, compiledTokens : list[Token], dat
 
     compiledTokens.append(Token("name", token))
     return cursor, compiledTokens, data
-
+"""
 #helper function to print all the tokens
 def printTokens(compiledTokens : list[Token]):
     for token in compiledTokens:

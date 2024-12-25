@@ -11,10 +11,12 @@ class NodeType(enum.Enum):
     MCFUNCTION_LITERAL = enum.auto()
     NAME = enum.auto()
 
+    ASSIGN_OPERATOR = enum.auto()
     OPERATOR = enum.auto()
 
     STATEMENT = enum.auto()
     GROUPED_EXPRESSION = enum.auto()
+    PREFIX_EXPRESSION = enum.auto()
 
     BLOCK = enum.auto()
 
@@ -32,6 +34,73 @@ class Node(typing.NamedTuple):
     value: typing.Optional[any] = None
 
     data_type: str = "untyped"
+
+    def reorder_expr(self) -> "Node":
+        """
+        Specifically for type=GROUPED EXPRESSION
+        Nodes, this function reorders the operands
+        to use prefix notation; e.g.
+
+        3 + 5 --> + 3 5
+
+        The resulting prefix expression is also properly
+        typed
+        """
+        if self.type != NodeType.GROUPED_EXPRESSION:
+            raise TypeError(f"reorder_expr() called on non-expr or an expr that has already been ordered")
+        if len(self.value) != 3 and len(self.value) != 1:
+            raise ValueError(
+                f"Expression has {len(self.value)} elements, not 3 or 1; anatomy:\n"
+                f"{self}"
+            )
+        
+        VALID_OPERANDS = (
+            NodeType.PREFIX_EXPRESSION,
+            NodeType.INT_LITERAL,
+            NodeType.STRING_LITERAL,
+            NodeType.MCFUNCTION_LITERAL,
+            NodeType.NAME
+        )
+
+        match self.value:
+            case (operand,):
+                return operand
+            case (operand1, operator, operand2) if (
+                operand1.type in VALID_OPERANDS
+                and operator.type in (NodeType.OPERATOR, NodeType.ASSIGN_OPERATOR)
+                and operand2.type in VALID_OPERANDS
+            ):
+                if not (
+                    operand1.data_type == operand2.data_type
+                    or
+                    operand1.type == "name" and operator.type == NodeType.ASSIGN_OPERATOR
+                    or
+                    (
+                        operand1.data_type == "*"
+                        or
+                        operand2.data_type == "*"
+                    )
+                ):
+                    raise TypeError(
+                        f"Incompatible types for operands:\n"
+                        f"{operand1}\n"
+                        f"and\n"
+                        f"{operand2}\n"
+                    )
+                return Node(
+                    type=NodeType.PREFIX_EXPRESSION,
+                    value=(
+                        operator,
+                        operand1,
+                        operand2
+                    ),
+                    data_type=operand1.data_type if operand1.data_type != "*" else operand2.data_type
+                )
+            case _:
+                raise ValueError(
+                    f"No match for (operand, operator, operand) or (operand,):\n"
+                    f"{self.render()}"
+                )
 
     def __repr__(self) -> str:
         return f"Node(type={self.type}, value={self.value})"
@@ -208,26 +277,34 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 value=t.value,
                 data_type= (
                     (
-                        tokens[_cursor - 1].value # Take data type from preceeding keyword
+                        tokens[_cursor - 2].value
                         if (
-                            tokens[_cursor - 1].type == "keyword"
-                            or tokens[_cursor - 1].type == "name"
+                            tokens[_cursor - 1].type == "op" and tokens[_cursor - 1].value == "@"
                         )
-                        else "type" # If the previous thing isn't a
-                        # data type then this must be the data type
-                        # for the following name
+                        else "*" # If we can't find a type assignment we make this a wildcard type,
+                        # which is compatible with everything else
                     )
-                    if _cursor - 1 >= 0
-                    else "type" # If there is no previous thing then
-                    # it is DEFINITELY a type
+                    if _cursor - 2 >= 0
+                    else "*" # We DEFINITELY do that if looking back would give an index error
                 )
             )
+        case ("op", o):
+            if "=" in o and o != "==" and o != "!=":
+                node = Node(
+                    type=NodeType.ASSIGN_OPERATOR,
+                    value=t.value
+                )
+            else:
+                node = Node(
+                    type=NodeType.OPERATOR,
+                    value=t.value
+                )
         case ("keyword", "while"):
             value, new_cursor = _resolve_finite_tuple(
                 tokens=tokens,
                 cursor=_cursor,
                 description=(
-                    (NodeType.GROUPED_EXPRESSION,),
+                    (NodeType.INT_LITERAL, NodeType.PREFIX_EXPRESSION),
                     (NodeType.BLOCK,),
                 )
             )
@@ -265,11 +342,12 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 cursor=_cursor,
                 end_token=VirtualToken("punc", ")")
             )
-            node = Node(
+            pre_node = Node(
                 type=NodeType.GROUPED_EXPRESSION,
                 value=value,
                 data_type="*"
             )
+            node = pre_node.reorder_expr()
         case ("punc", ";") | ("punc", "}") | ("punc", ")") | ("punc", "EOF"):
             raise ValueError(
                 f"Found unexpected closing token:\n"

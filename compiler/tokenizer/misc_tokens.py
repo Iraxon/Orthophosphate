@@ -152,8 +152,88 @@ class PunctuationToken(TokenizerModuleBase):
                     compiledTokens.append(Token("punc", "}"))
                     compiledTokens.append(Token("punc", ";"))
                     compiledTokens.append(Token("punc", "start"))
+                case "(" | ")" as p:
+                    # Parans need to be multiplied because of the
+                    # operator-precedence algorithm used by the
+                    # operators
+                    for _ in range(MAX_PARAN_COUNT + 1):
+                        compiledTokens.append(Token("punc", p))
+
                 case _:
                     compiledTokens.append(Token("punc", data[cursor]))
+        return cursor, compiledTokens, data
+
+# Constant that stores the paran count for
+# the least binding operator currently in
+# the language
+MAX_PARAN_COUNT = 5
+
+class OperatorToken(TokenizerModuleBase):
+    matches = ("+", "-", "*", "/", "%", "**", "=", "+=", "-=", "*=", "/=", "%=", "**=", "@")
+
+    isTerminating = True
+
+    def calculate(cursor, compiledTokens, data):
+        op_string = ""
+        if data[cursor] in OperatorToken.matches:
+            op_string += data[cursor]
+            cursor += 1
+        if cursor < len(data) and op_string + data[cursor] in OperatorToken.matches:
+            op_string += data[cursor]
+            cursor += 1
+        if cursor < len(data) and op_string + data[cursor] in OperatorToken.matches:
+            op_string += data[cursor]
+        
+        # We use full paranthetization to do operator precedence.
+        # https://en.wikipedia.org/wiki/Operator-precedence_parser#Full_parenthesization
+
+        # If Wikipedia doesn't know how it works, I definitely don't know how it works.
+        # But it worked for FORTRAN.
+
+        # Small sub-functions to save typing
+        def paran_close():
+            compiledTokens.append(Token("punc", ")"))
+        def paran_open():
+            compiledTokens.append(Token("punc", "("))
+        
+        def paranthesize(paran_count, operator):
+            """
+            Applies n closing parans,
+            runs the func, and then
+            applies n opening parans
+            """
+            for _ in range(paran_count):
+                paran_close()
+            compiledTokens.append(Token("op", operator))
+            for _ in range(paran_count):
+                paran_open()
+        
+        # Higher precedence = lower paran count
+        # Unary operators are a complication, but we may not need
+        # to support them. We could also add tokens to make them
+        # unary for the user but binary to a constant for the
+        # parser
+        #
+        # e.g. (-1) generates tokens for (0 - 1)
+        # and sin(x) is turned into 0 sin x where the first
+        # operand does nothing
+
+        match op_string:
+            case "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "**=" as o:
+                paranthesize(5, o)
+            
+            case "@" as o:
+                paranthesize(4, o)
+
+            case "+" | "-" as o:
+                paranthesize(3, o)
+            
+            case "*" | "/" as o:
+                paranthesize(2, o)
+            
+            case "**" as o:
+                paranthesize(1, o)
+
         return cursor, compiledTokens, data
 
 

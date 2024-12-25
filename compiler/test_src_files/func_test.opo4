@@ -20,4 +20,9 @@ func _TICK_module247
     :scoreboard players add $T24000 my_very_cool_datapack.tickers 1:; # 1 cycle per MC Day
     :scoreboard players operation $T24000 my_very_cool_datapack.tickers %= C24000 my_very_cool_datapack.constants:;
 
+    (int @ a = 2);
+    (a += 3);
+    (a %= 4);
+    (a = 10 + 2 ** 2 * 5);
+
 }
