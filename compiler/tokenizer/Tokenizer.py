@@ -8,7 +8,7 @@ from .declaration_tokens import *
 #one character sub for tokens in the code
 
 #the list of all the recognized tokens. Used this to add new tokens
-tokens = (NameToken, NumberToken, WhiteSpaceToken, StatementEndingToken, StringToken, MCFunctionLiteralToken, ParanthesesToken, CurlyBracketsToken, CommentToken)
+tokens = (NameToken, NumberToken, WhiteSpaceToken, StringToken, MCFunctionLiteralToken, PunctuationToken, CommentToken)
 
 #helper data set. Maps every token string to the token it is a part of
 tokenStrings: dict[str, Token]= {

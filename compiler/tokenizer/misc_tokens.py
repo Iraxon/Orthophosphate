@@ -68,7 +68,8 @@ class WhiteSpaceToken(TokenizerModuleBase):
                   compiledTokens: list[Token], data: str):
 
         return cursor, compiledTokens, data
-    
+
+""" 
 class StatementEndingToken(TokenizerModuleBase):
     matches = (";")
 
@@ -80,7 +81,8 @@ class StatementEndingToken(TokenizerModuleBase):
         compiledTokens.append(Token("punc", "start"))
         
         return cursor, compiledTokens, data
-
+"""
+     
 class StringToken(TokenizerModuleBase):
 
     matches = ("\"")
@@ -127,6 +129,36 @@ class MCFunctionLiteralToken(TokenizerModuleBase):
 
         return cursor, compiledTokens, data
 
+class PunctuationToken(TokenizerModuleBase):
+    matches = (";", "(", ")", "{", "}")
+
+    isTerminating = True
+
+    def calculate(cursor, compiledTokens, data):
+        if(data[cursor] in PunctuationToken.matches):
+
+            # Some of the punctuation characters have special actions,
+            # so we handle those with this statement
+            match data[cursor]:
+                case ";":
+                    compiledTokens.append(Token("punc", ";"))
+                    compiledTokens.append(Token("punc", "start"))
+                case "{":
+                    compiledTokens.append(Token("punc", "{"))
+                    compiledTokens.append(Token("punc", "start"))
+                case "}":
+                    if compiledTokens[-1].type == "punc" and compiledTokens[-1].value == "start":
+                        compiledTokens.pop() # Remove start token from the last curly brace if there was one
+                    compiledTokens.append(Token("punc", "}"))
+                    compiledTokens.append(Token("punc", ";"))
+                    compiledTokens.append(Token("punc", "start"))
+                case _:
+                    compiledTokens.append(Token("punc", data[cursor]))
+        return cursor, compiledTokens, data
+
+
+
+"""
 class ParanthesesToken(TokenizerModuleBase):
 
     matches = ("(", ")")
@@ -161,6 +193,7 @@ class CurlyBracketsToken(TokenizerModuleBase):
             compiledTokens.append(Token("punc", ";"))
             compiledTokens.append(Token("punc", "start"))
         return cursor, compiledTokens, data
+"""
     
 
 class CommentToken(TokenizerModuleBase):
