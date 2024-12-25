@@ -252,19 +252,10 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
         case ("punc", ";") | ("punc", "}") | ("punc", ")") | ("punc", "EOF"):
             raise ValueError(
                 f"Found unexpected closing token:\n"
-                f"\t{tokens[_cursor - 10] if _cursor - 10 >= 0 else ''}\n"
-                f"\t{tokens[_cursor - 9] if _cursor - 9 >= 0 else ''}\n"
-                f"\t{tokens[_cursor - 8] if _cursor - 8 >= 0 else ''}\n"
-                f"\t{tokens[_cursor - 7] if _cursor - 7 >= 0 else ''}\n"
-                f"\t{tokens[_cursor - 6] if _cursor - 6 >= 0 else ''}\n"
-                f"\t{tokens[_cursor - 5] if _cursor - 5 >= 0 else ''}\n"
-                f"\t{tokens[_cursor - 4] if _cursor - 4 >= 0 else ''}\n"
-                f"\t{tokens[_cursor - 3] if _cursor - 3 >= 0 else ''}\n"
-                f"\t{tokens[_cursor - 2] if _cursor - 2 >= 0 else ''}\n"
-                f"\t{tokens[_cursor - 1] if _cursor - 1 >= 0 else ''}\n"
-                f"\t{t} <<< HERE\n"
-                f"\t{tokens[_cursor + 1] if _cursor + 1 < len(tokens) else ''}\n"
-                f"\t{tokens[_cursor + 2] if _cursor + 2 < len(tokens) else ''}\n"
+                + "".join(tuple(f"\t{tokens[_cursor - n] if _cursor - n >= 0 else ''}\n" for n in range(0, -11, -1)))
+                + f"\t{t} <<< HERE\n"
+                + f"\t{tokens[_cursor + 1] if _cursor + 1 < len(tokens) else ''}\n"
+                + f"\t{tokens[_cursor + 2] if _cursor + 2 < len(tokens) else ''}\n"
             )
         case _:
             raise ValueError(f"Token {t} unknown to parser")

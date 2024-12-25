@@ -1,0 +1,4 @@
+# left brace intentionally omitted
+    12345;
+    12;
+}
