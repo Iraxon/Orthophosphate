@@ -30,8 +30,8 @@ class Node(typing.NamedTuple):
     type: NodeType = NodeType.ROOT
 
     value: typing.Optional[any] = None
-    # The data type of self.value depends on
-    # the value of self.type
+
+    data_type: str = "untyped"
 
     def __repr__(self) -> str:
         return f"Node(type={self.type}, value={self.value})"
@@ -56,7 +56,7 @@ class Node(typing.NamedTuple):
         ) if isinstance(self.value, tuple) else ("═ " + str(self.value),)
 
         return (
-            f"{"" if pre == "" else'═'}{self.type.name}\n"
+            f"{"" if pre == "" else'═'}{self.type.name}{': ' + self.data_type if self.data_type != "untyped" else ''}\n"
             + "".join(
                     tuple(
                         f"{pre}╠{element}\n"
@@ -187,22 +187,40 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
         case ("int", n):
             node = Node(
                 type=NodeType.INT_LITERAL,
-                value=int(t.value)
+                value=int(t.value),
+                data_type="int"
             )
         case ("string", s):
             node = Node(
                 type=NodeType.STRING_LITERAL,
-                value=t.value
+                value=t.value,
+                data_type="str"
             )
         case ("literal", x):
             node = Node(
                 type=NodeType.MCFUNCTION_LITERAL,
-                value=t.value
+                value=t.value,
+                data_type="cmd"
             )
         case ("name", n):
             node = Node(
                 type=NodeType.NAME,
-                value=t.value
+                value=t.value,
+                data_type= (
+                    (
+                        tokens[_cursor - 1].value # Take data type from preceeding keyword
+                        if (
+                            tokens[_cursor - 1].type == "keyword"
+                            or tokens[_cursor - 1].type == "name"
+                        )
+                        else "type" # If the previous thing isn't a
+                        # data type then this must be the data type
+                        # for the following name
+                    )
+                    if _cursor - 1 >= 0
+                    else "type" # If there is no previous thing then
+                    # it is DEFINITELY a type
+                )
             )
         case ("keyword", "while"):
             value, new_cursor = _resolve_finite_tuple(
@@ -223,7 +241,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 tokens=tokens,
                 cursor=_cursor,
                 description=(
-                    (NodeType.NAME,), # Needs to be changed to a function header or something
+                    (NodeType.NAME,),
                     (NodeType.BLOCK,),
                 )
             )
@@ -249,7 +267,8 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
             )
             node = Node(
                 type=NodeType.GROUPED_EXPRESSION,
-                value=value
+                value=value,
+                data_type="*"
             )
         case ("punc", ";") | ("punc", "}") | ("punc", ")") | ("punc", "EOF"):
             raise ValueError(
