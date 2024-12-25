@@ -19,12 +19,8 @@ class NameToken(TokenizerModuleBase):
         # Reserved keywords will be picked up by the matches,
         # so those are also handled here.
         match fullString:
-            case "func":
-                compiledTokens.append(Token("keyword", "func"))
-            case "while":
-                compiledTokens.append(Token("keyword", "while"))
-            case "return":
-                compiledTokens.append(Token("keyword", "return"))
+            case "let" | "func" | "while" | "return" as kw:
+                compiledTokens.append(Token("keyword", kw))
             case _:
                 compiledTokens.append(Token("name", fullString))
 
@@ -169,7 +165,7 @@ class PunctuationToken(TokenizerModuleBase):
 MAX_PARAN_COUNT = 5
 
 class OperatorToken(TokenizerModuleBase):
-    matches = ("+", "-", "*", "/", "%", "**", "=", "+=", "-=", "*=", "/=", "%=", "**=", "@")
+    matches = ("+", "-", "*", "/", "%", "**", "=", "+=", "-=", "*=", "/=", "%=", "**=", "==", "!=", "<", ">", "<=", ">=")
 
     isTerminating = True
 

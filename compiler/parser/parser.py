@@ -17,6 +17,7 @@ class NodeType(enum.Enum):
     STATEMENT = enum.auto()
     GROUPED_EXPRESSION = enum.auto()
     PREFIX_EXPRESSION = enum.auto()
+    DECLARATION = enum.auto()
 
     BLOCK = enum.auto()
 
@@ -59,7 +60,8 @@ class Node(typing.NamedTuple):
             NodeType.INT_LITERAL,
             NodeType.STRING_LITERAL,
             NodeType.MCFUNCTION_LITERAL,
-            NodeType.NAME
+            NodeType.NAME,
+            NodeType.DECLARATION
         )
 
         match self.value:
@@ -71,9 +73,12 @@ class Node(typing.NamedTuple):
                 and operand2.type in VALID_OPERANDS
             ):
                 if not (
+                    # If it is not the case that either the data types are the same,
+                    # the phrase is an assignment, or one or both of the two elements
+                    # is of wildcard type, then this is a type error and not allowed
                     operand1.data_type == operand2.data_type
                     or
-                    operand1.type == "name" and operator.type == NodeType.ASSIGN_OPERATOR
+                    operator.type == NodeType.ASSIGN_OPERATOR
                     or
                     (
                         operand1.data_type == "*"
@@ -94,6 +99,9 @@ class Node(typing.NamedTuple):
                         operand1,
                         operand2
                     ),
+                    # If the first operand is of wildcard type, then use the second operaand's
+                    # type for the whole expression.
+                    # This means that wildcard only gets propagated up if both operands are wildcards.
                     data_type=operand1.data_type if operand1.data_type != "*" else operand2.data_type
                 )
             case _:
@@ -275,18 +283,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
             node = Node(
                 type=NodeType.NAME,
                 value=t.value,
-                data_type= (
-                    (
-                        tokens[_cursor - 2].value
-                        if (
-                            tokens[_cursor - 1].type == "op" and tokens[_cursor - 1].value == "@"
-                        )
-                        else "*" # If we can't find a type assignment we make this a wildcard type,
-                        # which is compatible with everything else
-                    )
-                    if _cursor - 2 >= 0
-                    else "*" # We DEFINITELY do that if looking back would give an index error
-                )
+                data_type= "*"
             )
         case ("op", o):
             if "=" in o and o != "==" and o != "!=":
@@ -299,6 +296,21 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                     type=NodeType.OPERATOR,
                     value=t.value
                 )
+        case ("keyword", "let"):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.NAME,),
+                    (NodeType.NAME,)
+                )
+            )
+            node = Node(
+                type=NodeType.DECLARATION,
+                value=value,
+                data_type=(value[0].value) # THe first of the two names after "let" specifies the data type; the other
+                # one is the name of the new variable
+            )
         case ("keyword", "while"):
             value, new_cursor = _resolve_finite_tuple(
                 tokens=tokens,
@@ -323,7 +335,8 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 )
             )
             node = Node(
-                type=NodeType.FUNC_DEF,
+                type=NodeType.FUNC_DEF, # Eventually this should be changed to resolve to a declaration
+                # equivalent to the form `let func <name> = <block>`
                 value=value
             )
         case ("punc", "{"):
