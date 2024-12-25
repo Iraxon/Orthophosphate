@@ -5,21 +5,23 @@ class NodeType(enum.Enum):
     """
     The types of nodes in the abstract syntax tree
     """
-    ROOT = enum.auto()
-
-    STATEMENT = enum.auto()
-    GROUPED_EXPRESSION = enum.auto()
-    NAME = enum.auto()
-
+    
     STRING_LITERAL = enum.auto()
     INT_LITERAL = enum.auto()
     MCFUNCTION_LITERAL = enum.auto()
+    NAME = enum.auto()
+
+    OPERATOR = enum.auto()
+
+    STATEMENT = enum.auto()
+    GROUPED_EXPRESSION = enum.auto()
 
     BLOCK = enum.auto()
 
     WHILE = enum.auto()
-
     FUNC_DEF = enum.auto()
+
+    ROOT = enum.auto()
 
 class Node(typing.NamedTuple):
     """
