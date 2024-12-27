@@ -1,5 +1,11 @@
-import parser.parser as parser
-import tokenizer.Tokenizer as tokenizer
+if __name__ == "__main__":
+    from parser import parser
+    from parser import post_parser
+    from tokenizer import Tokenizer as tokenizer
+else:
+    from .parser import parser
+    from .parser import post_parser
+    from .tokenizer import Tokenizer as tokenizer
 
 import tkinter
 from tkinter import filedialog
@@ -23,7 +29,10 @@ if __name__ == "__main__":
         print(tokens)
         print(SEPARATOR)
         ast = parser.parse(tokens)
-        print(repr(ast))
-        print(LESSER_SEPERATOR)
+        # print(repr(ast))
+        # print(LESSER_SEPERATOR)
         print(ast)
+        print(SEPARATOR)
+        ast2 = post_parser.post_parse(ast)
+        print(ast2)
         print(SEPARATOR)
