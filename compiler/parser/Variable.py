@@ -13,5 +13,6 @@ class PrimitiveVariable(typing.NamedTuple):
 
     def __repr__(self):
         return f"Token(type={self.type!r}, value={self.value!r})"
+
     
 
