@@ -11,6 +11,16 @@ import enum
 #     DATA = "data"
 #     FUNCTION = "function"
 
+DEFAULT_MC_META = """
+{
+  "pack": {
+    "description": "Orthophosphate data pack",
+    "pack_format": 18,
+    "supported_formats": [18, 48]
+  }
+}
+"""
+
 def frozenset_(*args) -> frozenset:
     """
     Custom constructor for frozenset
@@ -32,6 +42,7 @@ class FileRep(typing.NamedTuple):
     realized
     """
     name: str
+    content: str = ""
 
     def realize(self, directory) -> None:
         """
@@ -40,7 +51,7 @@ class FileRep(typing.NamedTuple):
         parts of the code may add data
         """
         with open(os.path.join(directory, self.name), "x") as f:
-            pass
+            f.write(self.content)
 
 class FolderRep(typing.NamedTuple):
     """
@@ -90,7 +101,7 @@ def datapack_directory(name, namespace=None) -> dict:
     if namespace is None:
         namespace = name
     return FolderRep(name, frozenset_(
-        FileRep("pack.mcmeta"),
+        FileRep("pack.mcmeta", DEFAULT_MC_META),
         FolderRep("data", frozenset_(
             FolderRep(namespace, frozenset_(
                 FolderRep("function", frozenset_()),
