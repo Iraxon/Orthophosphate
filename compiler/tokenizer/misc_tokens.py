@@ -19,7 +19,7 @@ class NameToken(TokenizerModuleBase):
         # Reserved keywords will be picked up by the matches,
         # so those are also handled here.
         match fullString:
-            case "let" | "func" | "while" | "return" as kw:
+            case "let" | "func" | "while" | "return" | "namespace" as kw:
                 compiledTokens.append(Token("keyword", kw))
             case _:
                 compiledTokens.append(Token("name", fullString))

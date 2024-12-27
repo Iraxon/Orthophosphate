@@ -23,6 +23,7 @@ class NodeType(enum.Enum):
 
     WHILE = enum.auto()
     FUNC_DEF = enum.auto()
+    NAMESPACE = enum.auto()
 
     ROOT = enum.auto()
 
