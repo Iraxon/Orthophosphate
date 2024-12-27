@@ -80,7 +80,7 @@ def namespacify(name) -> str:
     return "".join(
         (
             char
-            if char is not " "
+            if char != " "
             else "_"
             # Convert spaces to underscores
         )
