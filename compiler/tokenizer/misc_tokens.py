@@ -2,6 +2,56 @@ from .tokenizer_module_base import TokenizerModuleBase
 from .token import Token
 import string
 
+class VariableToken(TokenizerModuleBase):
+    matches = ("int", "boolean")
+
+    isTerminating = False
+
+    def calculate(cursor, compiledTokens, data):
+
+        #part 1 of the proccess, gets the declaration variable and type.
+        typeChar : chr = data[cursor]
+
+        #gets the name of the variable
+        cursor += 1
+
+        name: str = ""
+        
+        while(data[cursor] != " "):
+            cursor += 1
+            name += data[cursor]
+
+        #creation data format: type: <VARIABLETYPE> + "creation", value: <VARIABLENAME>
+
+        # appends the data according to the last letter. I don't like this system but it's ok I guess
+        if typeChar == "t":
+            compiledTokens.append(Token("intCreation", name))
+        else:
+            compiledTokens.append(Token("booleanCreation", name))
+
+        #this is where stuff starts to get weird. Variables can also be a compoind expressions: int i = 5. This is two expressions.
+
+        #iterates cursor past the spaces
+        while(data[cursor] == " "):
+            cursor += 1
+
+        #if the next character is a semicolon this is not a compound expression and we are done
+        if(data[cursor] == ";"):
+            return cursor, compiledTokens, data
+        
+        #because this is a compound expression we are going to artificially insert an equals and start token
+        compiledTokens.append(Token("punc", ";"))
+        compiledTokens.append(Token("punc", "start"))
+        
+        #starting now this is a compound expression! we are treated with the syntax <VARIABLETYPE> <VARIABLENAME> = <EXPRESSION>
+        #that said, we already have infastructure to deal with this. all we need to do is specificy that this is a variable declaration and the rest is handled for us
+        if typeChar == "t":
+            compiledTokens.append(Token("assignment", name))
+        else:
+            compiledTokens.append(Token("assignment", name))
+
+        return cursor, compiledTokens, data
+
 class NameToken(TokenizerModuleBase):
 
     matches = tuple(char for char in string.ascii_letters) + ("_",)
@@ -19,7 +69,7 @@ class NameToken(TokenizerModuleBase):
         # Reserved keywords will be picked up by the matches,
         # so those are also handled here.
         match fullString:
-            case "let" | "func" | "while" | "return" as kw:
+            case "func" | "while" | "return" as kw:
                 compiledTokens.append(Token("keyword", kw))
             case _:
                 compiledTokens.append(Token("name", fullString))
