@@ -1,1 +1,12 @@
-:say hello world:;
+func core
+{
+    :say hello world:;
+}
+
+namespace minecraft
+{
+    tag function tick
+    {
+        core
+    }
+}
