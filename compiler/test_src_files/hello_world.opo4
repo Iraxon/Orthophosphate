@@ -7,6 +7,6 @@ namespace minecraft
 {
     tag function tick
     {
-        core
+        (core)
     }
 }
