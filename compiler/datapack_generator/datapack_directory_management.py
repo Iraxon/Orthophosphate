@@ -1,8 +1,6 @@
 import os
 import string
-import typing # Note that Python itself doesn't enforce type hints. It just allows them. VSCode by default also ignores them.
-# I included them for your benefit, and also because typing.NamedTuple does require its arguments to be statically typed.
-# (Python won't bother to enforce that the type is *correct* though; it only makes sure that there *is* a type assigned)
+import typing
 import enum
 
 # NOT IMPLEMENTED YET
