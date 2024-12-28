@@ -1,7 +1,6 @@
 import tkinter
 import user_interface.file_utils
 import user_interface.gui
-import datapack_directory_management
 import compiler.compiler
 
 from user_interface.prompting import save_in, save_out, load_in, load_out
