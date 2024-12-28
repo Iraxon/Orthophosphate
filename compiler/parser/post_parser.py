@@ -1,7 +1,7 @@
 from . import abstract_syntax_tree as tree
 
 def strip_empties(ast: tree.Node) -> tree.Node:
-    if isinstance(ast.value, tuple) and len(ast.value) == 0:
+    if ast.type in frozenset((tree.NodeType.STATEMENT, tree.NodeType.PREFIX_EXPRESSION)) and isinstance(ast.value, tuple) and len(ast.value) == 0:
         return None
     return ast
 

@@ -167,6 +167,20 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 type=NodeType.NAMESPACE,
                 value=value
             )
+        case ("keyword", "tag"):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.NAME,),
+                    (NodeType.NAME,),
+                    (NodeType.BLOCK,),
+                )
+            )
+            node = Node(
+                type=NodeType.TAG_DEF,
+                value=value
+            )
         case ("keyword", "let"):
             value, new_cursor = _resolve_finite_tuple(
                 tokens=tokens,
@@ -196,7 +210,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 value=value
             )
             pass
-        case ("keyword", "func"):
+        case ("keyword", "func" | "tick_func" as second_word):
             value, new_cursor = _resolve_finite_tuple(
                 tokens=tokens,
                 cursor=_cursor,
@@ -206,8 +220,12 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 )
             )
             node = Node(
-                type=NodeType.FUNC_DEF, # Eventually this should be changed to resolve to a declaration
-                # equivalent to the form `let func <name> = <block>`
+                type=(
+                    {
+                        "func": NodeType.FUNC_DEF,
+                        "tick_func": NodeType.TICK_FUNC_DEF
+                    }[second_word]
+                ),
                 value=value
             )
         case ("punc", "{"):

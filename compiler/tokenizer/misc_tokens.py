@@ -19,7 +19,7 @@ class NameToken(TokenizerModuleBase):
         # Reserved keywords will be picked up by the matches,
         # so those are also handled here.
         match fullString:
-            case "let" | "func" | "while" | "return" | "namespace" as kw:
+            case "let" | "func" | "tick_func" | "while" | "return" | "namespace" | "tag" as kw:
                 compiledTokens.append(Token("keyword", kw))
             case _:
                 compiledTokens.append(Token("name", fullString))
@@ -115,7 +115,7 @@ class MCFunctionLiteralToken(TokenizerModuleBase):
 
         fullString = ""
     
-        while(data[cursor] != ":"):
+        while(data[cursor] != ":" and cursor < len(data)):
             
             #making this command valid by removing backslash n's
             if(data[cursor] != "\n"):

@@ -21,7 +21,9 @@ class NodeType(enum.Enum):
 
     WHILE = enum.auto()
     FUNC_DEF = enum.auto()
+    TICK_FUNC_DEF = enum.auto()
     NAMESPACE = enum.auto()
+    TAG_DEF = enum.auto()
 
     ROOT = enum.auto()
 

@@ -1,12 +1,4 @@
-func core
-{
-    :say hello world:;
-}
-
-namespace minecraft
-{
-    tag function tick
+tick_func core
     {
-        (core)
+        :say hello world:;
     }
-}
