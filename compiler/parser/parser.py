@@ -187,7 +187,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 tokens=tokens,
                 cursor=_cursor,
                 description=(
-                    (NodeType.INT_LITERAL, NodeType.PREFIX_EXPRESSION),
+                    (NodeType.LITERAL_VALUE, NodeType.PREFIX_EXPRESSION),
                     (NodeType.BLOCK,),
                 )
             )
