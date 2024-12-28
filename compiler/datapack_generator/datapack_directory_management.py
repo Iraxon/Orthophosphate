@@ -1,4 +1,5 @@
 import os
+import shutil
 import string
 import typing
 import enum
@@ -89,12 +90,42 @@ def namespacify(name) -> str:
         )
     ).lower() # Lowercase capitals
 
-def datapack_directory(name, namespace=None) -> dict:
+def tagify(set: frozenset[str], replace=False, force_namespace="") -> str:
     """
-    Returns a dictionary
+    Takes a frozenset of strings
+    and returns the JSON for
+    a tag file
+    """
+
+    if force_namespace == "":
+        new_set = set
+    else:
+        new_set = frozenset_(force_namespace + ":" + item for item in set)
+
+    return (
+        "{\n"
+        + f"  \"replace\": {'true' if replace else 'false'},\n"
+        + "  \"values\": [\n"
+        + "".join(tuple(
+            f"    \"{item}\"{',' if i != len(new_set) - 1 else ''}\n" for i, item in enumerate(new_set)
+        ))
+        + "  ]\n"
+        + "}"
+    )
+
+def datapack_directory(
+    name, namespace=None,
+    functions=frozenset_(),
+    function_tags=frozenset_(),
+    customs_folders=frozenset_(),
+    tick_functions=frozenset_(),
+    load_functions=frozenset_()
+) -> dict:
+    """
+    Returns a
     representation of a datapack
     directory structure, using "name" as the
-    datapack namespace
+    datapack nme
     """
     if namespace is None:
         namespace = name
@@ -102,7 +133,7 @@ def datapack_directory(name, namespace=None) -> dict:
         FileRep("pack.mcmeta", DEFAULT_MC_META),
         FolderRep("data", frozenset_(
             FolderRep(namespace, frozenset_(
-                FolderRep("function", frozenset_()),
+                FolderRep("function", functions),
                 FolderRep("structure", frozenset_()),
                 FolderRep("tags", frozenset_(
                     FolderRep("function", frozenset_())
@@ -133,8 +164,14 @@ def datapack_directory(name, namespace=None) -> dict:
             FolderRep("minecraft", frozenset_(
                 FolderRep("tags", frozenset_(
                     FolderRep("function", frozenset_(
-                        FileRep("tick.json"),
-                        FileRep("load.json")
+                        FileRep("tick.json", tagify(
+                            tick_functions,
+                            force_namespace=namespace
+                        )),
+                        FileRep( "load.json", tagify(
+                            load_functions,
+                            force_namespace=namespace
+                        ))
                     ))
                 ))
             ))
@@ -150,7 +187,26 @@ if __name__ == "__main__":
     print(test_namespace := namespacify(test_name :="My very cool DATAPACK"))
     print(test_directory := datapack_directory(test_name, test_namespace))
 
+    print("tagification of a frozenset holding 'a', 'b', and 'c':\n")
+    print(tagify(frozenset_('a', 'b', 'c')))
+
+    did_test = False
+
     if input("Do you want to test the creation of datapack folders? (Y/N) "
           "This will create a test directory inside the testing_grounds "
           "directory. \n> ") == "Y":
-        test_directory.realize(os.path.join(ROOT_DIR_PATH, "testing_grounds"))
+        did_test = True
+        test_directory.realize((testing_grounds_path := os.path.join(ROOT_DIR_PATH, "testing_grounds")))
+    
+    if did_test:
+        def recursive_delete_in(path) -> None:
+            for item in os.listdir(path):
+                item_path = os.path.join(path, item)
+                try:
+                    os.remove(item_path)
+                except IsADirectoryError:
+                    recursive_delete_in(path)
+                    os.rmdir(item_path)
+
+        if input("Would you like to get rid of the test files now? (Y/N)") == "Y":
+            recursive_delete_in(testing_grounds_path)

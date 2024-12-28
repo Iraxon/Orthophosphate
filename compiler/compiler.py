@@ -2,13 +2,43 @@ if __name__ == "__main__":
     from parser import parser
     from parser import post_parser
     from tokenizer import Tokenizer as tokenizer
+    from datapack_generator import datapack_directory_management as ddm
 else:
     from .parser import parser
     from .parser import post_parser
     from .tokenizer import Tokenizer as tokenizer
+    from .datapack_generator import datapack_directory_management as ddm
 
 import tkinter
 from tkinter import filedialog
+
+def compile(src_file_path, destination_file_path) -> None:
+    raise NotImplementedError
+    output = ""
+    with open(src_file_path) as f:
+        output = _compile(f)
+    output.realize(destination_file_path)
+
+def _compile(src) -> ddm.FolderRep:
+    raise NotImplementedError
+
+    final_tree = post_parser.post_parse(
+                parser.parse(
+                    tokenizer.tokenize(src)
+                )
+            )
+    ddm.datapack_directory()
+    """
+    return (
+        ddm.datapack_directory(
+            post_parser.post_parse(
+                parser.parse(
+                    tokenizer.tokenize(src)
+                )
+            )
+        )
+    )
+    """
 
 if __name__ == "__main__":
     root = tkinter.Tk()
