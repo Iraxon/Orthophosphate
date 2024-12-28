@@ -6,9 +6,7 @@ class NodeType(enum.Enum):
     The types of nodes in the abstract syntax tree
     """
     
-    STRING_LITERAL = enum.auto()
-    INT_LITERAL = enum.auto()
-    MCFUNCTION_LITERAL = enum.auto()
+    LITERAL_VALUE = enum.auto()
     NAME = enum.auto()
 
     ASSIGN_OPERATOR = enum.auto()
@@ -58,9 +56,7 @@ class Node(typing.NamedTuple):
         
         VALID_OPERANDS = (
             NodeType.PREFIX_EXPRESSION,
-            NodeType.INT_LITERAL,
-            NodeType.STRING_LITERAL,
-            NodeType.MCFUNCTION_LITERAL,
+            NodeType.LITERAL_VALUE,
             NodeType.NAME,
             NodeType.DECLARATION
         )

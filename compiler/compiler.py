@@ -16,10 +16,10 @@ def compile(src_file_path, destination_file_path) -> None:
     raise NotImplementedError
     output = ""
     with open(src_file_path) as f:
-        output = _compile(f)
+        output = _pre_compile(f)
     output.realize(destination_file_path)
 
-def _compile(src) -> ddm.FolderRep:
+def _pre_compile(src) -> ddm.FolderRep:
     raise NotImplementedError
 
     final_tree = post_parser.post_parse(

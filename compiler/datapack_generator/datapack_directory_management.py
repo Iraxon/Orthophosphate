@@ -116,8 +116,6 @@ def tagify(set: frozenset[str], replace=False, force_namespace="") -> str:
 def datapack_directory(
     name, namespace=None,
     functions=frozenset_(),
-    function_tags=frozenset_(),
-    customs_folders=frozenset_(),
     tick_functions=frozenset_(),
     load_functions=frozenset_()
 ) -> dict:

@@ -121,19 +121,19 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
             )
         case ("int", n):
             node = Node(
-                type=NodeType.INT_LITERAL,
+                type=NodeType.LITERAL_VALUE,
                 value=int(t.value),
                 data_type="int"
             )
         case ("string", s):
             node = Node(
-                type=NodeType.STRING_LITERAL,
+                type=NodeType.LITERAL_VALUE,
                 value=t.value,
                 data_type="str"
             )
         case ("literal", x):
             node = Node(
-                type=NodeType.MCFUNCTION_LITERAL,
+                type=NodeType.LITERAL_VALUE,
                 value=t.value,
                 data_type="cmd"
             )

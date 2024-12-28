@@ -11,7 +11,7 @@ class NameToken(TokenizerModuleBase):
 
         fullString = ""
 
-        while(data[cursor] in NameToken.can_contain):
+        while(cursor < len(data) and data[cursor] in NameToken.can_contain):
 
             fullString += data[cursor]
             cursor += 1
@@ -23,6 +23,8 @@ class NameToken(TokenizerModuleBase):
                 compiledTokens.append(Token("keyword", kw))
             case _:
                 compiledTokens.append(Token("name", fullString))
+        
+        cursor -= 1
 
         return cursor, compiledTokens, data
 
@@ -143,8 +145,7 @@ class PunctuationToken(TokenizerModuleBase):
                     compiledTokens.append(Token("punc", "{"))
                     compiledTokens.append(Token("punc", "start"))
                 case "}":
-                    if compiledTokens[-1].type == "punc" and compiledTokens[-1].value == "start":
-                        compiledTokens.pop() # Remove start token from the last curly brace if there was one
+                    compiledTokens.append(Token("punc", ";"))
                     compiledTokens.append(Token("punc", "}"))
                     compiledTokens.append(Token("punc", ";"))
                     compiledTokens.append(Token("punc", "start"))
