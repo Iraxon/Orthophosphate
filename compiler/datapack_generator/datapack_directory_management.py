@@ -3,6 +3,7 @@ import shutil
 import string
 import typing
 import enum
+import re
 
 # NOT IMPLEMENTED YET
 # 
@@ -90,17 +91,19 @@ def namespacify(name) -> str:
         )
     ).lower() # Lowercase capitals
 
-def tagify(set: frozenset[str], replace=False, force_namespace="") -> str:
+def tagify(set: frozenset[str], namespace, replace=False) -> str:
     """
     Takes a frozenset of strings
     and returns the JSON for
     a tag file
     """
 
-    if force_namespace == "":
-        new_set = set
-    else:
-        new_set = frozenset_(force_namespace + ":" + item for item in set)
+    new_set = frozenset_(
+        *(
+            ((namespace + ":") if re.search(r"^.*:",item) is None else "") + item
+            for i, item in enumerate(set)
+        )
+    )
 
     return (
         "{\n"
@@ -164,11 +167,11 @@ def datapack_directory(
                     FolderRep("function", frozenset_(
                         FileRep("tick.json", tagify(
                             tick_functions,
-                            force_namespace=namespace
+                            namespace=namespace
                         )),
                         FileRep( "load.json", tagify(
                             load_functions,
-                            force_namespace=namespace
+                            namespace=namespace
                         ))
                     ))
                 ))
@@ -185,8 +188,8 @@ if __name__ == "__main__":
     print(test_namespace := namespacify(test_name :="My very cool DATAPACK"))
     print(test_directory := datapack_directory(test_name, test_namespace))
 
-    print("tagification of a frozenset holding 'a', 'b', and 'c':\n")
-    print(tagify(frozenset_('a', 'b', 'c')))
+    print("tagification of a frozenset holding 'minecraft:a', 'other_namespace:b', and 'c':\n")
+    print(tagify(frozenset_('minecraft:a', 'other_namespace:b', 'c'), namespace=test_namespace))
 
     did_test = False
 
