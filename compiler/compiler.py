@@ -15,31 +15,16 @@ import tkinter
 from tkinter import filedialog
 
 def compile(src_file_path, destination_file_path) -> None:
-    output = ""
-    with open(src_file_path) as f:
-        output = _pre_compile(f)
-    output.realize(destination_file_path)
-
-def _pre_compile(src) -> ddm.FolderRep:
     raise NotImplementedError
+    
+    src = ""
 
-    final_tree = post_parser.post_parse(
-                parser.parse(
-                    tokenizer.tokenize(src)
-                )
-            )
-    ddm.datapack_directory()
-    """
-    return (
-        ddm.datapack_directory(
-            post_parser.post_parse(
-                parser.parse(
-                    tokenizer.tokenize(src)
-                )
-            )
-        )
-    )
-    """
+    with open(src_file_path) as f:
+        src = f.read()
+    ast = parser.parse(tokens)
+    ast2 = post_parser.post_parse(ast)
+    directory_rep = datapack_generator.generate_datapack(ast2)
+    directory_rep.realize(destination_file_path)
 
 if __name__ == "__main__":
     root = tkinter.Tk()
