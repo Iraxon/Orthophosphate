@@ -2,18 +2,19 @@ if __name__ == "__main__":
     from parser import parser
     from parser import post_parser
     from tokenizer import Tokenizer as tokenizer
+    from datapack_generator import datapack_generator
     from datapack_generator import datapack_directory_management as ddm
 else:
     from .parser import parser
     from .parser import post_parser
     from .tokenizer import Tokenizer as tokenizer
+    from .datapack_generator import datapack_generator
     from .datapack_generator import datapack_directory_management as ddm
 
 import tkinter
 from tkinter import filedialog
 
 def compile(src_file_path, destination_file_path) -> None:
-    raise NotImplementedError
     output = ""
     with open(src_file_path) as f:
         output = _pre_compile(f)
@@ -66,3 +67,5 @@ if __name__ == "__main__":
         ast2 = post_parser.post_parse(ast)
         print(ast2)
         print(SEPARATOR)
+        directory_rep = datapack_generator.generate_datapack(ast2)
+        print(directory_rep)

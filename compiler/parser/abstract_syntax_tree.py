@@ -1,7 +1,7 @@
 import enum
 import typing
 
-class NodeType(enum.Enum):
+class NodeType(enum.StrEnum):
     """
     The types of nodes in the abstract syntax tree
     """
@@ -145,3 +145,7 @@ class Node(typing.NamedTuple):
                     )
                 )
         )
+
+if __name__ == "__main__":
+    for node_type in NodeType:
+        print(f"{node_type.name} = {node_type.value}")

@@ -1,5 +1,4 @@
 import os
-import shutil
 import string
 import typing
 import enum
@@ -52,6 +51,22 @@ class FileRep(typing.NamedTuple):
         """
         with open(os.path.join(directory, self.name), "x") as f:
             f.write(self.content)
+    
+    def __str__(self):
+        return self.render()
+    
+    def render(self, pre="") -> None:
+        """
+        Not exactly incomprehensible but still
+        not good for your sanity either
+        """
+        pre_len = len(pre)
+        return(
+            f"{"" if pre == "" else'═'} {self.name}"
+            + f"\n{pre}{"".join(tuple('-' for _ in range(50 - pre_len) ))}\n"
+            + f"{"".join(tuple(pre + str(i) + ' | ' + ln + "\n" for i, ln in enumerate(self.content.split("\n")) ))}"
+            + f"{pre}{"".join(tuple('=' for _ in range(50 - pre_len) ))}"
+            )
 
 class FolderRep(typing.NamedTuple):
     """
@@ -69,6 +84,38 @@ class FolderRep(typing.NamedTuple):
         os.makedirs(os.path.join(directory, self.name), exist_ok=True)
         for item in self.content:
                 item.realize(os.path.join(directory, self.name))
+    
+    def __str__(self):
+        return self.render()
+    
+    def render(self, pre="") -> str:
+        """
+        It's dark sorcery just like the AST one;
+        do not touch if you value your sanity
+        """
+        line_tuple = tuple(
+            element.render(pre + ("║ " if i < len(self.content) - 1 else "  "))
+            if isinstance(element, (FolderRep, FileRep))
+            else "═ " + str(element)
+            for i, element in enumerate(self.content)
+        ) if len(self.content) > 0 else tuple()
+        # if len(self.content) > 1 else ("═ " + str(self.content),)
+
+        return (
+            f"{'' if pre == '' else'═ '}{self.name}"
+            + (
+                (
+                    "\n" + "".join(
+                        tuple(
+                            f"{pre}╠{element}\n"
+                            if i < len(line_tuple) - 1
+                            else f"{pre}╚{element}"
+                            for i, element in enumerate(line_tuple)
+                        )
+                    )
+                ) if len(line_tuple) > 0 else ""
+            )
+        )
 
 def namespacify(name) -> str:
     """
@@ -119,14 +166,14 @@ def tagify(set: frozenset[str], namespace, replace=False) -> str:
 def datapack_directory(
     name, namespace=None,
     functions=frozenset_(),
-    tick_functions=frozenset_(),
+    tick_functions: frozenset[FileRep | FolderRep]=frozenset_(),
     load_functions=frozenset_()
 ) -> dict:
     """
     Returns a
     representation of a datapack
     directory structure, using "name" as the
-    datapack nme
+    datapack name
     """
     if namespace is None:
         namespace = name
@@ -186,13 +233,16 @@ if __name__ == "__main__":
     print(os.path.join("data", "function"))
 
     print(test_namespace := namespacify(test_name :="My very cool DATAPACK"))
-    print(test_directory := datapack_directory(test_name, test_namespace))
+    test_directory = datapack_directory(test_name, test_namespace)
+    print(repr(test_directory))
 
     print("tagification of a frozenset holding 'minecraft:a', 'other_namespace:b', and 'c':\n")
     print(tagify(frozenset_('minecraft:a', 'other_namespace:b', 'c'), namespace=test_namespace))
 
-    did_test = False
+    print(test_directory)
 
+    did_test = False
+"""
     if input("Do you want to test the creation of datapack folders? (Y/N) "
           "This will create a test directory inside the testing_grounds "
           "directory. \n> ") == "Y":
@@ -211,3 +261,4 @@ if __name__ == "__main__":
 
         if input("Would you like to get rid of the test files now? (Y/N)") == "Y":
             recursive_delete_in(testing_grounds_path)
+            """
