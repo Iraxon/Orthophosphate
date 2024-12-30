@@ -96,7 +96,7 @@ class FolderRep(typing.NamedTuple):
         line_tuple = tuple(
             element.render(pre + ("║ " if i < len(self.content) - 1 else "  "))
             if isinstance(element, (FolderRep, FileRep))
-            else "═ " + str(element)
+            else "═ " + element
             for i, element in enumerate(self.content)
         ) if len(self.content) > 0 else tuple()
         # if len(self.content) > 1 else ("═ " + str(self.content),)
@@ -163,24 +163,9 @@ def tagify(set: frozenset[str], namespace, replace=False) -> str:
         + "}"
     )
 
-def datapack_directory(
-    name, namespace=None,
-    functions: frozenset[FileRep]=frozenset_(),
-    tick_functions: frozenset[FileRep]=frozenset_(),
-    load_functions: frozenset[FileRep]=frozenset_()
-) -> FolderRep:
-    """
-    Returns a
-    representation of a datapack
-    directory structure, using "name" as the
-    datapack name
-    """
-    if namespace is None:
-        namespace = name
-    return FolderRep(name, frozenset_(
-        FileRep("pack.mcmeta", DEFAULT_MC_META),
-        FolderRep("data", frozenset_(
-            FolderRep(namespace, frozenset_(
+def namespace_directory(namespace, functions) -> FolderRep:
+    return (
+        FolderRep(namespace, frozenset_(
                 FolderRep("function", functions),
                 FolderRep("structure", frozenset_()),
                 FolderRep("tags", frozenset_(
@@ -208,22 +193,52 @@ def datapack_directory(
                     # There are subfolders that go in here, but we probably won't
                     # have to worry about them for a long time
                 ))
-            )),
-            FolderRep("minecraft", frozenset_(
-                FolderRep("tags", frozenset_(
-                    FolderRep("function", frozenset_(
-                        FileRep("tick.json", tagify(
-                            tick_functions,
-                            namespace=namespace
-                        )),
-                        FileRep( "load.json", tagify(
-                            load_functions,
-                            namespace=namespace
+        ))
+    )
+
+def datapack_directory(
+    name, namespace=None,
+    functions: frozenset[FileRep]=frozenset_(),
+    tick_functions: frozenset[FileRep]=frozenset_(),
+    load_functions: frozenset[FileRep]=frozenset_(),
+    secondary_namespaces: frozenset[tuple[str, frozenset[FileRep]]]=frozenset_()
+    # secondary_namespaces, abbv. "sn", is a frozenset of tuples, where each
+    # tuple contains the namespace of a secondary namespace and a frozenset
+    # of the functions that go in it
+) -> FolderRep:
+    """
+    Returns a
+    representation of a datapack
+    directory structure, using "name" as the
+    datapack name
+    """
+    if namespace is None:
+        namespace = namespacify(name)
+    return FolderRep(name, frozenset_(
+        FileRep("pack.mcmeta", DEFAULT_MC_META),
+        FolderRep(
+            "data",
+            frozenset_(
+                namespace_directory(namespace, functions),
+                FolderRep("minecraft", frozenset_(
+                    FolderRep("tags", frozenset_(
+                        FolderRep("function", frozenset_(
+                            FileRep("tick.json", tagify(
+                                tick_functions,
+                                namespace=namespace
+                            )),
+                            FileRep( "load.json", tagify(
+                                load_functions,
+                                namespace=namespace
+                            ))
                         ))
                     ))
                 ))
+            ).union(frozenset(
+                namespace_directory(sn_name, sn_functions)
+                for sn_name, sn_functions in secondary_namespaces
             ))
-        ))
+        )
     ))
 
 ROOT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -240,6 +255,23 @@ if __name__ == "__main__":
     print(tagify(frozenset_('minecraft:a', 'other_namespace:b', 'c'), namespace=test_namespace))
 
     print(test_directory)
+
+    print(
+        datapack_directory(
+            name="name", namespace=None,
+            functions= frozenset_(FileRep("test", "say goes in primary namespace")),
+            tick_functions=frozenset_("test"),
+            load_functions=frozenset_(),
+            secondary_namespaces=frozenset_(
+                (
+                    "secondary_namespace",
+                    frozenset_(
+                        FileRep("func_in_secondary_namespace", "say goes in secondary namespace")
+                    )
+                )
+            )
+        )
+    )
 
     did_test = False
 """
