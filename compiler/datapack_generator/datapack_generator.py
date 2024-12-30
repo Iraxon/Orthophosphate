@@ -13,7 +13,7 @@ def compile_function(ast) -> FileRep:
             case _:
                 raise ValueError(f"Datapack function generator does not recognize this:\n{line}")
     
-    return FileRep(ast.value[0].value, "\n".join(command_list))
+    return FileRep(ast.value[0].value + ".mcfunction", "\n".join(command_list))
 
 def generate_datapack(ast, name=None) -> FolderRep:
     """
