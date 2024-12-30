@@ -1,4 +1,9 @@
 tick_func core
-    {
-        :say hello world:;
-    }
+{
+    :say hello world:;
+}
+
+func other_function
+{
+    :say other_function called:;
+}
