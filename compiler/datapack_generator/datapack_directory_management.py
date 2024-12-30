@@ -165,10 +165,10 @@ def tagify(set: frozenset[str], namespace, replace=False) -> str:
 
 def datapack_directory(
     name, namespace=None,
-    functions=frozenset_(),
-    tick_functions: frozenset[FileRep | FolderRep]=frozenset_(),
-    load_functions=frozenset_()
-) -> dict:
+    functions: frozenset[FileRep]=frozenset_(),
+    tick_functions: frozenset[FileRep]=frozenset_(),
+    load_functions: frozenset[FileRep]=frozenset_()
+) -> FolderRep:
     """
     Returns a
     representation of a datapack
