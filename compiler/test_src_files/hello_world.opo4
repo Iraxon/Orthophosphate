@@ -7,3 +7,11 @@ func other_function
 {
     :say other_function called:;
 }
+
+namespace secondary_namespace
+{
+    func a_function_in_a_specified_namespace
+    {
+        :running function from secondary_namespace:;
+    }
+}
