@@ -8,6 +8,7 @@ class NodeType(enum.StrEnum):
     
     LITERAL_VALUE = enum.auto()
     NAME = enum.auto()
+    PLACEHOLDER = enum.auto() # Implemented only in the post-parser
 
     ASSIGN_OPERATOR = enum.auto()
     OPERATOR = enum.auto()
