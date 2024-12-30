@@ -163,13 +163,28 @@ def tagify(set: frozenset[str], namespace, replace=False) -> str:
         + "}"
     )
 
-def namespace_directory(namespace, functions) -> FolderRep:
+def file_tagify(tag_name, set: frozenset[str], namespace, replace=False):
+    """
+    Like tagify, but it returns the whole FileRep instead
+    """
+    return (
+        FileRep(
+            name=tag_name,
+            content=tagify(set, namespace, replace)
+        )
+    )
+
+def namespace_directory(
+        namespace: str,
+        functions: frozenset[FileRep],
+        function_tags: frozenset[FileRep] = frozenset()
+) -> FolderRep:
     return (
         FolderRep(namespace, frozenset_(
                 FolderRep("function", functions),
                 FolderRep("structure", frozenset_()),
                 FolderRep("tags", frozenset_(
-                    FolderRep("function", frozenset_())
+                    FolderRep("function", function_tags)
                 )),
                 FolderRep("advancement", frozenset_()),
                 FolderRep("banner_patern", frozenset_()),
@@ -199,8 +214,8 @@ def namespace_directory(namespace, functions) -> FolderRep:
 def datapack_directory(
     name, namespace=None,
     functions: frozenset[FileRep]=frozenset_(),
-    tick_functions: frozenset[FileRep]=frozenset_(),
-    load_functions: frozenset[FileRep]=frozenset_(),
+    tick_functions: frozenset[str]=frozenset_(),
+    load_functions: frozenset[str]=frozenset_(),
     secondary_namespaces: frozenset[tuple[str, frozenset[FileRep]]]=frozenset_()
     # secondary_namespaces, abbv. "sn", is a frozenset of tuples, where each
     # tuple contains the namespace of a secondary namespace and a frozenset
@@ -212,28 +227,35 @@ def datapack_directory(
     directory structure, using "name" as the
     datapack name
     """
+
     if namespace is None:
         namespace = namespacify(name)
+    
+    tick_json = FileRep(
+        "tick.json",
+        tagify(
+            tick_functions,
+            namespace=namespace
+        )
+    )
+    load_json = FileRep(
+        "load.json",
+        tagify(
+            load_functions,
+            namespace=namespace
+        )
+    )
+
     return FolderRep(name, frozenset_(
         FileRep("pack.mcmeta", DEFAULT_MC_META),
         FolderRep(
             "data",
             frozenset_(
-                namespace_directory(namespace, functions),
-                FolderRep("minecraft", frozenset_(
-                    FolderRep("tags", frozenset_(
-                        FolderRep("function", frozenset_(
-                            FileRep("tick.json", tagify(
-                                tick_functions,
-                                namespace=namespace
-                            )),
-                            FileRep( "load.json", tagify(
-                                load_functions,
-                                namespace=namespace
-                            ))
-                        ))
-                    ))
-                ))
+                namespace_directory("minecraft", functions=frozenset(), function_tags=frozenset_(
+                    tick_json,
+                    load_json
+                )),
+                namespace_directory(namespace, functions=functions),
             ).union(frozenset(
                 namespace_directory(sn_name, sn_functions)
                 for sn_name, sn_functions in secondary_namespaces
