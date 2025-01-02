@@ -211,6 +211,23 @@ def namespace_directory(
         ))
     )
 
+def strip_empty_folders(folder: FolderRep) -> FolderRep:
+
+    if isinstance(folder, FileRep):
+        return folder
+    
+    if len(folder.content) == 0:
+        return None
+    
+    new_folder_contents = frozenset(
+        tuple(
+            strip_empty_folders(item) for item in folder.content
+            if strip_empty_folders(item) is not None
+        )
+    )
+    new_folder = FolderRep(name=folder.name, content=new_folder_contents)
+    return new_folder if len(new_folder.content) > 0 else None
+
 def datapack_directory(
     name,
     primary_namespace: typing.Optional[str] = None,
@@ -242,7 +259,7 @@ def datapack_directory(
         )
     )
 
-    return FolderRep(name, frozenset_(
+    output = FolderRep(name, frozenset_(
         FileRep("pack.mcmeta", DEFAULT_MC_META),
         FolderRep(
             "data",
@@ -258,6 +275,8 @@ def datapack_directory(
             )
         )
     ))
+
+    return strip_empty_folders(output)
 
 ROOT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 

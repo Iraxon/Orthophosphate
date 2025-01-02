@@ -18,6 +18,8 @@ def compile_function(ast) -> FileRep:
 
 def generate_namespace(ast, arg_namespace: typing.Optional[str] = None) -> tuple[FolderRep, tuple[str], tuple[str]]:
     if ast.value[0].type == "placeholder" and ast.value[0].value == "default_namespace":
+        if arg_namespace is None:
+            raise ValueError(f"No namespace provided to fill placeholder")
         namespace = arg_namespace
     else:
         namespace = ast.value[0].value # The first item in the block attached to the
@@ -59,10 +61,18 @@ def generate_datapack(ast, name: typing.Optional[str]=None, in_secondary_namespa
     post-parsed AST
     """
 
-    namespace = namespacify(name) if name is not None else "unnamed_datapack_" + str(random.randint(0, 99999))
-
     if name is None:
-        name = "Unnamed Datapack " + str(random.randint(0, 99999))
+        name = (
+            "Unnamed Datapack "
+            + " ".join(tuple(
+                "".join(tuple(
+                    str(random.randint(0, 9))
+                    for _ in range(4)
+                ))
+                for _ in range(2)
+            ))
+        )
+    namespace = namespacify(name)
     
     namespace_folders = []
     tick_functions = tuple()
