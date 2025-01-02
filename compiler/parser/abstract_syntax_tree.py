@@ -136,7 +136,7 @@ class Node(typing.NamedTuple):
         ) if isinstance(self.value, tuple) else ("═ " + str(self.value),)
 
         return (
-            f"{"" if pre == "" else'═'}{self.type.name}{': ' + self.data_type if self.data_type != "untyped" else ''}\n"
+            f"{"" if pre == "" else'═'}{self.type}{': ' + self.data_type if self.data_type != "untyped" else ''}\n"
             + "".join(
                     tuple(
                         f"{pre}╠{element}\n"
@@ -149,4 +149,4 @@ class Node(typing.NamedTuple):
 
 if __name__ == "__main__":
     for node_type in NodeType:
-        print(f"{node_type.name} = {node_type.value}")
+        print(f"{node_type.name} = {node_type.value}; {node_type == node_type.value}")

@@ -212,24 +212,20 @@ def namespace_directory(
     )
 
 def datapack_directory(
-    name, namespace=None,
-    functions: frozenset[FileRep]=frozenset_(),
+    name,
+    primary_namespace: typing.Optional[str] = None,
     tick_functions: frozenset[str]=frozenset_(),
     load_functions: frozenset[str]=frozenset_(),
-    secondary_namespaces: frozenset[tuple[str, frozenset[FileRep]]]=frozenset_()
-    # secondary_namespaces, abbv. "sn", is a frozenset of tuples, where each
-    # tuple contains the namespace of a secondary namespace and a frozenset
-    # of the functions that go in it
+    namespace_folders: frozenset[FolderRep]=frozenset_()
 ) -> FolderRep:
     """
     Returns a
     representation of a datapack
     directory structure, using "name" as the
-    datapack name
+    root folder name
     """
 
-    if namespace is None:
-        namespace = namespacify(name)
+    namespace = primary_namespace if primary_namespace is not None else namespacify(name)
     
     tick_json = FileRep(
         "tick.json",
@@ -250,16 +246,16 @@ def datapack_directory(
         FileRep("pack.mcmeta", DEFAULT_MC_META),
         FolderRep(
             "data",
-            frozenset_(
-                namespace_directory("minecraft", functions=frozenset(), function_tags=frozenset_(
-                    tick_json,
-                    load_json
-                )),
-                namespace_directory(namespace, functions=functions),
-            ).union(frozenset(
-                namespace_directory(sn_name, sn_functions)
-                for sn_name, sn_functions in secondary_namespaces
-            ))
+            frozenset(
+                (
+                    namespace_directory("minecraft", functions=frozenset(), function_tags=frozenset_(
+                        tick_json,
+                        load_json
+                    )),
+                ) + (tuple(
+                    namespace_folders
+                ))
+            )
         )
     ))
 

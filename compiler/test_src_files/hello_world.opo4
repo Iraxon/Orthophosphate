@@ -12,6 +12,6 @@ namespace secondary_namespace
 {
     func a_function_in_a_specified_namespace
     {
-        :running function from secondary_namespace:;
+        :say running function from secondary_namespace:;
     }
 }
