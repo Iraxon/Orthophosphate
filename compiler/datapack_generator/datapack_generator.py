@@ -17,7 +17,7 @@ def compile_function(ast) -> FileRep:
     return FileRep(ast.value[0].value + ".mcfunction", "\n".join(command_list))
 
 def generate_namespace(ast, arg_namespace: typing.Optional[str] = None) -> tuple[FolderRep, tuple[str], tuple[str]]:
-    if ast.type == "placeholder" and ast.value == "default_namespace":
+    if ast.value[0].type == "placeholder" and ast.value[0].value == "default_namespace":
         namespace = arg_namespace
     else:
         namespace = ast.value[0].value # The first item in the block attached to the
