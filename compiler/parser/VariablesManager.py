@@ -90,7 +90,7 @@ def createVar(variable: PrimitiveVariableType, varName : str, fileName : str, pa
     encapsulatedVariable.type = variable
     encapsulatedVariable.value = 0
 
-    localPath = _convertPath(varName=varName, fileName=fileName path=path)
+    localPath = _convertPath(varName=varName, fileName=fileName, path=path)
     globalPath = _convertPath(varName=varName, fileName=fileName, path=path)
 
 
