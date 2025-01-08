@@ -1,9 +1,9 @@
 import typing
-from enum import Enum
+import enum
 
-class PrimitiveVariableType(Enum):
-    STRING = 1
-    INTEGER = 1
+class PrimitiveVariableType(enum.Enum):
+    STRING = enum.auto()
+    INTEGER = enum.auto()
 
 class PrimitiveVariable(typing.NamedTuple):
     type: PrimitiveVariableType
