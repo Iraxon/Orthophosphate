@@ -16,4 +16,4 @@ All of the code in this repository is free and open source software under the MI
 
 - Orthophosphate would not have been made if not for the massive frustration, pain, and suffering involved in developing data packs manually with Notepad. That experience will not be missed.
 
-- (The Super Tiny Compiler)[https://github.com/jamiebuilds/the-super-tiny-compiler/tree/master] provided the understanding necessary to build the Orthophosphate compiler. Orthophosphate would not have been possible without it.
+- [The Super Tiny Compiler](https://github.com/jamiebuilds/the-super-tiny-compiler/tree/master) provided the understanding necessary to build the Orthophosphate compiler. Orthophosphate would not have been possible without it.
