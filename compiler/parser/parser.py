@@ -80,11 +80,12 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
     representing the program specified
 
     This function is recursive, both itself and
-    mutually with _resolve_node_tuple; it uses the private cursor parameter
+    mutually with _resolve_node_tuple and _resolve_finite_tuple;
+    it uses the private cursor parameter
     in the recursion calls; that parameter should not be set
     by outsider callers
 
-    @reutrn Node [outside calls]
+    @return Node [outside calls]
 
     @return (Node, cursor) [recursive calls]
     """
@@ -121,19 +122,19 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
             )
         case ("int", n):
             node = Node(
-                type=NodeType.INT_LITERAL,
+                type=NodeType.LITERAL_VALUE,
                 value=int(t.value),
                 data_type="int"
             )
         case ("string", s):
             node = Node(
-                type=NodeType.STRING_LITERAL,
+                type=NodeType.LITERAL_VALUE,
                 value=t.value,
                 data_type="str"
             )
         case ("literal", x):
             node = Node(
-                type=NodeType.MCFUNCTION_LITERAL,
+                type=NodeType.LITERAL_VALUE,
                 value=t.value,
                 data_type="cmd"
             )
@@ -154,6 +155,33 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                     type=NodeType.OPERATOR,
                     value=t.value
                 )
+        case ("keyword", "namespace"):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.NAME,),
+                    (NodeType.BLOCK,)
+                )
+            )
+            node = Node(
+                type=NodeType.NAMESPACE,
+                value=value
+            )
+        case ("keyword", "tag"):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.NAME,),
+                    (NodeType.NAME,),
+                    (NodeType.BLOCK,),
+                )
+            )
+            node = Node(
+                type=NodeType.TAG_DEF,
+                value=value
+            )
         case ("keyword", "let"):
             value, new_cursor = _resolve_finite_tuple(
                 tokens=tokens,
@@ -174,7 +202,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 tokens=tokens,
                 cursor=_cursor,
                 description=(
-                    (NodeType.INT_LITERAL, NodeType.PREFIX_EXPRESSION),
+                    (NodeType.LITERAL_VALUE, NodeType.PREFIX_EXPRESSION),
                     (NodeType.BLOCK,),
                 )
             )
@@ -183,7 +211,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 value=value
             )
             pass
-        case ("keyword", "func"):
+        case ("keyword", "func" | "tick_func" as second_word):
             value, new_cursor = _resolve_finite_tuple(
                 tokens=tokens,
                 cursor=_cursor,
@@ -193,8 +221,12 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 )
             )
             node = Node(
-                type=NodeType.FUNC_DEF, # Eventually this should be changed to resolve to a declaration
-                # equivalent to the form `let func <name> = <block>`
+                type=(
+                    {
+                        "func": NodeType.FUNC_DEF,
+                        "tick_func": NodeType.TICK_FUNC_DEF
+                    }[second_word]
+                ),
                 value=value
             )
         case ("punc", "{"):
@@ -222,10 +254,9 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
         case ("punc", ";") | ("punc", "}") | ("punc", ")") | ("punc", "EOF"):
             raise ValueError(
                 f"Found unexpected closing token:\n"
-                + "".join(tuple(f"\t{tokens[_cursor - n] if _cursor - n >= 0 else ''}\n" for n in range(0, -11, -1)))
+                + "".join(tuple(f"\t{(tokens[_cursor + n]) if (_cursor + n >= 0 and _cursor + n < len(tokens)) else ''}\n" for n in range(-10, 0)))
                 + f"\t{t} <<< HERE\n"
-                + f"\t{tokens[_cursor + 1] if _cursor + 1 < len(tokens) else ''}\n"
-                + f"\t{tokens[_cursor + 2] if _cursor + 2 < len(tokens) else ''}\n"
+                + "".join(tuple(f"\t{(tokens[_cursor + n]) if (_cursor + n >= 0 and _cursor + n < len(tokens)) else ''}\n" for n in range(1, 3)))
             )
         case _:
             raise ValueError(f"Token {t} unknown to parser")

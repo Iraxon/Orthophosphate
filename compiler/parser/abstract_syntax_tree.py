@@ -1,15 +1,14 @@
 import enum
 import typing
 
-class NodeType(enum.Enum):
+class NodeType(enum.StrEnum):
     """
     The types of nodes in the abstract syntax tree
     """
     
-    STRING_LITERAL = enum.auto()
-    INT_LITERAL = enum.auto()
-    MCFUNCTION_LITERAL = enum.auto()
+    LITERAL_VALUE = enum.auto()
     NAME = enum.auto()
+    PLACEHOLDER = enum.auto() # Implemented only in the post-parser
 
     ASSIGN_OPERATOR = enum.auto()
     OPERATOR = enum.auto()
@@ -23,6 +22,9 @@ class NodeType(enum.Enum):
 
     WHILE = enum.auto()
     FUNC_DEF = enum.auto()
+    TICK_FUNC_DEF = enum.auto()
+    NAMESPACE = enum.auto()
+    TAG_DEF = enum.auto()
 
     ROOT = enum.auto()
 
@@ -57,9 +59,7 @@ class Node(typing.NamedTuple):
         
         VALID_OPERANDS = (
             NodeType.PREFIX_EXPRESSION,
-            NodeType.INT_LITERAL,
-            NodeType.STRING_LITERAL,
-            NodeType.MCFUNCTION_LITERAL,
+            NodeType.LITERAL_VALUE,
             NodeType.NAME,
             NodeType.DECLARATION
         )
@@ -136,7 +136,7 @@ class Node(typing.NamedTuple):
         ) if isinstance(self.value, tuple) else ("═ " + str(self.value),)
 
         return (
-            f"{"" if pre == "" else'═'}{self.type.name}{': ' + self.data_type if self.data_type != "untyped" else ''}\n"
+            f"{"" if pre == "" else'═'}{self.type}{': ' + self.data_type if self.data_type != "untyped" else ''}\n"
             + "".join(
                     tuple(
                         f"{pre}╠{element}\n"
@@ -146,3 +146,7 @@ class Node(typing.NamedTuple):
                     )
                 )
         )
+
+if __name__ == "__main__":
+    for node_type in NodeType:
+        print(f"{node_type.name} = {node_type.value}; {node_type == node_type.value}")

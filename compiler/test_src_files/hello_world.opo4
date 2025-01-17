@@ -1,12 +1,17 @@
-func core
+tick_func core
 {
     :say hello world:;
 }
 
-namespace minecraft
+func other_function
 {
-    tag function tick
+    :say other_function called:;
+}
+
+namespace secondary_namespace
+{
+    func a_function_in_a_specified_namespace
     {
-        core
+        :say running function from secondary_namespace:;
     }
 }
