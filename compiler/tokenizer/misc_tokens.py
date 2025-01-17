@@ -69,7 +69,7 @@ class NameToken(TokenizerModuleBase):
         # so those are also handled here.
         #not sure why this is handled here, it's a lil bit confusing
         match fullString:
-            case "let" | "func" | "tick_func" | "while" | "return" | "namespace" | "tag" as kw:
+            case "func" | "tick_func" | "while" | "return" | "namespace" | "tag" as kw:
                 compiledTokens.append(Token("keyword", kw))
             case _:
                 compiledTokens.append(Token("name", fullString))
