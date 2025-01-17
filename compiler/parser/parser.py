@@ -80,11 +80,12 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
     representing the program specified
 
     This function is recursive, both itself and
-    mutually with _resolve_node_tuple; it uses the private cursor parameter
+    mutually with _resolve_node_tuple and _resolve_finite_tuple;
+    it uses the private cursor parameter
     in the recursion calls; that parameter should not be set
     by outsider callers
 
-    @reutrn Node [outside calls]
+    @return Node [outside calls]
 
     @return (Node, cursor) [recursive calls]
     """
