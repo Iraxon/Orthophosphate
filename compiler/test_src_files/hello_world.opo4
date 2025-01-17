@@ -1,7 +1,6 @@
 tick_func core
 {
     :say hello world:;
-    int x = 3;
 }
 
 func other_function
