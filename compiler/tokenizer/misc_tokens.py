@@ -2,7 +2,7 @@ from .tokenizer_module_base import TokenizerModuleBase
 from .token import Token
 import string
 
-class NameToken(TokenizerModuleBase):
+class AlphanumericToken(TokenizerModuleBase):
 
     matches = tuple(char for char in string.ascii_letters) + ("_",)
     can_contain = matches + tuple(char for char in string.digits) + (".",)
@@ -11,13 +11,11 @@ class NameToken(TokenizerModuleBase):
 
         fullString = ""
 
-        while(cursor < len(data) and data[cursor] in NameToken.can_contain):
+        while(cursor < len(data) and data[cursor] in AlphanumericToken.can_contain):
 
             fullString += data[cursor]
             cursor += 1
         
-        # Reserved keywords will be picked up by the matches,
-        # so those are also handled here.
         match fullString:
             case "let" | "func" | "tick_func" | "while" | "return" | "namespace" | "tag" as kw:
                 compiledTokens.append(Token("keyword", kw))
