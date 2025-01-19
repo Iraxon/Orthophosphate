@@ -4,6 +4,9 @@ def strip_empties(ast: tree.Node) -> tree.Node:
     """
     Strip empty STATEMENT nodes from the AST
     """
+    if ast is None:
+        return None
+    # If AST.value is a tuple and that tuple is empty, return None
     if ast.type in frozenset((tree.NodeType.STATEMENT, tree.NodeType.PREFIX_EXPRESSION)) and isinstance(ast.value, tuple) and len(ast.value) == 0:
         return None
     return ast
@@ -45,31 +48,25 @@ def _move_up_loose_functions(nodes: tuple[tree.Node]) -> tuple[tree.Node]:
     new_nodes = []
     contents_of_default_namespace = []
 
-    for statement in nodes:
-        for node in statement.value:
+    for node in nodes:
             match (node.type, node.value):
                 case "namespace", v:
-                    new_nodes.append(statement)
+                    new_nodes.append(node)
                 case _:
-                    contents_of_default_namespace.append(statement)
+                    contents_of_default_namespace.append(node)
     return (
         (
             tree.Node(
-                type="statement",
+                type="namespace",
                 value=(
                     tree.Node(
-                        type="namespace",
-                        value=(
-                            tree.Node(
-                                type="placeholder",
-                                value="default_namespace"
-                            ),
-                            tree.Node(
-                                type="block",
-                                value=tuple(contents_of_default_namespace)
-                            )
-                        )
+                        type="placeholder",
+                        value="default_namespace"
                     ),
+                    tree.Node(
+                        type="block",
+                        value=tuple(contents_of_default_namespace)
+                    )
                 )
             ),
             
@@ -103,4 +100,5 @@ def post_parse(ast: tree.Node) -> tree.Node:
     """
     stripped_ast = simple_pass(ast, strip_empties)
     expanded_ast = expand_tree(stripped_ast)
-    return expanded_ast
+    post_stripped_ast = simple_pass(expanded_ast, strip_empties)
+    return post_stripped_ast

@@ -8,7 +8,7 @@ class NodeType(enum.StrEnum):
     
     LITERAL_VALUE = enum.auto()
     NAME = enum.auto()
-    PLACEHOLDER = enum.auto() # Implemented only in the post-parser
+    PLACEHOLDER = enum.auto() # It gets filled in the post-parser
 
     ASSIGN_OPERATOR = enum.auto()
     OPERATOR = enum.auto()
@@ -17,13 +17,19 @@ class NodeType(enum.StrEnum):
     GROUPED_EXPRESSION = enum.auto()
     PREFIX_EXPRESSION = enum.auto()
     DECLARATION = enum.auto()
+    OBJ_DEF = enum.auto()
+
+    SCOREBOARD_OPERATION = enum.auto()
+    CONSTANT_SCORE = enum.auto()
 
     BLOCK = enum.auto()
 
     WHILE = enum.auto()
+    
+    NAMESPACE = enum.auto()
+
     FUNC_DEF = enum.auto()
     TICK_FUNC_DEF = enum.auto()
-    NAMESPACE = enum.auto()
     TAG_DEF = enum.auto()
 
     ROOT = enum.auto()
@@ -38,7 +44,17 @@ class Node(typing.NamedTuple):
 
     data_type: str = "untyped"
 
-    def reorder_expr(self) -> "Node":
+    def check_statement(self) -> typing.Optional["Node"]:
+        """
+        This function removes superfluo
+        """
+        if len(self.value) == 0 or (len(self.value) == 1 and self.value[0] is None):
+            return None
+        if len(self.value) == 1 and self.value[0].type in (NodeType.NAMESPACE, NodeType.FUNC_DEF, NodeType.TICK_FUNC_DEF, NodeType.TAG_DEF):
+            return self.value[0]
+        return self
+
+    def reorder_expr(self) -> typing.Optional["Node"]:
         """
         Specifically for type=GROUPED EXPRESSION
         Nodes, this function reorders the operands
@@ -51,11 +67,13 @@ class Node(typing.NamedTuple):
         """
         if self.type != NodeType.GROUPED_EXPRESSION:
             raise TypeError(f"reorder_expr() called on non-expr or an expr that has already been ordered")
-        if len(self.value) != 3 and len(self.value) != 1:
+        if len(self.value) not in (0, 1, 3):
             raise ValueError(
-                f"Expression has {len(self.value)} elements, not 3 or 1; anatomy:\n"
+                f"Expression has {len(self.value)} elements, not 0, 1 or 3; anatomy:\n"
                 f"{self}"
             )
+        if len(self.value) == 0:
+            return None
         
         VALID_OPERANDS = (
             NodeType.PREFIX_EXPRESSION,

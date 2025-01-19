@@ -118,10 +118,11 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 cursor=_cursor,
                 end_token=VirtualToken("punc", ";")
             )
-            node = Node(
+            pre_node = Node(
                 type=NodeType.STATEMENT,
                 value=value
             )
+            node = pre_node.check_statement()
         case ("int", n):
             node = Node(
                 type=NodeType.LITERAL_VALUE,
@@ -147,7 +148,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 data_type= "*"
             )
         case ("op", o):
-            if "=" in o and o != "==" and o != "!=":
+            if ("=" in o and o != "==" and o != "!=") or o in ("><",):
                 node = Node(
                     type=NodeType.ASSIGN_OPERATOR,
                     value=t.value
@@ -168,6 +169,67 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
             )
             node = Node(
                 type=NodeType.NAMESPACE,
+                value=value
+            )
+        case ("keyword", "obj"):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.NAME,),
+                )
+            )
+            node = Node(
+                type=NodeType.OBJ_DEF,
+                value=value
+            )
+        case ("keyword", "scoreboard"):
+            # The description for _resolve_finite_tuple
+            # depends on whether it's a score or a constant
+            # as the second operand ("source score"). So we
+            # look ahead in the tokens to check which it is.
+            # If an index error arises, it's because the user didn't
+            # supply the correct arguments to the scoreboard keyword
+            ahead_token = tokens[_cursor + 4]
+            match (ahead_token.type, ahead_token.value):
+                case ("keyword", "constant"):
+                    value, new_cursor = _resolve_finite_tuple(
+                        tokens=tokens,
+                        cursor=_cursor,
+                        description=(
+                            (NodeType.NAME,),
+                            (NodeType.NAME,),
+                            (NodeType.ASSIGN_OPERATOR,),
+                            (NodeType.CONSTANT_SCORE,),
+                        )
+                    )
+                case ("name", _):
+                    value, new_cursor = _resolve_finite_tuple(
+                        tokens=tokens,
+                        cursor=_cursor,
+                        description=(
+                            (NodeType.NAME,),
+                            (NodeType.NAME,),
+                            (NodeType.ASSIGN_OPERATOR,),
+                            (NodeType.NAME,),
+                            (NodeType.NAME,),
+                        )
+                    )
+            
+            node = Node(
+                type=NodeType.SCOREBOARD_OPERATION,
+                value=value
+            )
+        case ("keyword", "constant"):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.LITERAL_VALUE,),
+                )
+            )
+            node = Node(
+                type=NodeType.CONSTANT_SCORE,
                 value=value
             )
         case ("keyword", "tag"):
@@ -254,9 +316,9 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
         case ("punc", ";") | ("punc", "}") | ("punc", ")") | ("punc", "EOF"):
             raise ValueError(
                 f"Found unexpected closing token:\n"
-                + "".join(tuple(f"\t{(tokens[_cursor + n]) if (_cursor + n >= 0 and _cursor + n < len(tokens)) else ''}\n" for n in range(-10, 0)))
+                + "".join(tuple(f"\t{(tokens[_cursor + n]) if (_cursor + n >= 0 and _cursor + n < len(tokens)) else ''}\n" for n in range(-20, 0)))
                 + f"\t{t} <<< HERE\n"
-                + "".join(tuple(f"\t{(tokens[_cursor + n]) if (_cursor + n >= 0 and _cursor + n < len(tokens)) else ''}\n" for n in range(1, 3)))
+                + "".join(tuple(f"\t{(tokens[_cursor + n]) if (_cursor + n >= 0 and _cursor + n < len(tokens)) else ''}\n" for n in range(1, 10)))
             )
         case _:
             raise ValueError(f"Token {t} unknown to parser")

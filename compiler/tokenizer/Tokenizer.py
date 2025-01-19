@@ -8,7 +8,7 @@ from .declaration_tokens import *
 #one character sub for tokens in the code
 
 #the list of all the recognized tokens. Used this to add new tokens
-tokens = (AlphanumericToken, NumberToken, WhiteSpaceToken, StringToken, MCFunctionLiteralToken, PunctuationToken, CommentToken, OperatorToken)
+tokens = (AlphanumericToken, NumberToken, WhiteSpaceToken, StringToken, MCFunctionLiteralToken, PunctuationToken, CommentToken, MultilineCommentToken, OperatorToken)
 
 #helper data set. Maps every token string to the token it is a part of
 tokenStrings: dict[str, Token]= {
@@ -33,7 +33,7 @@ def tokenize(input : str) -> list[Token]:
 
     # Invisible punctuation added to start of file
     compiledTokens.append(Token("punc", "file_start"))
-    compiledTokens.append(Token("punc", "start"))
+    PunctuationToken.start(compiledTokens)
 
     #logic
     while(cursor < len(data)):
@@ -60,11 +60,9 @@ def tokenize(input : str) -> list[Token]:
 
     #if the token is not empty, we need to run it
     cursor, compiledTokens, data = runToken(token=token, cursor=cursor, compiledTokens=compiledTokens, data=data)
-    
-    # Get rid of the excess start token
-    # that will follow the last semicolon the programmer wrote
-    if compiledTokens[-1].type == "punc" and compiledTokens[-1].value == "start":
-        compiledTokens.pop()
+    # Close the excess start token that will be found
+    # after the last semicolon
+    PunctuationToken.semicolon(compiledTokens, include_start=False)
     compiledTokens.append(Token("punc", "EOF"))
 
     return compiledTokens
