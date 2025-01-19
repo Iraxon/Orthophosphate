@@ -11,7 +11,7 @@ class VirtualToken(typing.NamedTuple):
     type: str
     value: str
 
-def _resolve_finite_tuple(tokens: list, cursor: int, description: tuple[tuple[str]] = None, count: int = -1):
+def _resolve_finite_tuple(tokens: list, cursor: int, description: typing.Optional[tuple[tuple[str], ...]] = None, count: int = -1):
     """
     Makes a flat tuple of nodes from the tokens
     until the tuple contains the specified count and
@@ -27,10 +27,12 @@ def _resolve_finite_tuple(tokens: list, cursor: int, description: tuple[tuple[st
     """
 
     if count != -1:
-        description = tuple(("*",) for _ in range(count))
+        description = tuple(
+            ("*",) for _ in range(count)
+        )
     
     iterating_cursor = cursor + 1 # Skip opening token
-    node_list = []
+    node_list: list = []
     counter = 0
 
     while iterating_cursor < len(tokens):
