@@ -17,8 +17,10 @@ class AlphanumericToken(TokenizerModuleBase):
             cursor += 1
         
         match fullString:
-            case "let" | "func" | "tick_func" | "while" | "return" | "namespace" | "tag" as kw:
+            case "func" | "tick_func" | "while" | "return" | "namespace" | "tag" as kw:
                 compiledTokens.append(Token("keyword", kw))
+            case "int" | "bool" as typ:
+                compiledTokens.append(Token("type", typ))
             case _:
                 compiledTokens.append(Token("name", fullString))
         

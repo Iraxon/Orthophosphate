@@ -54,4 +54,4 @@ if __name__ == "__main__":
     root.withdraw()
     file_path = filedialog.askopenfilename(filetypes=[("Orthophosphate Files", "*.opo4")])
 
-    compile(file_path, None, False)
+    compile(file_path, None, True)

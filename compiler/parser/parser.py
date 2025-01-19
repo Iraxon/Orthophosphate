@@ -184,20 +184,18 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 type=NodeType.TAG_DEF,
                 value=value
             )
-        case ("keyword", "let"):
+        case ("type", typ):
             value, new_cursor = _resolve_finite_tuple(
                 tokens=tokens,
                 cursor=_cursor,
                 description=(
                     (NodeType.NAME,),
-                    (NodeType.NAME,)
                 )
             )
             node = Node(
                 type=NodeType.DECLARATION,
                 value=value,
-                data_type=(value[0].value) # THe first of the two names after "let" specifies the data type; the other
-                # one is the name of the new variable
+                data_type=typ
             )
         case ("keyword", "while"):
             value, new_cursor = _resolve_finite_tuple(
