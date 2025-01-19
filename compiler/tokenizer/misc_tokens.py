@@ -166,7 +166,7 @@ class PunctuationToken(TokenizerModuleBase):
 MAX_PARAN_COUNT = 5
 
 class OperatorToken(TokenizerModuleBase):
-    matches = ("+", "-", "*", "/", "%", "**", "=", "+=", "-=", "*=", "/=", "%=", "**=", "==", "!=", "<", ">", "<=", ">=")
+    matches = ("+", "-", "*", "/", "%", "**", "=", "+=", "-=", "*=", "/=", "%=", "**=", "==", "!=", "<", ">", "<=", ">=", "<!==", ">==", "><")
 
     isTerminating = True
 
@@ -275,7 +275,7 @@ class CurlyBracketsToken(TokenizerModuleBase):
 
 class CommentToken(TokenizerModuleBase):
 
-    matches = ("#")
+    matches = ("#", "//")
 
     isTerminating = True
 
@@ -285,6 +285,22 @@ class CommentToken(TokenizerModuleBase):
         cursor += 1
 
         while(cursor < len(data) and data[cursor] != "\n"):
+            cursor += 1
+
+        return cursor, compiledTokens, data
+
+class MultilineCommentToken(TokenizerModuleBase):
+
+    matches = ("/*")
+
+    isTerminating = True
+
+
+    def calculate(cursor, compiledTokens, data):
+
+        cursor += 1
+
+        while(cursor < len(data) - 2 and data[cursor:cursor+2] != "*/"):
             cursor += 1
 
         return cursor, compiledTokens, data
