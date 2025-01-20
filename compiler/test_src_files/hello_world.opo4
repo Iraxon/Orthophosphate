@@ -5,6 +5,7 @@ tick_func core
     scoreboard $x testObj += constant 1;
     scoreboard $y testObj = $x testObj;
     # comment
+    // comment
     /* comment */ :say code:;
 }
 

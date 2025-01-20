@@ -311,7 +311,7 @@ class CurlyBracketsToken(TokenizerModuleBase):
 
 class CommentToken(TokenizerModuleBase):
 
-    matches = ("#",)
+    matches = ("#", "//")
 
     isTerminating = True
 
