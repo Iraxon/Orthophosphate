@@ -17,18 +17,21 @@ else:
     from .datapack_generator import datapack_directory_management as ddm
 
 def compile(src_file_path: str, destination_file_path: typing.Optional[str], do_prints=False) -> None:
+    SEPARATOR = "\n### ### ###\n"
     with open(src_file_path) as file:
         src = file.read()
-    tokens = tokenizer.tokenize(src)
-
-    SEPARATOR = "\n### ### ###\n"
-
+    
     if do_prints:
         print(SEPARATOR)
         print(src)
         print(SEPARATOR)
-        print(tokens)
+
+    tokens = tokenizer.tokenize(src)
+
+    if do_prints:
+        print(src)
         print(SEPARATOR)
+        print("\n".join(str(token) for token in tokens))
     ast = parser.parse(tokens)
 
     if do_prints:
@@ -39,7 +42,6 @@ def compile(src_file_path: str, destination_file_path: typing.Optional[str], do_
     if do_prints:
         print(ast2)
         print(SEPARATOR)
-    
     directory_rep = datapack_generator.generate_datapack(
         ast2,
         name=os.path.splitext(os.path.basename(src_file_path))[0]

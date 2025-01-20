@@ -192,26 +192,22 @@ def paren(compiledTokens, p):
 class OperatorToken(TokenizerModuleBase):
     matches = ("+", "-", "*", "/", "%", "**", "=", "+=", "-=",
         "*=", "/=", "%=", "**=", "==", "!=", "<", ">", "<=", ">=",
-        "<==", ">==", "><" # Scoreboard assign operators;
+        "<==", ">==", "><")
+    
+        # Scoreboard assign operators;
         # <== : assign if the value is less than current value
         # >== : assign if the value is greater than current value
         # >< : swap values of two scores (might not be supported)
         # These operators are added for low-level score management;
         # Minecraft has them
-    )
 
     isTerminating = True
 
     def calculate(cursor, compiledTokens, data):
         op_string = ""
-        if data[cursor] in OperatorToken.matches:
+        while cursor < len(data) and op_string + data[cursor] in OperatorToken.matches:
             op_string += data[cursor]
             cursor += 1
-        if cursor < len(data) and op_string + data[cursor] in OperatorToken.matches:
-            op_string += data[cursor]
-            cursor += 1
-        if cursor < len(data) and op_string + data[cursor] in OperatorToken.matches:
-            op_string += data[cursor]
         
         # We use full parenthesization to do operator precedence.
         # https://en.wikipedia.org/wiki/Operator-precedence_parser#Full_parenthesization
@@ -269,7 +265,7 @@ class OperatorToken(TokenizerModuleBase):
             case "**" as o:
                 parenthesize(1, o)
             case _ as o:
-                raise ValueError(f"Tokenizer does not support operator {o}")
+                raise ValueError(f"Tokenizer does not support operator {o}; cursor = {cursor}")
 
         return cursor, compiledTokens, data
 
@@ -331,7 +327,7 @@ class CommentToken(TokenizerModuleBase):
 
 class MultilineCommentToken(TokenizerModuleBase):
 
-    matches = ("#[",)
+    matches = ("~[",)
 
     isTerminating = True
 
@@ -339,7 +335,9 @@ class MultilineCommentToken(TokenizerModuleBase):
 
         cursor += 1
 
-        while(cursor < len(data) - 2 and data[cursor:cursor+2] != "]#"):
+        while(cursor < len(data) - 2 and data[cursor:cursor+2] != "]~"):
             cursor += 1
+        
+        cursor += 1
 
         return cursor, compiledTokens, data
