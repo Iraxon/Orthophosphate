@@ -73,7 +73,7 @@ def tokenize(input : str) -> list[Token]:
             
             # Decide on which token module to get calculate() from
             if len(possible_tokens) >= 1:
-                chosen_token = sorted(possible_tokens, key=len)[0] # Get the longest of the possible tokens
+                chosen_token = sorted(possible_tokens, key=len)[-1] # Get the longest of the possible tokens
             else:
                 raise ValueError(f"Token {token} has no matches")
             
