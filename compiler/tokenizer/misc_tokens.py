@@ -327,7 +327,7 @@ class CommentToken(TokenizerModuleBase):
 
 class MultilineCommentToken(TokenizerModuleBase):
 
-    matches = ("~[",)
+    matches = ("/*",)
 
     isTerminating = True
 
@@ -335,7 +335,7 @@ class MultilineCommentToken(TokenizerModuleBase):
 
         cursor += 1
 
-        while(cursor < len(data) - 2 and data[cursor:cursor+2] != "]~"):
+        while(cursor < len(data) - 2 and data[cursor:cursor+2] != "*/"):
             cursor += 1
         
         cursor += 1
