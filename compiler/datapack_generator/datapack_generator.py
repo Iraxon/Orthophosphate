@@ -10,14 +10,21 @@ def compile_function(ast) -> FileRep:
     for statement in ast.value[1].value:
         for line in statement.value:
             match (line.type, line.value, line.data_type):
+                
                 case ("literal_value", _ as cmd, "cmd"):
                     command_list.append(cmd)
+
                 case ("obj_def", _ as obj_tuple, _):
                     command_list.append(f"scoreboard objectives add {obj_tuple[0].value} dummy")
+
                 case ("scoreboard_operation", _ as contents, _):
                     targ_name = contents[0].value
                     targ_obj = contents[1].value
-                    operation = contents[2].value
+                    operation = contents[2].value if contents[2].value not in ("<==", ">==") else contents[2].value[0]
+
+                    if operation not in ("=", "+=", "-=", "*=", "/=", "%=", "<==", ">==", "><"):
+                        raise ValueError(f"Unsupported scoreboard operation: {operation}")
+                    
                     if len(contents) == 5:
                         source_name = contents[3].value
                         source_obj = contents[4].value
