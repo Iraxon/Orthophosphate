@@ -81,9 +81,10 @@ class FolderRep(typing.NamedTuple):
         Creates this folder and its contents
         inside the specified directory
         """
-        os.makedirs(os.path.join(directory, self.name), exist_ok=True)
+        new_path = os.path.join(directory, self.name)
+        os.makedirs(new_path, exist_ok=True)
         for item in self.content:
-                item.realize(os.path.join(directory, self.name))
+                item.realize(new_path)
 
     def __str__(self):
         return self.render()
