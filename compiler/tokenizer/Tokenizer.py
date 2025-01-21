@@ -30,11 +30,7 @@ tokenStrings: dict[str, TokenizerModuleBase]= {
     for string in token.matches
 }
 
-def tokenize(input : str) -> list[Token]:
-    """
-    for k, v in tokenStrings.items():
-        print(f"key: {k}, value: {v}")
-    """
+def tokenize(input : str) -> tuple[Token, ...]:
 
     data : str = input
 
@@ -91,7 +87,7 @@ def tokenize(input : str) -> list[Token]:
     PunctuationToken.semicolon(compiledTokens, include_start=False)
     compiledTokens.append(Token("punc", "EOF"))
 
-    return compiledTokens
+    return tuple(compiledTokens)
 
     """
         printTokens(compiledTokens)

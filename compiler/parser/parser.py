@@ -1,3 +1,4 @@
+import functools
 import typing
 from .abstract_syntax_tree import NodeType
 from .abstract_syntax_tree import Node
@@ -11,7 +12,8 @@ class VirtualToken(typing.NamedTuple):
     type: str
     value: str
 
-def _resolve_finite_tuple(tokens: list, cursor: int, description: typing.Optional[tuple[tuple[str], ...]] = None, count: int = -1):
+@functools.cache
+def _resolve_finite_tuple(tokens: tuple, cursor: int, description: typing.Optional[tuple[tuple[str], ...]] = None, count: int = -1):
     """
     Makes a flat tuple of nodes from the tokens
     until the tuple contains the specified count and
@@ -48,8 +50,8 @@ def _resolve_finite_tuple(tokens: list, cursor: int, description: typing.Optiona
 
     return tuple(node_list), iterating_cursor # No +1 because no closing token to skip
 
-
-def _resolve_node_tuple(tokens: list, cursor: int, end_token):
+@functools.cache
+def _resolve_node_tuple(tokens: tuple, cursor: int, end_token):
     """
     Makes a flat tuple of nodes from the tokens
     until it hits the specfied end token or EOF
@@ -74,9 +76,10 @@ def _resolve_node_tuple(tokens: list, cursor: int, end_token):
 
     return tuple(node_list), iterating_cursor + 1 # Skip closing token
 
-def parse(tokens: list, _cursor: int = 0) -> Node:
+@functools.cache
+def parse(tokens: tuple, _cursor: int = 0) -> Node:
     """
-    Accepts a list of tokens from the tokenizer
+    Accepts a tuple of tokens from the tokenizer
 
     Returns the root node of an abstract syntax tree
     representing the program specified
