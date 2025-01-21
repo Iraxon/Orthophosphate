@@ -1,12 +1,14 @@
 tick_func core
 {
     :say hello world:;
+
     obj testObj;
     scoreboard $x testObj += constant 1;
     scoreboard $y testObj = $x testObj;
+    
     # comment
     // comment
-    /* comment */ :say code:;
+    /* comment */ :say but this is code:;
 }
 
 func other_function
@@ -21,4 +23,5 @@ namespace secondary_namespace
         :say running function from secondary_namespace:;
     }
 }
-/* comment that doesnt cause an index error */
+/* Trailing multi-line comments
+do not cause index errors. */

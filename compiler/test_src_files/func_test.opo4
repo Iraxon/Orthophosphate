@@ -1,8 +1,11 @@
-func _TICK_module247
+func test
 {
-    # This is code that is ripped straight out of one of my datapacks, with
-    # just the namespace changed. Consider it a case study of why
-    # we want to have concise scoreboard statements.
+    /* This is code that is ripped straight out of one of my datapacks, with
+    just the namespace changed. Consider it a case study of why
+    we want to have concise scoreboard statements. */
+
+    /* Since the insertion of the above comment, we now have said concise statements.
+    This file also contains an implementation using those.*/
 
     :scoreboard objectives add my_very_cool_datapack.constants dummy:;
     :scoreboard players set C3 my_very_cool_datapack.constants 3:;
@@ -19,10 +22,36 @@ func _TICK_module247
 
     :scoreboard players add $T24000 my_very_cool_datapack.tickers 1:; # 1 cycle per MC Day
     :scoreboard players operation $T24000 my_very_cool_datapack.tickers %= C24000 my_very_cool_datapack.constants:;
+}
 
-    (let int a = 2);
-    (a += 3);
-    (a %= 4);
-    (a = 10 + 2 ** 2 * 5);
+func concise_test
+{
+    /* Remember that most real datapacks won't
+    have a name as long as "my_very_cool_datapack" */
+
+    obj my_very_cool_datapack.tickers;
+
+    scoreboard $T20 my_very_cool_datapack.tickers += constant 1;
+    scoreboard $T20 my_very_cool_datapack.tickers %= constant 20;
+
+    scoreboard $T3 my_very_cool_datapack.tickers += constant 1;
+    scoreboard $T3 my_very_cool_datapack.tickers %= constant 3;
+
+    scoreboard $T24000 my_very_cool_datapack += constant 1;
+    scoreboard $T24000 my_very_cool_datapack %= constant 24000;
+}
+
+/*
+func var_test
+{
+    /* This function uses the higher-level variable construct
+    instead of scoreboard manipulation. It does not do the same
+    thing as the others.*--------/
+    
+    int a = 2;
+    a += 3;
+    a %= 4;
+    a = 10 + 2 ** 2 * 5;
 
 }
+*/
