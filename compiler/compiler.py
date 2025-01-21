@@ -20,7 +20,7 @@ def compile(src_file_path: str, destination_file_path: typing.Optional[str], do_
     SEPARATOR = "\n### ### ###\n"
     with open(src_file_path) as file:
         src = file.read()
-    
+
     if do_prints:
         print(SEPARATOR)
         print(src)

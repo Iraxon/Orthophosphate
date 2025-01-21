@@ -47,7 +47,7 @@ func var_test
     /* This function uses the higher-level variable construct
     instead of scoreboard manipulation. It does not do the same
     thing as the others.*--------/
-    
+
     int a = 2;
     a += 3;
     a %= 4;

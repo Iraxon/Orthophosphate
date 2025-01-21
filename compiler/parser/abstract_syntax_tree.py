@@ -5,7 +5,7 @@ class NodeType(enum.StrEnum):
     """
     The types of nodes in the abstract syntax tree
     """
-    
+
     LITERAL_VALUE = enum.auto()
     NAME = enum.auto()
     PLACEHOLDER = enum.auto() # It gets filled in the post-parser
@@ -25,7 +25,7 @@ class NodeType(enum.StrEnum):
     BLOCK = enum.auto()
 
     WHILE = enum.auto()
-    
+
     NAMESPACE = enum.auto()
 
     FUNC_DEF = enum.auto()
@@ -74,7 +74,7 @@ class Node(typing.NamedTuple):
             )
         if len(self.value) == 0:
             return None
-        
+
         VALID_OPERANDS = (
             NodeType.PREFIX_EXPRESSION,
             NodeType.LITERAL_VALUE,
@@ -133,10 +133,10 @@ class Node(typing.NamedTuple):
 
     def __repr__(self) -> str:
         return f"Node(type={self.type}, value={self.value})"
-    
+
     def __str__(self) -> str:
         return self.render()
-    
+
     def render(self, pre="") -> str:
         """
         Provides a nice readable string

@@ -15,7 +15,7 @@ class AlphanumericToken(TokenizerModuleBase):
 
             fullString += data[cursor]
             cursor += 1
-        
+
         match fullString:
             case "func" | "tick_func" | "while" | "return" | "namespace" | "tag" | "obj" | "scoreboard" | "constant" as kw:
                 compiledTokens.append(Token("keyword", kw))
@@ -23,7 +23,7 @@ class AlphanumericToken(TokenizerModuleBase):
                 compiledTokens.append(Token("type", typ))
             case _:
                 compiledTokens.append(Token("name", fullString))
-        
+
         cursor -= 1
 
         return cursor, compiledTokens, data
@@ -32,7 +32,7 @@ class NumberToken(TokenizerModuleBase):
     matches = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
 
     def calculate(cursor: int, compiledTokens: list[Token], data: str):
-        
+
         fullNum = ""
 
         #adds the whole number
@@ -50,7 +50,7 @@ class NumberToken(TokenizerModuleBase):
                 break
         if fullNum == "":
             fullNum = "0"
-        
+
         cursor -= 1
 
         compiledTokens.append(Token("int", fullNum))
@@ -62,12 +62,12 @@ class WhiteSpaceToken(TokenizerModuleBase):
 
     isTerminating = True
 
-    def calculate(cursor: int, 
+    def calculate(cursor: int,
                   compiledTokens: list[Token], data: str):
 
         return cursor, compiledTokens, data
 
-""" 
+"""
 class StatementEndingToken(TokenizerModuleBase):
     matches = (";")
 
@@ -77,10 +77,10 @@ class StatementEndingToken(TokenizerModuleBase):
 
         compiledTokens.append(Token("punc", ";"))
         compiledTokens.append(Token("punc", "start"))
-        
+
         return cursor, compiledTokens, data
 """
-     
+
 class StringToken(TokenizerModuleBase):
 
     matches = ("\"")
@@ -114,13 +114,13 @@ class MCFunctionLiteralToken(TokenizerModuleBase):
         cursor += 1
 
         fullString = ""
-    
+
         while(data[cursor] != ":" and cursor < len(data)):
-            
+
             #making this command valid by removing backslash n's
             if(data[cursor] != "\n"):
                 fullString += data[cursor]
-            
+
             cursor += 1
 
         compiledTokens.append(Token("literal", fullString))
@@ -141,7 +141,7 @@ class PunctuationToken(TokenizerModuleBase):
             compiledTokens.append(Token("punc", ";"))
             if include_start:
                 PunctuationToken.start(compiledTokens)
-            
+
     def start(compiledTokens):
         """
         For adding invisible start tokens; exists for the
@@ -151,7 +151,7 @@ class PunctuationToken(TokenizerModuleBase):
         paren(compiledTokens, "(")
 
     def calculate(cursor, compiledTokens, data):
-        if(data[cursor] in PunctuationToken.matches):            
+        if(data[cursor] in PunctuationToken.matches):
 
             # Some of the punctuation characters have special actions,
             # so we handle those with this statement
@@ -193,7 +193,7 @@ class OperatorToken(TokenizerModuleBase):
     matches = ("+", "-", "*", "/", "%", "**", "=", "+=", "-=",
         "*=", "/=", "%=", "**=", "==", "!=", "<", ">", "<=", ">=",
         "<==", ">==", "><")
-    
+
         # Scoreboard assign operators;
         # <== : assign if the value is less than current value
         # >== : assign if the value is greater than current value
@@ -208,7 +208,7 @@ class OperatorToken(TokenizerModuleBase):
         while cursor < len(data) and op_string + data[cursor] in OperatorToken.matches:
             op_string += data[cursor]
             cursor += 1
-        
+
         # We use full parenthesization to do operator precedence.
         # https://en.wikipedia.org/wiki/Operator-precedence_parser#Full_parenthesization
 
@@ -220,7 +220,7 @@ class OperatorToken(TokenizerModuleBase):
             compiledTokens.append(Token("punc", ")"))
         def single_paren_open():
             compiledTokens.append(Token("punc", "("))
-        
+
         def parenthesize(paren_count, operator):
             """
             Applies n closing parens,
@@ -232,7 +232,7 @@ class OperatorToken(TokenizerModuleBase):
             compiledTokens.append(Token("op", operator))
             for _ in range(paren_count):
                 single_paren_open()
-        
+
         # In the special case of scoreboard operations, there
         # should not be any operator precedence because only
         # one operator is allowed there.
@@ -244,7 +244,7 @@ class OperatorToken(TokenizerModuleBase):
                 case _ as o:
                     raise ValueError(f"Not a scoreboard operation: {o}")
             return cursor, compiledTokens, data
-        
+
         # Higher precedence = lower paren count
         # Unary operators are a complication, but we may not need
         # to support them. We could also add tokens to make them
@@ -287,9 +287,9 @@ class ParenthesesToken(TokenizerModuleBase):
 
 
         return cursor, compiledTokens, data
-    
+
 class CurlyBracketsToken(TokenizerModuleBase):
-    
+
     matches = ("{", "}")
 
     isTerminating = True
@@ -307,7 +307,7 @@ class CurlyBracketsToken(TokenizerModuleBase):
             compiledTokens.append(Token("punc", "start"))
         return cursor, compiledTokens, data
 """
-    
+
 
 class CommentToken(TokenizerModuleBase):
 
@@ -337,7 +337,7 @@ class MultilineCommentToken(TokenizerModuleBase):
 
         while(cursor < len(data) - 2 and data[cursor:cursor+2] != "*/"):
             cursor += 1
-        
+
         cursor += 1
 
         return cursor, compiledTokens, data

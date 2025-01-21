@@ -70,13 +70,13 @@ def tokenize(input : str) -> list[Token]:
                 inner_cursor += 1
                 # print(f"Inner tokenizer loop running: {cursor}:{inner_cursor} on {inner_token}")
             # print(possible_tokens)
-            
+
             # Decide on which token module to get calculate() from
             if len(possible_tokens) >= 1:
                 chosen_token = sorted(possible_tokens, key=len)[-1] # Get the longest of the possible tokens
             else:
                 raise ValueError(f"Token {token} has no matches")
-            
+
             # Apply calculate()
             cursor, compiledTokens, data = tokenStrings[chosen_token].calculate(
                 cursor=cursor,
@@ -85,12 +85,12 @@ def tokenize(input : str) -> list[Token]:
             )
         cursor += 1
         # print(f"Outer tokenizer loop running: {cursor} on {token}")
-    
+
     # Close the excess start token that will be found
     # after the last semicolon
     PunctuationToken.semicolon(compiledTokens, include_start=False)
     compiledTokens.append(Token("punc", "EOF"))
-    
+
     return compiledTokens
 
     """
@@ -102,7 +102,7 @@ def tokenize(input : str) -> list[Token]:
         # errors will be handled in the run token method
         # but we don't want to do this if this token plus the next char could be a valid token
         # or if this token is the empty string
-        
+
         if(
             isTerminatingToken(nextChar)
             and token + nextChar not in tokenStrings
@@ -111,14 +111,14 @@ def tokenize(input : str) -> list[Token]:
             # takes the output and sets all the values
             cursor, compiledTokens, data = runToken(token=token, cursor=cursor, compiledTokens=compiledTokens, data=data)
             token = ""
-        
-        
+
+
         # If the token is whitespace (SPECIFICALLY whitespace; other terminating tokens can be
         # multiple characters) then no continuation is required
         if token in WhiteSpaceToken.matches:
             cursor, compiledTokens, data = runToken(token=token, cursor=cursor, compiledTokens=compiledTokens, data=data)
             token = ""
-        
+
         token += nextChar
         cursor += 1
 
@@ -144,7 +144,7 @@ def runToken(token: str, cursor: int, compiledTokens : list[Token], data : str) 
 
         #returns the values
         return cursor, compiledTokens, data
-    
+
     #if not throw error
     else:
         raise ValueError(f"Unknown token: '{token}' at index {cursor}, ln col {get_ln_and_col(data, cursor)}")
@@ -155,7 +155,7 @@ def isTerminatingToken(token: str):
     #it is not terminating if it is not a token
     if token not in tokenStrings:
         return False
-    
+
     #get the token
     compiledToken : TokenizerModuleBase = tokenStrings[token]
 

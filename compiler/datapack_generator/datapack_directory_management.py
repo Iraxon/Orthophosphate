@@ -5,7 +5,7 @@ import enum
 import re
 
 # NOT IMPLEMENTED YET
-# 
+#
 # class DefaultFolder(enum.StrEnum):
 #     DATA = "data"
 #     FUNCTION = "function"
@@ -51,10 +51,10 @@ class FileRep(typing.NamedTuple):
         """
         with open(os.path.join(directory, self.name), "x") as f:
             f.write(self.content)
-    
+
     def __str__(self):
         return self.render()
-    
+
     def render(self, pre="") -> None:
         """
         Not exactly incomprehensible but still
@@ -84,10 +84,10 @@ class FolderRep(typing.NamedTuple):
         os.makedirs(os.path.join(directory, self.name), exist_ok=True)
         for item in self.content:
                 item.realize(os.path.join(directory, self.name))
-    
+
     def __str__(self):
         return self.render()
-    
+
     def render(self, pre="") -> str:
         """
         It's dark sorcery just like the AST one;
@@ -215,10 +215,10 @@ def strip_empty_folders(folder: FolderRep) -> FolderRep:
 
     if isinstance(folder, FileRep):
         return folder
-    
+
     if len(folder.content) == 0:
         return None
-    
+
     new_folder_contents = frozenset(
         tuple(
             strip_empty_folders(item) for item in folder.content
@@ -243,7 +243,7 @@ def datapack_directory(
     """
 
     namespace = primary_namespace if primary_namespace is not None else namespacify(name)
-    
+
     tick_json = FileRep(
         "tick.json",
         tagify(
@@ -317,7 +317,7 @@ if __name__ == "__main__":
           "directory. \n> ") == "Y":
         did_test = True
         test_directory.realize((testing_grounds_path := os.path.join(ROOT_DIR_PATH, "testing_grounds")))
-    
+
     if did_test:
         def recursive_delete_in(path) -> None:
             for item in os.listdir(path):

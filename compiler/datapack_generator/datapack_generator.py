@@ -10,7 +10,7 @@ def compile_function(ast) -> FileRep:
     for statement in ast.value[1].value:
         for line in statement.value:
             match (line.type, line.value, line.data_type):
-                
+
                 case ("literal_value", _ as cmd, "cmd"):
                     command_list.append(cmd)
 
@@ -24,7 +24,7 @@ def compile_function(ast) -> FileRep:
 
                     if operation not in ("=", "+=", "-=", "*=", "/=", "%=", "<==", ">==", "><"):
                         raise ValueError(f"Unsupported scoreboard operation: {operation}")
-                    
+
                     if len(contents) == 5:
                         source_name = contents[3].value
                         source_obj = contents[4].value
@@ -47,7 +47,7 @@ def compile_function(ast) -> FileRep:
                     )
                 case _:
                     raise ValueError(f"Datapack function generator does not recognize this:\n{line}")
-    
+
     return FileRep(ast.value[0].value + ".mcfunction", "\n".join(command_list))
 
 def generate_namespace(ast, arg_namespace: typing.Optional[str] = None) -> tuple[FolderRep, tuple[str], tuple[str]]:
@@ -63,7 +63,7 @@ def generate_namespace(ast, arg_namespace: typing.Optional[str] = None) -> tuple
     else:
         namespace = ast.value[0].value # The first item in the block attached to the
         # namespace is the name
-    
+
     func_list = [] # list of ("name", "contents") tuples
 
     # These two just contain function names;
@@ -84,7 +84,7 @@ def generate_namespace(ast, arg_namespace: typing.Optional[str] = None) -> tuple
                 raise ValueError(f"Unexpected statement:\n{item}")
             case _:
                 raise ValueError(f"Namespace generator does not recognize this:\n{item}")
-    
+
     return (
         namespace_directory(
             namespace=namespace,
@@ -113,7 +113,7 @@ def generate_datapack(ast, name: typing.Optional[str]=None, in_secondary_namespa
             ))
         )
     namespace = namespacify(name)
-    
+
     namespace_folders = []
     tick_functions = tuple()
     load_functions = tuple()
@@ -132,7 +132,7 @@ def generate_datapack(ast, name: typing.Optional[str]=None, in_secondary_namespa
                         f"as a permitted top-level item:\n"
                         f"{item}"
                     )
-    
+
     return datapack_directory(
         name=name,
         tick_functions=frozenset(tick_functions),

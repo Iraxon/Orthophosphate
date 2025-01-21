@@ -69,7 +69,7 @@ def _move_up_loose_functions(nodes: tuple[tree.Node]) -> tuple[tree.Node]:
                     )
                 )
             ),
-            
+
         ) + tuple(new_nodes)
     )
 

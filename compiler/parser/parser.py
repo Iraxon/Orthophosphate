@@ -30,7 +30,7 @@ def _resolve_finite_tuple(tokens: list, cursor: int, description: typing.Optiona
         description = tuple(
             ("*",) for _ in range(count)
         )
-    
+
     iterating_cursor = cursor + 1 # Skip opening token
     node_list: list = []
     counter = 0
@@ -42,12 +42,12 @@ def _resolve_finite_tuple(tokens: list, cursor: int, description: typing.Optiona
 
         if next_node.type not in description[counter] and description[counter] != ("*",):
             raise ValueError(f"Expected Node of a type in {description[counter]}; got {repr(next_node)}")
-        
+
         node_list.append(next_node)
         counter += 1
-    
+
     return tuple(node_list), iterating_cursor # No +1 because no closing token to skip
-        
+
 
 def _resolve_node_tuple(tokens: list, cursor: int, end_token):
     """
@@ -104,11 +104,11 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                 end_token=VirtualToken("punc", "EOF")
             )[0]
         )
-    
+
     # The recursive sorcery begins here
 
     # This value might be changed by a case block;
-    # if it is not, then we default to cursor + 1 
+    # if it is not, then we default to cursor + 1
     new_cursor = _cursor + 1
 
     match (t.type, t.value):
@@ -215,7 +215,7 @@ def parse(tokens: list, _cursor: int = 0) -> Node:
                             (NodeType.NAME,),
                         )
                     )
-            
+
             node = Node(
                 type=NodeType.SCOREBOARD_OPERATION,
                 value=value
