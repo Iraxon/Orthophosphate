@@ -16,8 +16,10 @@ else:
     from .datapack_generator import datapack_generator
     from .datapack_generator import datapack_directory_management as ddm
 
-def compile(src_file_path: str, destination_file_path: typing.Optional[str], do_prints=False) -> None:
+def compile(src_file_path: str, destination_file_path: typing.Optional[str], do_prints: bool=False) -> None:
+
     SEPARATOR = "\n### ### ###\n"
+
     with open(src_file_path) as file:
         src = file.read()
 
@@ -42,6 +44,7 @@ def compile(src_file_path: str, destination_file_path: typing.Optional[str], do_
     if do_prints:
         print(ast2)
         print(SEPARATOR)
+
     directory_rep = datapack_generator.generate_datapack(
         ast2,
         name=os.path.splitext(os.path.basename(src_file_path))[0]
