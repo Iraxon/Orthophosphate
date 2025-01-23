@@ -22,7 +22,7 @@ def compile_all() -> tuple[ddm.FolderRep, ...]:
         compile_test_src(name, nameIncludesExtension=True) for name in os.listdir(TEST_SRC_PATH)
     )
 
-def test_types():
+def test_that_everything_compiles():
     for item in compile_all():
         assert isinstance(
             item,
