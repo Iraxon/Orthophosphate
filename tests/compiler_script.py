@@ -2,12 +2,20 @@
 This file allows quickly test-running the compiler
 without realizing the resulting FolderRep
 """
+import os
+import sys
+OPO4_PATH = os.path.join(
+        os.path.abspath(""), # Repo
+        "src", # src
+        "orthophosphate" # orthophosphate dir in src
+    )
 
-# A rather ugly solution to making the import happen from src
-import sys, os
-sys.path.insert(0, os.path.abspath('...'))
+sys.path.insert(
+    0,
+    OPO4_PATH
+)
 
-from src.orthophosphate.compiler.compiler import *
+from compiler.compiler import compile #type: ignore
 import tkinter
 from tkinter import filedialog
 
