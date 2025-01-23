@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "ms-python.mypy-type-checker",
+        "ms-python.vscode-pylance",
+        "ms-python.python",
+        "ms-python.debugpy",
+        "chang196700.newline",
+        "davidanson.vscode-markdownlint"
+    ]
+}
