@@ -2,7 +2,12 @@
 This file allows quickly test-running the compiler
 without realizing the resulting FolderRep
 """
-from compiler.compiler import *
+
+# A rather ugly solution to making the import happen from src
+import sys, os
+sys.path.insert(0, os.path.abspath('...'))
+
+from src.orthophosphate.compiler.compiler import *
 import tkinter
 from tkinter import filedialog
 
