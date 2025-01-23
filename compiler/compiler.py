@@ -1,20 +1,11 @@
-import tkinter
-from tkinter import filedialog
 import typing
 import os
 
-if __name__ == "__main__":
-    from parser import parser
-    from parser import post_parser
-    from tokenizer import Tokenizer as tokenizer
-    from datapack_generator import datapack_generator
-    from datapack_generator import datapack_directory_management as ddm
-else:
-    from .parser import parser
-    from .parser import post_parser
-    from .tokenizer import Tokenizer as tokenizer
-    from .datapack_generator import datapack_generator
-    from .datapack_generator import datapack_directory_management as ddm
+from .parser import parser
+from .parser import post_parser
+from .parser.abstract_syntax_tree import Node
+from .tokenizer import Tokenizer as tokenizer
+from .datapack_generator import datapack_generator
 
 def compile(src_file_path: str, destination_file_path: str | None, do_prints: bool=False) -> None:
 
@@ -39,8 +30,8 @@ def compile(src_file_path: str, destination_file_path: str | None, do_prints: bo
     if do_prints:
         print(ast)
         print(SEPARATOR)
+    assert isinstance(ast, Node)
 
-    assert not isinstance(ast, tuple)
     ast2 = post_parser.post_parse(ast)
 
     if do_prints:
@@ -55,10 +46,3 @@ def compile(src_file_path: str, destination_file_path: str | None, do_prints: bo
         directory_rep.realize(destination_file_path)
     else:
         print(directory_rep)
-
-if __name__ == "__main__":
-    root = tkinter.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename(filetypes=[("Orthophosphate Files", "*.opo4")])
-
-    compile(file_path, None, True)
