@@ -18,7 +18,7 @@ def browse_for_file_in(*args) -> None:
     """
 
     file_path_str = filedialog.askopenfilename(filetypes=[("Orthophosphate Files", "*.txt *.opo4")])
-    
+
     if file_path_str:
         pass
     else:
@@ -34,14 +34,18 @@ def browse_for_file_out(*args) -> None:
     (which puts it in the entry box
     as well)
     """
+    global file_path_out
 
     file_path_str = filedialog.askdirectory()
-    
+
     if file_path_str:
         pass
     else:
         file_path_str = "No file selected"
     file_path_out.set(file_path_str)
+
+file_path_in: StringVar
+file_path_out: StringVar
 
 def set_up_window(root: Tk, save_path_in_function, load_path_in_function, save_path_out_function, load_path_out_function) -> None:
     """
@@ -61,13 +65,13 @@ def set_up_window(root: Tk, save_path_in_function, load_path_in_function, save_p
         for y in (1, 2, 3):
             mainframe.columnconfigure(x, weight=1)
             mainframe.rowconfigure(y)
-    
+
     # Check for stored paths
     global file_path_in
     file_path_in = StringVar(value=(path_in_str if (path_in_str := load_path_in_function()) else "No file selected"))
     global file_path_out
     file_path_out = StringVar(value=(path_out_str if (path_out_str := load_path_out_function()) else "No directory selected"))
-    
+
     # Input button, entry, and labels
 
     ttk.Label(mainframe, text="Input File", justify="center").grid(column=1, row=1, columnspan=2, sticky=NSEW)
@@ -85,7 +89,7 @@ def set_up_window(root: Tk, save_path_in_function, load_path_in_function, save_p
               "The datapack .zip will go inside the output directory. "
               "If you want it\n to compile straight into a world, select "
               "that world's datapacks folder.").grid(column=2, row=5, sticky=NSEW)
-    
+
     # Compilation button (and maybe settings in the future)
     ttk.Button(mainframe, text="This button will eventually compile the file,\nbut it does nothing right now").grid(column=2,row=6, sticky=EW)
 

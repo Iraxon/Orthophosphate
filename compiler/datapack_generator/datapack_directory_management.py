@@ -55,7 +55,7 @@ class FileRep(typing.NamedTuple):
     def __str__(self):
         return self.render()
 
-    def render(self, pre="") -> None:
+    def render(self, pre="") -> str:
         """
         Not exactly incomprehensible but still
         not good for your sanity either
@@ -97,7 +97,7 @@ class FolderRep(typing.NamedTuple):
         line_tuple = tuple(
             element.render(pre + ("║ " if i < len(self.content) - 1 else "  "))
             if isinstance(element, (FolderRep, FileRep))
-            else "═ " + element
+            else "═ " + str(element)
             for i, element in enumerate(self.content)
         ) if len(self.content) > 0 else tuple()
         # if len(self.content) > 1 else ("═ " + str(self.content),)
@@ -212,10 +212,21 @@ def namespace_directory(
         ))
     )
 
-def strip_empty_folders(folder: FolderRep) -> FolderRep:
+# These overloads tell the type checker
+# That this function always returns a FolderRep if given a FolderRep
+# and a FileRep or None if given a FileRep
+
+@typing.overload
+def strip_empty_folders(folder: FolderRep) -> FolderRep: ...
+
+@typing.overload
+def strip_empty_folders(folder: FileRep) -> FileRep | None: ...
+
+def strip_empty_folders(folder: FolderRep | FileRep) -> FolderRep | FileRep | None:
 
     if isinstance(folder, FileRep):
         return folder
+    assert not isinstance(folder, FileRep)
 
     if len(folder.content) == 0:
         return None
@@ -226,7 +237,10 @@ def strip_empty_folders(folder: FolderRep) -> FolderRep:
             if strip_empty_folders(item) is not None
         )
     )
-    new_folder = FolderRep(name=folder.name, content=new_folder_contents)
+
+    new_folder = FolderRep(name=folder.name, content=new_folder_contents) #type: ignore
+    # Type checker does not realize new_folder_contents cannot include None
+
     return new_folder if len(new_folder.content) > 0 else None
 
 def datapack_directory(
@@ -280,55 +294,3 @@ def datapack_directory(
     return strip_empty_folders(output)
 
 ROOT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
-
-if __name__ == "__main__":
-    print(ROOT_DIR_PATH)
-    print(os.path.join("data", "function"))
-
-    print(test_namespace := namespacify(test_name :="My very cool DATAPACK"))
-    test_directory = datapack_directory(test_name, test_namespace)
-    print(repr(test_directory))
-
-    print("tagification of a frozenset holding 'minecraft:a', 'other_namespace:b', and 'c':\n")
-    print(tagify(frozenset_('minecraft:a', 'other_namespace:b', 'c'), namespace=test_namespace))
-
-    print(test_directory)
-
-    print(
-        datapack_directory(
-            name="name", namespace=None,
-            functions= frozenset_(FileRep("test", "say goes in primary namespace")),
-            tick_functions=frozenset_("test"),
-            load_functions=frozenset_(),
-            secondary_namespaces=frozenset_(
-                (
-                    "secondary_namespace",
-                    frozenset_(
-                        FileRep("func_in_secondary_namespace", "say goes in secondary namespace")
-                    )
-                )
-            )
-        )
-    )
-
-    did_test = False
-"""
-    if input("Do you want to test the creation of datapack folders? (Y/N) "
-          "This will create a test directory inside the testing_grounds "
-          "directory. \n> ") == "Y":
-        did_test = True
-        test_directory.realize((testing_grounds_path := os.path.join(ROOT_DIR_PATH, "testing_grounds")))
-
-    if did_test:
-        def recursive_delete_in(path) -> None:
-            for item in os.listdir(path):
-                item_path = os.path.join(path, item)
-                try:
-                    os.remove(item_path)
-                except IsADirectoryError:
-                    recursive_delete_in(path)
-                    os.rmdir(item_path)
-
-        if input("Would you like to get rid of the test files now? (Y/N)") == "Y":
-            recursive_delete_in(testing_grounds_path)
-            """

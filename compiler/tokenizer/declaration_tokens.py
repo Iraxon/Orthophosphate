@@ -16,7 +16,7 @@ class FunctionToken(TokenizerModuleBase):
 
     isTerminating = False
 
-    def calculate(cursor: int, compiledTokens: list[Token], data: str):        
+    def calculate(cursor: int, compiledTokens: list[Token], data: str):
         name = ""
 
         cursor += 1
@@ -43,31 +43,31 @@ class FunctionToken(TokenizerModuleBase):
         return cursor, compiledTokens, data
 
 class LoopToken(TokenizerModuleBase):
-    
+
     matches = ("while",)
 
     isTerminating = False
 
-    def calculate(cursor: int, compiledTokens: list[Token], data: str):        
+    def calculate(cursor: int, compiledTokens: list[Token], data: str):
 
         compiledTokens.append(Token("keyword", "while"))
 
 
         return cursor, compiledTokens, data
-    
+
 class ReturnToken(TokenizerModuleBase):
-    
+
     matches = ("return",)
 
     isTerminating = False
 
-    def calculate(cursor: int, compiledTokens: list[Token], data: str):        
+    def calculate(cursor: int, compiledTokens: list[Token], data: str):
 
         compiledTokens.append(Token("keyword", "return"))
 
 
         return cursor, compiledTokens, data
-    
+
 
 
 """

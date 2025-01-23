@@ -1,5 +1,6 @@
 import enum
 import typing
+from typing import Any
 
 class NodeType(enum.StrEnum):
     """
@@ -40,7 +41,7 @@ class Node(typing.NamedTuple):
     """
     type: NodeType = NodeType.ROOT
 
-    value: typing.Optional[any] = None
+    value: Any = None
 
     data_type: str = "untyped"
 
@@ -65,6 +66,9 @@ class Node(typing.NamedTuple):
         The resulting prefix expression is also properly
         typed
         """
+        assert self.type == NodeType.GROUPED_EXPRESSION
+        assert isinstance(self.value, tuple)
+
         if self.type != NodeType.GROUPED_EXPRESSION:
             raise TypeError(f"reorder_expr() called on non-expr or an expr that has already been ordered")
         if len(self.value) not in (0, 1, 3):

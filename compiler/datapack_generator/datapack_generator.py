@@ -50,7 +50,7 @@ def compile_function(ast) -> FileRep:
 
     return FileRep(ast.value[0].value + ".mcfunction", "\n".join(command_list))
 
-def generate_namespace(ast, arg_namespace: typing.Optional[str] = None) -> tuple[FolderRep, tuple[str], tuple[str]]:
+def generate_namespace(ast, arg_namespace: typing.Optional[str] = None) -> tuple[FolderRep, tuple[str, ...], tuple[str, ...]]:
     """
     The ast parameter is a namespace statement
 
@@ -68,8 +68,8 @@ def generate_namespace(ast, arg_namespace: typing.Optional[str] = None) -> tuple
 
     # These two just contain function names;
     # full function data goes in func_list
-    tick_functions = []
-    load_functions = []
+    tick_functions: list[str] = []
+    load_functions: list[str] = []
 
     for item in ast.value[1].value: # in the block attached to the namespace keyword
         match (item.type, item.value, item.data_type):
@@ -115,8 +115,8 @@ def generate_datapack(ast, name: typing.Optional[str]=None, in_secondary_namespa
     namespace = namespacify(name)
 
     namespace_folders = []
-    tick_functions = tuple()
-    load_functions = tuple()
+    tick_functions: tuple[str, ...] = tuple()
+    load_functions: tuple[str, ...] = tuple()
 
     for item in ast.value:
 

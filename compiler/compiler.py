@@ -16,7 +16,7 @@ else:
     from .datapack_generator import datapack_generator
     from .datapack_generator import datapack_directory_management as ddm
 
-def compile(src_file_path: str, destination_file_path: typing.Optional[str], do_prints: bool=False) -> None:
+def compile(src_file_path: str, destination_file_path: str | None, do_prints: bool=False) -> None:
 
     SEPARATOR = "\n### ### ###\n"
 
@@ -39,6 +39,8 @@ def compile(src_file_path: str, destination_file_path: typing.Optional[str], do_
     if do_prints:
         print(ast)
         print(SEPARATOR)
+
+    assert not isinstance(ast, tuple)
     ast2 = post_parser.post_parse(ast)
 
     if do_prints:

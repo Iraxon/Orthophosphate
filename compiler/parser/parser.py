@@ -13,7 +13,12 @@ class VirtualToken(typing.NamedTuple):
     value: str
 
 @functools.cache
-def _resolve_finite_tuple(tokens: tuple, cursor: int, description: typing.Optional[tuple[tuple[str], ...]] = None, count: int = -1):
+def _resolve_finite_tuple(
+    tokens: tuple,
+    cursor: int,
+    description: tuple[tuple[str, ...], ...] | None = None,
+    count: int = -1
+):
     """
     Makes a flat tuple of nodes from the tokens
     until the tuple contains the specified count and
@@ -32,6 +37,8 @@ def _resolve_finite_tuple(tokens: tuple, cursor: int, description: typing.Option
         description = tuple(
             ("*",) for _ in range(count)
         )
+    else:
+        assert description is not None
 
     iterating_cursor = cursor + 1 # Skip opening token
     node_list: list = []
@@ -77,7 +84,7 @@ def _resolve_node_tuple(tokens: tuple, cursor: int, end_token):
     return tuple(node_list), iterating_cursor + 1 # Skip closing token
 
 @functools.cache
-def parse(tokens: tuple, _cursor: int = 0) -> Node:
+def parse(tokens: tuple, _cursor: int = 0) -> Node | tuple[Node, int]:
     """
     Accepts a tuple of tokens from the tokenizer
 
