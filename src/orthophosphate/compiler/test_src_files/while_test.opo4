@@ -1,12 +1,15 @@
-while (1)
+tick_func core
 {
-    :say hello world:;
-    123;
-    "456";
-}
-:say done looping!:;
-while (0)
-{
-    :say this never:;
-    "gets executed";
+    while (1)
+    {
+        :say hello world:;
+        123;
+        "456";
+    }
+    :say done looping!:;
+    while (0)
+    {
+        :say this never:;
+        "gets executed";
+    }
 }
