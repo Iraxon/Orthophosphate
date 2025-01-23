@@ -2,15 +2,7 @@ import functools
 import typing
 from .abstract_syntax_tree import NodeType
 from .abstract_syntax_tree import Node
-
-class VirtualToken(typing.NamedTuple):
-    """
-    A fake token that provides the necessary
-    interface for the parser to understand
-    tokenizer.Token objects
-    """
-    type: str
-    value: str
+from compiler.tokenizer.token import Token
 
 @functools.cache
 def _resolve_finite_tuple(
@@ -86,13 +78,13 @@ def _resolve_node_tuple(tokens: tuple, cursor: int, end_token):
     return tuple(node_list), iterating_cursor + 1 # Skip closing token
 
 @typing.overload
-def parse(tokens: tuple) -> Node: ...
+def parse(tokens: tuple[Token, ...]) -> Node: ...
 
 @typing.overload
-def parse(tokens: tuple, _cursor: int) -> tuple[Node | None, int]: ...
+def parse(tokens: tuple[Token, ...], _cursor: int) -> tuple[Node | None, int]: ...
 
 @functools.cache
-def parse(tokens: tuple, _cursor: int = 0) -> Node | tuple[Node | None, int]:
+def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | None, int]:
     """
     Accepts a tuple of tokens from the tokenizer
 
@@ -119,7 +111,7 @@ def parse(tokens: tuple, _cursor: int = 0) -> Node | tuple[Node | None, int]:
             value=_resolve_node_tuple(
                 tokens=tokens,
                 cursor=0,
-                end_token=VirtualToken("punc", "EOF")
+                end_token=Token("punc", "EOF")
             )[0]
         )
 
@@ -135,7 +127,7 @@ def parse(tokens: tuple, _cursor: int = 0) -> Node | tuple[Node | None, int]:
             value, new_cursor = _resolve_node_tuple(
                 tokens=tokens,
                 cursor=_cursor,
-                end_token=VirtualToken("punc", ";")
+                end_token=Token("punc", ";")
             )
             pre_node = Node(
                 type=NodeType.STATEMENT,
@@ -314,7 +306,7 @@ def parse(tokens: tuple, _cursor: int = 0) -> Node | tuple[Node | None, int]:
             value, new_cursor = _resolve_node_tuple(
                 tokens=tokens,
                 cursor=_cursor,
-                end_token=VirtualToken("punc", "}")
+                end_token=Token("punc", "}")
             )
             node = Node(
                 type=NodeType.BLOCK,
@@ -324,7 +316,7 @@ def parse(tokens: tuple, _cursor: int = 0) -> Node | tuple[Node | None, int]:
             value, new_cursor = _resolve_node_tuple(
                 tokens=tokens,
                 cursor=_cursor,
-                end_token=VirtualToken("punc", ")")
+                end_token=Token("punc", ")")
             )
             pre_node = Node(
                 type=NodeType.GROUPED_EXPRESSION,
