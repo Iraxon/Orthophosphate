@@ -135,14 +135,3 @@ def fileKeyPut(key, value, path):
 
     fileKeyDelete(key, path)
     fileStringWrite(key + splittingChar + value, path)
-    fileAppendNewline(path)
-
-def fileAppendNewline(path: str) -> None:
-    """
-    Appends one newline to the file
-    This should be called as the last operation
-    of every manipulation of the file
-    to ensure it ends with a newline
-    """
-    with open(path, 'a') as f:
-        f.write("\n")

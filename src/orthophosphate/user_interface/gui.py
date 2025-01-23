@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
+import typing
 
 # These functions take arbitrary *args
 # because the Tkinter tutorial's function
@@ -47,7 +48,13 @@ def browse_for_file_out(*args) -> None:
 file_path_in: StringVar
 file_path_out: StringVar
 
-def set_up_window(root: Tk, save_path_in_function, load_path_in_function, save_path_out_function, load_path_out_function) -> None:
+def set_up_window(root: Tk,
+    save_path_in_function: typing.Callable[[str], None],
+    load_path_in_function: typing.Callable[[], str],
+    save_path_out_function: typing.Callable[[str], None],
+    load_path_out_function: typing.Callable[[], str],
+    compile_function: typing.Callable[[str, str], None]
+) -> None:
     """
     Sets up the GUI for
     choosing input and output
@@ -90,12 +97,19 @@ def set_up_window(root: Tk, save_path_in_function, load_path_in_function, save_p
               "If you want it\n to compile straight into a world, select "
               "that world's datapacks folder.").grid(column=2, row=5, sticky=NSEW)
 
-    # Compilation button (and maybe settings in the future)
-    ttk.Button(mainframe, text="This button will eventually compile the file,\nbut it does nothing right now").grid(column=2,row=6, sticky=EW)
-
     def save_func():
         save_path_in_function(file_path_in.get())
         save_path_out_function(file_path_out.get())
-        root.quit()
+        root.destroy()
 
     root.protocol("WM_DELETE_WINDOW", save_func)
+
+    def compile(*args) -> None:
+        global file_path_in
+        global file_path_out
+
+        compile_function(file_path_in.get(), file_path_out.get())
+        save_func()
+
+    # Compilation button (and maybe settings in the future)
+    ttk.Button(mainframe, text="Compile", command=compile).grid(column=2,row=6, sticky=EW)
