@@ -105,9 +105,9 @@ def fileKeyDelete(key, path):
                 f.write(line)
 
 #VOID: writes the string to the file, will go to the nearest available spot
-def fileStringWrite(input, path):
+def fileStringWrite(input: str, path: str) -> None:
 
-    lines = ""
+    lines: list[str]
 
     with open(path, "r") as f:
         lines = f.readlines()
@@ -132,10 +132,17 @@ def fileStringWrite(input, path):
 
 #puts the key into the file. Will replace and delete any other key values
 def fileKeyPut(key, value, path):
+
     fileKeyDelete(key, path)
     fileStringWrite(key + splittingChar + value, path)
+    fileAppendNewline(path)
 
-if __name__ == "__main__":
-    # prep boiler plate for file functionality
-    root = Tk()
-    root.withdraw()
+def fileAppendNewline(path: str) -> None:
+    """
+    Appends one newline to the file
+    This should be called as the last operation
+    of every manipulation of the file
+    to ensure it ends with a newline
+    """
+    with open(path, 'a') as f:
+        f.write("\n")
