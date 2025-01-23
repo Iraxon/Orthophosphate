@@ -45,9 +45,9 @@ class Node(typing.NamedTuple):
 
     data_type: str = "untyped"
 
-    def check_statement(self) -> typing.Optional["Node"]:
+    def check_statement(self) -> "Node | None":
         """
-        This function removes superfluo
+        This function removes empty or one-element statements
         """
         if len(self.value) == 0 or (len(self.value) == 1 and self.value[0] is None):
             return None
@@ -55,7 +55,7 @@ class Node(typing.NamedTuple):
             return self.value[0]
         return self
 
-    def reorder_expr(self) -> typing.Optional["Node"]:
+    def reorder_expr(self) -> "Node | None":
         """
         Specifically for type=GROUPED EXPRESSION
         Nodes, this function reorders the operands

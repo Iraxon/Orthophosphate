@@ -37,8 +37,7 @@ def _resolve_finite_tuple(
         description = tuple(
             ("*",) for _ in range(count)
         )
-    else:
-        assert description is not None
+    assert description is not None
 
     iterating_cursor = cursor + 1 # Skip opening token
     node_list: list = []
@@ -48,6 +47,9 @@ def _resolve_finite_tuple(
         if len(node_list) >= len(description):
             break
         next_node, iterating_cursor = parse(tokens, _cursor=iterating_cursor)
+
+        if next_node is None:
+            raise ValueError(f"Expected Node of a type in {description[counter]}; got None")
 
         if next_node.type not in description[counter] and description[counter] != ("*",):
             raise ValueError(f"Expected Node of a type in {description[counter]}; got {repr(next_node)}")
@@ -83,8 +85,14 @@ def _resolve_node_tuple(tokens: tuple, cursor: int, end_token):
 
     return tuple(node_list), iterating_cursor + 1 # Skip closing token
 
+@typing.overload
+def parse(tokens: tuple) -> Node: ...
+
+@typing.overload
+def parse(tokens: tuple, _cursor: int) -> tuple[Node | None, int]: ...
+
 @functools.cache
-def parse(tokens: tuple, _cursor: int = 0) -> Node | tuple[Node, int]:
+def parse(tokens: tuple, _cursor: int = 0) -> Node | tuple[Node | None, int]:
     """
     Accepts a tuple of tokens from the tokenizer
 
@@ -119,7 +127,8 @@ def parse(tokens: tuple, _cursor: int = 0) -> Node | tuple[Node, int]:
 
     # This value might be changed by a case block;
     # if it is not, then we default to cursor + 1
-    new_cursor = _cursor + 1
+    new_cursor: int = _cursor + 1
+    node: Node | None
 
     match (t.type, t.value):
         case ("punc", "start"):
