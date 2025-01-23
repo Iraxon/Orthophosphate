@@ -5,6 +5,7 @@
         "ms-python.python",
         "ms-python.debugpy",
         "chang196700.newline",
-        "davidanson.vscode-markdownlint"
+        "davidanson.vscode-markdownlint",
+        "shardulm94.trailing-spaces"
     ]
 }
