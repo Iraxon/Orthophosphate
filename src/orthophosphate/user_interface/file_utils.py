@@ -49,7 +49,7 @@ def fileValueFromKey(key, path):
             splitString = i.split(splittingChar)
 
             if(splitString[0] == key):
-                return splitString[1]
+                return splitString[1].strip()
 
     #default return if the output doesn't exist
     return ""
