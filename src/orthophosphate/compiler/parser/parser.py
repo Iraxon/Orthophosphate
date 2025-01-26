@@ -2,7 +2,7 @@ import functools
 import typing
 from .abstract_syntax_tree import NodeType
 from .abstract_syntax_tree import Node
-from compiler.tokenizer.token import Token
+from ..tokenizer.token import Token
 
 @functools.cache
 def _resolve_finite_tuple(
