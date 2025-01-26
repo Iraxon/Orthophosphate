@@ -22,13 +22,10 @@ def get_ln_and_col(s: str, index) -> tuple[int, int]:
     col = len(lines[-1])
     return len(lines), col
 
-#the list of all the recognized token modules. Used this to add new tokens
-tokens = (AlphanumericToken, NumberToken, WhiteSpaceToken, StringToken, MCFunctionLiteralToken, PunctuationToken, CommentToken, MultilineCommentToken, OperatorToken)
-
 #helper data set. Maps every token string to the token it is a part of
 tokenStrings: dict[str, typing.Type[TokenizerModuleBase]] = {
     match: token
-    for token in tokens
+    for token in TOKEN_MODULES #this is defined in token_modules
     for match in token.matches
 }
 

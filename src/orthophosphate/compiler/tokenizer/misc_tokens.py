@@ -2,6 +2,12 @@ from .tokenizer_module_base import TokenizerModuleBase
 from .token import Token
 import string
 
+#
+#
+# Remember to add new token modules to the tuple at the bottom of the file!
+#
+#
+
 class AlphanumericToken(TokenizerModuleBase):
 
     matches = tuple(char for char in string.ascii_letters) + ("_", "$")
@@ -355,3 +361,10 @@ class MultilineCommentToken(TokenizerModuleBase):
         cursor += 1
 
         return cursor, compiledTokens, data
+
+#the list of all the recognized token modules. Used this to add new tokens
+TOKEN_MODULES = (
+    AlphanumericToken, NumberToken, WhiteSpaceToken,
+    StringToken, MCFunctionLiteralToken, PunctuationToken,
+    CommentToken, MultilineCommentToken, OperatorToken
+)
