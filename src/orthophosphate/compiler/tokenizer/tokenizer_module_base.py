@@ -7,18 +7,19 @@ class TokenizerModuleBase(typing.NamedTuple):
     """
 
 
-    #all the tokens that will call this module
-    tokens: tuple = tuple()
-
-    #if the module needs white space to be considered a token. CAN ONLY BE ONE CHARACTER!! THIS IS A VERY DANGEROUS VARIABLE TO CHANGE!!!
-    isTerminating: bool = True
+    #all the strings that this token matches
+    matches: tuple[str, ...]
 
     #OUTPUT: tokenizer output
     #calculates the tokenizer output given the data
     @staticmethod
-    def calculate(cursor: int, compiledTokens: list[Token], data: str) -> tuple:
+    def calculate(cursor: int, compiledTokens: list[Token], data: str) -> tuple[int, list, str]:
         """
         OUTPUT: tokenizer output
         calculates the tokenizer output given the data
         """
-        raise NotImplementedError(f"Tokenizer module fails to implement calculate")
+        token_string = ""
+        while cursor < len(data) and token_string + data[cursor] in TokenizerModuleBase.matches:
+            token_string += data[cursor]
+            cursor += 1
+        return cursor, compiledTokens, data

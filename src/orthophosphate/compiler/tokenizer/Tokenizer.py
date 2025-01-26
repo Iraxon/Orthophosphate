@@ -1,3 +1,5 @@
+import typing
+
 from .tokenizer_module_base import TokenizerModuleBase
 from .token import Token
 from .misc_tokens import *
@@ -24,10 +26,10 @@ def get_ln_and_col(s: str, index) -> tuple[int, int]:
 tokens = (AlphanumericToken, NumberToken, WhiteSpaceToken, StringToken, MCFunctionLiteralToken, PunctuationToken, CommentToken, MultilineCommentToken, OperatorToken)
 
 #helper data set. Maps every token string to the token it is a part of
-tokenStrings: dict[str, TokenizerModuleBase]= {
-    string: token
+tokenStrings: dict[str, typing.Type[TokenizerModuleBase]] = {
+    match: token
     for token in tokens
-    for string in token.matches
+    for match in token.matches
 }
 
 def tokenize(input : str) -> tuple[Token, ...]:
@@ -170,6 +172,3 @@ def handleUnkownToken(token: str, cursor: int, compiledTokens : list[Token], dat
 def printTokens(compiledTokens : list[Token]):
     for token in compiledTokens:
         print(token)
-
-
-

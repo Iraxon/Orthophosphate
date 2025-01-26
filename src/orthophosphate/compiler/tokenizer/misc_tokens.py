@@ -7,6 +7,7 @@ class AlphanumericToken(TokenizerModuleBase):
     matches = tuple(char for char in string.ascii_letters) + ("_", "$")
     can_contain = matches + tuple(char for char in string.digits) + (".",)
 
+    @staticmethod
     def calculate(cursor, compiledTokens, data):
 
         fullString = ""
@@ -36,6 +37,7 @@ class AlphanumericToken(TokenizerModuleBase):
 class NumberToken(TokenizerModuleBase):
     matches = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
 
+    @staticmethod
     def calculate(cursor: int, compiledTokens: list[Token], data: str):
 
         fullNum = ""
@@ -67,8 +69,8 @@ class WhiteSpaceToken(TokenizerModuleBase):
 
     isTerminating = True
 
-    def calculate(cursor: int,
-                  compiledTokens: list[Token], data: str):
+    @staticmethod
+    def calculate(cursor: int, compiledTokens: list[Token], data: str):
 
         return cursor, compiledTokens, data
 
@@ -88,10 +90,11 @@ class StatementEndingToken(TokenizerModuleBase):
 
 class StringToken(TokenizerModuleBase):
 
-    matches = ("\"")
+    matches = ("\"",)
 
     isTerminating = True
 
+    @staticmethod
     def calculate(cursor, compiledTokens, data):
 
         #getting past first token
@@ -110,10 +113,11 @@ class StringToken(TokenizerModuleBase):
 
 class MCFunctionLiteralToken(TokenizerModuleBase):
 
-    matches = (":")
+    matches = (":",)
 
     isTerminating = True
 
+    @staticmethod
     def calculate(cursor, compiledTokens, data):
         #getting past the first character
         cursor += 1
@@ -137,6 +141,7 @@ class PunctuationToken(TokenizerModuleBase):
 
     isTerminating = True
 
+    @staticmethod
     def semicolon(compiledTokens, include_start=True):
             """
             A function for adding a semicolon,
@@ -147,6 +152,7 @@ class PunctuationToken(TokenizerModuleBase):
             if include_start:
                 PunctuationToken.start(compiledTokens)
 
+    @staticmethod
     def start(compiledTokens):
         """
         For adding invisible start tokens; exists for the
@@ -155,6 +161,7 @@ class PunctuationToken(TokenizerModuleBase):
         compiledTokens.append(Token("punc", "start"))
         paren(compiledTokens, "(")
 
+    @staticmethod
     def calculate(cursor, compiledTokens, data):
         if(data[cursor] in PunctuationToken.matches):
 
@@ -208,6 +215,7 @@ class OperatorToken(TokenizerModuleBase):
 
     isTerminating = True
 
+    @staticmethod
     def calculate(cursor, compiledTokens, data):
         op_string = ""
         while cursor < len(data) and op_string + data[cursor] in OperatorToken.matches:
@@ -320,7 +328,7 @@ class CommentToken(TokenizerModuleBase):
 
     isTerminating = True
 
-
+    @staticmethod
     def calculate(cursor, compiledTokens, data):
 
         cursor += 1
@@ -336,6 +344,7 @@ class MultilineCommentToken(TokenizerModuleBase):
 
     isTerminating = True
 
+    @staticmethod
     def calculate(cursor, compiledTokens, data):
 
         cursor += 1
