@@ -20,8 +20,11 @@ class NodeType(enum.StrEnum):
     DECLARATION = enum.auto()
     OBJ_DEF = enum.auto()
 
+    TARGET_SELECTOR = enum.auto()
+
     SCOREBOARD_OPERATION = enum.auto()
     CONSTANT_SCORE = enum.auto()
+    SCOREBOARD_RESET = enum.auto()
 
     BLOCK = enum.auto()
 

@@ -6,9 +6,14 @@ tick_func core
     scoreboard $x testObj += constant 1;
     scoreboard $y testObj = $x testObj;
 
-    # comment
-    // comment
-    /* comment */ :say but this is code:;
+    # line comment
+    // line comment
+    /* comment */:say but this is code:;
+
+    obj notPlayer;
+    scoreboard @a[type=!player] notPlayer = constant 1;
+
+    reset $x testObj;
 }
 
 func other_function
@@ -23,5 +28,4 @@ namespace secondary_namespace
         :say running function from secondary_namespace:;
     }
 }
-/* Trailing multi-line comments
-do not cause index errors. */
+/* Welcome to Orthophosphate! */

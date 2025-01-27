@@ -156,7 +156,13 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
             node = Node(
                 type=NodeType.NAME,
                 value=t.value,
-                data_type= "*"
+                data_type="*"
+            )
+        case ("selector", s):
+            node = Node(
+                type=NodeType.NAME,
+                value=t.value,
+                data_type="sel"
             )
         case ("op", o):
             if ("=" in o and o != "==" and o != "!=") or o in ("><",):
@@ -208,7 +214,7 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
                         tokens=tokens,
                         cursor=_cursor,
                         description=(
-                            (NodeType.NAME,),
+                            (NodeType.NAME, NodeType.TARGET_SELECTOR),
                             (NodeType.NAME,),
                             (NodeType.ASSIGN_OPERATOR,),
                             (NodeType.CONSTANT_SCORE,),
@@ -219,10 +225,10 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
                         tokens=tokens,
                         cursor=_cursor,
                         description=(
-                            (NodeType.NAME,),
+                            (NodeType.NAME, NodeType.TARGET_SELECTOR),
                             (NodeType.NAME,),
                             (NodeType.ASSIGN_OPERATOR,),
-                            (NodeType.NAME,),
+                            (NodeType.NAME, NodeType.TARGET_SELECTOR),
                             (NodeType.NAME,),
                         )
                     )
@@ -241,6 +247,19 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
             )
             node = Node(
                 type=NodeType.CONSTANT_SCORE,
+                value=value
+            )
+        case ("keyword", "reset"):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.TARGET_SELECTOR, NodeType.NAME,),
+                    (NodeType.NAME,),
+                )
+            )
+            node = Node(
+                type=NodeType.SCOREBOARD_RESET,
                 value=value
             )
         case ("keyword", "tag"):

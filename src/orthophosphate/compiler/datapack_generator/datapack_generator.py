@@ -11,13 +11,13 @@ def compile_function(ast) -> FileRep:
         for line in statement.value:
             match (line.type, line.value, line.data_type):
 
-                case ("literal_value", _ as cmd, "cmd"):
+                case ("literal_value", cmd, "cmd"):
                     command_list.append(cmd)
 
                 case ("obj_def", _ as obj_tuple, _):
                     command_list.append(f"scoreboard objectives add {obj_tuple[0].value} dummy")
 
-                case ("scoreboard_operation", _ as contents, _):
+                case ("scoreboard_operation", contents, _):
                     targ_name = contents[0].value
                     targ_obj = contents[1].value
                     operation = contents[2].value if contents[2].value not in ("<==", ">==") else contents[2].value[0]
@@ -45,6 +45,9 @@ def compile_function(ast) -> FileRep:
                         f"{operation} "
                         f"{source_name} {source_obj}"
                     )
+                case ("scoreboard_reset", contents, _):
+                    name, obj = contents
+                    command_list.append(f"scoreboard players reset {name.value} {obj.value}")
                 case _:
                     raise ValueError(f"Datapack function generator does not recognize this:\n{line}")
 

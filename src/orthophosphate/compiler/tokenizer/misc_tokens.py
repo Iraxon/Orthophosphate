@@ -28,7 +28,7 @@ class AlphanumericToken(TokenizerModuleBase):
                 "func" | "tick_func" | "return"
                 | "while"
                 | "namespace" | "tag"
-                | "obj" | "scoreboard" | "constant"
+                | "obj" | "scoreboard" | "constant" | "reset"
             ) as kw:
                 compiledTokens.append(Token("keyword", kw))
             case "int" | "bool" as typ:
@@ -132,7 +132,7 @@ class MCFunctionLiteralToken(TokenizerModuleBase):
 
         while(data[cursor] != ":" and cursor < len(data)):
 
-            #making this command valid by removing backslash n's
+            #making this command valid by removing newlines
             if(data[cursor] != "\n"):
                 fullString += data[cursor]
 
@@ -362,9 +362,37 @@ class MultilineCommentToken(TokenizerModuleBase):
 
         return cursor, compiledTokens, data
 
+class SelectorToken(TokenizerModuleBase):
+
+    matches = tuple("@,")
+    can_contain = (
+        AlphanumericToken.matches
+        + WhiteSpaceToken.matches
+        + tuple(char for char in string.digits) + (".", ":", "!", "[", "]", "=")
+    )
+
+    @staticmethod
+    def calculate(cursor, compiledTokens, data):
+
+        fullString = "@"
+        cursor += 1
+
+        while(cursor < len(data) and data[cursor] in SelectorToken.can_contain and data[cursor] != "]"):
+
+            fullString += data[cursor]
+            cursor += 1
+
+        fullString += "]"
+
+        compiledTokens.append(Token("selector", fullString))
+
+
+        return cursor, compiledTokens, data
+
 #the list of all the recognized token modules. Used this to add new tokens
 TOKEN_MODULES = (
     AlphanumericToken, NumberToken, WhiteSpaceToken,
     StringToken, MCFunctionLiteralToken, PunctuationToken,
-    CommentToken, MultilineCommentToken, OperatorToken
+    CommentToken, MultilineCommentToken, OperatorToken,
+    SelectorToken
 )

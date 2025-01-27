@@ -63,12 +63,12 @@ def tokenize(input : str) -> tuple[Token, ...]:
                 if inner_token in tokenStrings:
                     possible_tokens.append(inner_token)
                 inner_cursor += 1
-                # print(f"Inner tokenizer loop running: {cursor}:{inner_cursor} on {inner_token}")
-            # print(possible_tokens)
+                print(f"Inner tokenizer loop running: {cursor}:{inner_cursor} on {inner_token}")
+            print(possible_tokens)
 
             # Decide on which token module to get calculate() from
             if len(possible_tokens) >= 1:
-                chosen_token = sorted(possible_tokens, key=len)[-1] # Get the longest of the possible tokens
+                chosen_token = sorted(possible_tokens, key=len, reverse=True)[0] # Get the longest of the possible tokens
             else:
                 raise ValueError(f"Token {token} has no matches")
 
@@ -78,8 +78,9 @@ def tokenize(input : str) -> tuple[Token, ...]:
                 compiledTokens=compiledTokens,
                 data=data
             )
+            print(compiledTokens[-1])
         cursor += 1
-        # print(f"Outer tokenizer loop running: {cursor} on {token}")
+        print(f"Outer tokenizer loop running: {cursor} on {token}")
 
     # Close the excess start token that will be found
     # after the last semicolon
