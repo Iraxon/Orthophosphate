@@ -368,7 +368,7 @@ class SelectorToken(TokenizerModuleBase):
     can_contain = (
         AlphanumericToken.matches
         + WhiteSpaceToken.matches
-        + tuple(char for char in string.digits) + (".", ":", "!", "[", "]", "=")
+        + tuple(char for char in string.digits) + (".", ":", "!", "[", "]", "=", "*")
     )
 
     @staticmethod
@@ -382,7 +382,8 @@ class SelectorToken(TokenizerModuleBase):
             fullString += data[cursor]
             cursor += 1
 
-        fullString += "]"
+        if data[cursor] == "]":
+            fullString += "]"
 
         compiledTokens.append(Token("selector", fullString))
 
