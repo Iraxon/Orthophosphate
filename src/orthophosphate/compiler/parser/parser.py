@@ -321,6 +321,31 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
                 ),
                 value=value
             )
+        case ("keyword", "call"):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.NAME,),
+                )
+            )
+            node = Node(
+                type=NodeType.CALL,
+                value=value
+            )
+        case ("keyword", "after"):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.LITERAL_VALUE,),
+                    (NodeType.BLOCK,)
+                )
+            )
+            node = Node(
+                type=NodeType.AFTER,
+                value=value
+            )
         case ("punc", "{"):
             value, new_cursor = _resolve_node_tuple(
                 tokens=tokens,

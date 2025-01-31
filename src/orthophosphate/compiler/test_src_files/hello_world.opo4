@@ -1,4 +1,7 @@
-tick_func core
+// Top level function definitions are put
+// in a default namespace that is named after the filename
+
+tick_func core // core is the Orthophosphate equivalent of main()
 {
     :say hello world:;
 
@@ -14,14 +17,39 @@ tick_func core
     scoreboard @a[type=!player] notPlayer = constant 1;
 
     reset $x testObj;
+
+    :say you can put
+    newlines
+    and extra    spaces in your command literals,
+    and they get replaced with single spaces
+    so that really long commands like this can be
+       aligned
+          with
+    each other,
+        nested
+            arbitrarily,
+    and split between lines:;
+
+    call other_function;
+    /* Namespaces aren't required
+    when calling another function in the
+    same namespace*/
 }
 
 func other_function
 {
     :say other_function called:;
+
+    after 20 {
+        :say this runs once a second!
+            (Every 20 function calls,
+            and the function is called ever tick)
+        :;
+        :say and so does this:;
+    }
 }
 
-namespace secondary_namespace
+namespace secondary_namespace // You can also declare namespaces explicitly
 {
     func a_function_in_a_specified_namespace
     {

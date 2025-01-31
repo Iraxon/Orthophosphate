@@ -26,8 +26,10 @@ class NodeType(enum.StrEnum):
     CONSTANT_SCORE = enum.auto()
     SCOREBOARD_RESET = enum.auto()
 
-    BLOCK = enum.auto()
+    CALL = enum.auto()
 
+    BLOCK = enum.auto()
+    AFTER = enum.auto()
     WHILE = enum.auto()
 
     NAMESPACE = enum.auto()
@@ -44,7 +46,7 @@ class Node(typing.NamedTuple):
     """
     type: NodeType = NodeType.ROOT
 
-    value: Any = None
+    value: tuple["Node", ...] | str | int | bool | None = None
 
     data_type: str = "untyped"
 
@@ -52,9 +54,12 @@ class Node(typing.NamedTuple):
         """
         This function removes empty or one-element statements
         """
+        assert isinstance(self.value, tuple)
         if len(self.value) == 0 or (len(self.value) == 1 and self.value[0] is None):
             return None
-        if len(self.value) == 1 and self.value[0].type in (NodeType.NAMESPACE, NodeType.FUNC_DEF, NodeType.TICK_FUNC_DEF, NodeType.TAG_DEF):
+        if len(self.value) == 1 and self.value[0].type in (
+            NodeType.NAMESPACE, NodeType.FUNC_DEF, NodeType.TICK_FUNC_DEF, NodeType.TAG_DEF
+        ):
             return self.value[0]
         return self
 
@@ -100,6 +105,7 @@ class Node(typing.NamedTuple):
                 and operator.type in (NodeType.OPERATOR, NodeType.ASSIGN_OPERATOR)
                 and operand2.type in VALID_OPERANDS
             ):
+
                 if not (
                     # If it is not the case that either the data types are the same,
                     # the phrase is an assignment, or one or both of the two elements

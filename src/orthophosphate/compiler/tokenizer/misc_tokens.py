@@ -29,6 +29,7 @@ class AlphanumericToken(TokenizerModuleBase):
                 | "while"
                 | "namespace" | "tag"
                 | "obj" | "scoreboard" | "constant" | "reset"
+                | "after" | "call"
             ) as kw:
                 compiledTokens.append(Token("keyword", kw))
             case "int" | "bool" as typ:
@@ -132,8 +133,11 @@ class MCFunctionLiteralToken(TokenizerModuleBase):
 
         while(data[cursor] != ":" and cursor < len(data)):
 
-            #making this command valid by removing newlines
-            if(data[cursor] != "\n"):
+            #making this command valid by resolving all whitespace to a single space
+            if(data[cursor] in WhiteSpaceToken.matches):
+                if fullString[-1] != " ":
+                    fullString += " "
+            else:
                 fullString += data[cursor]
 
             cursor += 1
