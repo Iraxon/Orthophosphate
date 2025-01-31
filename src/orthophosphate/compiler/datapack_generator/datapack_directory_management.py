@@ -20,7 +20,7 @@ DEFAULT_MC_META = """
 }
 """
 
-def frozenset_(*args) -> frozenset:
+def frozenset_(*args: typing.Any) -> frozenset:
     """
     Custom constructor for frozenset
     objects that takes multiple args
