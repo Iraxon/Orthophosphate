@@ -1,5 +1,6 @@
 import random
 import typing
+
 from ..parser.abstract_syntax_tree import Node, NodeType
 from .datapack_directory_management import FolderRep, FileRep, datapack_directory, namespacify, frozenset_, namespace_directory
 
