@@ -3,7 +3,6 @@ import typing
 from .tokenizer_module_base import TokenizerModuleBase
 from .token import Token
 from .misc_tokens import *
-from .declaration_tokens import *
 
 #NEEDED CHANGES:
 #finish class lol
@@ -89,83 +88,6 @@ def tokenize(input : str) -> tuple[Token, ...]:
 
     return tuple(compiledTokens)
 
-    """
-        printTokens(compiledTokens)
-        nextChar : str = data[cursor]
-
-        # if the next character is a terminating token, then we
-        # need to run the token regardless if it is a token or not,
-        # errors will be handled in the run token method
-        # but we don't want to do this if this token plus the next char could be a valid token
-        # or if this token is the empty string
-
-        if(
-            isTerminatingToken(nextChar)
-            and token + nextChar not in tokenStrings
-            and token + nextChar + data[cursor + 1] not in tokenStrings
-        ):
-            # takes the output and sets all the values
-            cursor, compiledTokens, data = runToken(token=token, cursor=cursor, compiledTokens=compiledTokens, data=data)
-            token = ""
-
-
-        # If the token is whitespace (SPECIFICALLY whitespace; other terminating tokens can be
-        # multiple characters) then no continuation is required
-        if token in WhiteSpaceToken.matches:
-            cursor, compiledTokens, data = runToken(token=token, cursor=cursor, compiledTokens=compiledTokens, data=data)
-            token = ""
-
-        token += nextChar
-        cursor += 1
-
-    #if the token is not empty, we need to run it
-    cursor, compiledTokens, data = runToken(token=token, cursor=cursor, compiledTokens=compiledTokens, data=data)
-
-    # Close the excess start token that will be found
-    # after the last semicolon
-    PunctuationToken.semicolon(compiledTokens, include_start=False)
-    compiledTokens.append(Token("punc", "EOF"))
-
-    return compiledTokens
-
-#runs the specific token string, will return an error if not a token
-def runToken(token: str, cursor: int, compiledTokens : list[Token], data : str) -> tuple:
-    #run token if it is in the token base
-
-    if(token in tokenStrings):
-
-        compiledToken : TokenizerModuleBase = tokenStrings[token]
-
-        cursor, compiledTokens, data = compiledToken.calculate(cursor, compiledTokens, data)
-
-        #returns the values
-        return cursor, compiledTokens, data
-
-    #if not throw error
-    else:
-        raise ValueError(f"Unknown token: '{token}' at index {cursor}, ln col {get_ln_and_col(data, cursor)}")
-
-#checks if a token is terminating
-def isTerminatingToken(token: str):
-
-    #it is not terminating if it is not a token
-    if token not in tokenStrings:
-        return False
-
-    #get the token
-    compiledToken : TokenizerModuleBase = tokenStrings[token]
-
-    #returns wether the final token is terminating
-    return compiledToken.isTerminating
-
-def handleUnkownToken(token: str, cursor: int, compiledTokens : list[Token], data : str) -> tuple:
-
-    # This still needs to be replaced
-    raise NotImplementedError(f"Proper name token logic is still forthcoming")
-
-    compiledTokens.append(Token("name", token))
-    return cursor, compiledTokens, data
-"""
 #helper function to print all the tokens
 def printTokens(compiledTokens : list[Token]):
     for token in compiledTokens:
