@@ -81,20 +81,6 @@ class WhiteSpaceToken(TokenizerModuleBase):
 
         return cursor, compiledTokens, data
 
-"""
-class StatementEndingToken(TokenizerModuleBase):
-    matches = (";")
-
-    isTerminating = True
-
-    def calculate(cursor: int, compiledTokens: list[Token], data: str):
-
-        compiledTokens.append(Token("punc", ";"))
-        compiledTokens.append(Token("punc", "start"))
-
-        return cursor, compiledTokens, data
-"""
-
 class StringToken(TokenizerModuleBase):
 
     matches = ("\"",)
@@ -273,7 +259,8 @@ class OperatorToken(TokenizerModuleBase):
                     raise ValueError(f"Not a scoreboard operation: {o}")
             return cursor, compiledTokens, data
 
-        # Higher precedence = lower paren count
+        # !!! Higher precedence = lower paren count
+
         # Unary operators are a complication, but we may not need
         # to support them. We could also add tokens to make them
         # unary for the user but binary to a constant for the
@@ -297,46 +284,6 @@ class OperatorToken(TokenizerModuleBase):
 
         return cursor, compiledTokens, data
 
-
-
-"""
-class ParenthesesToken(TokenizerModuleBase):
-
-    matches = ("(", ")")
-
-    isTerminating = True
-
-    def calculate(cursor, compiledTokens, data):
-
-        if(data[cursor] == "("):
-            compiledTokens.append(Token("punc", "("))
-        else:
-            compiledTokens.append(Token("punc", ")"))
-
-
-        return cursor, compiledTokens, data
-
-class CurlyBracketsToken(TokenizerModuleBase):
-
-    matches = ("{", "}")
-
-    isTerminating = True
-
-    def calculate(cursor, compiledTokens, data):
-
-        if(data[cursor] == "{"):
-            compiledTokens.append(Token("punc", "{"))
-            compiledTokens.append(Token("punc", "start"))
-        else:
-            if compiledTokens[-1].type == "punc" and compiledTokens[-1].value == "start":
-                compiledTokens.pop() # Remove start token from the last curly brace if there was one
-            compiledTokens.append(Token("punc", "}"))
-            compiledTokens.append(Token("punc", ";"))
-            compiledTokens.append(Token("punc", "start"))
-        return cursor, compiledTokens, data
-"""
-
-
 class CommentToken(TokenizerModuleBase):
 
     matches = ("#", "//")
@@ -346,7 +293,9 @@ class CommentToken(TokenizerModuleBase):
     @staticmethod
     def calculate(cursor, compiledTokens, data):
 
-        cursor += 1
+        cursor += 1 # No need to compensate for two
+        # char start in case of // because loop
+        # will roll over it all anyway
 
         while(cursor < len(data) and data[cursor] != "\n"):
             cursor += 1
@@ -362,12 +311,14 @@ class MultilineCommentToken(TokenizerModuleBase):
     @staticmethod
     def calculate(cursor, compiledTokens, data):
 
-        cursor += 1
+        cursor += 1 # We don't need to compensate for
+        # two character start because the loop will roll over
+        # the asterisk anyway
 
         while(cursor < len(data) - 2 and data[cursor:cursor+2] != "*/"):
             cursor += 1
 
-        cursor += 1
+        cursor += 1 # Compensate for two-character end marker
 
         return cursor, compiledTokens, data
 
@@ -383,7 +334,7 @@ class SelectorToken(TokenizerModuleBase):
     @staticmethod
     def calculate(cursor, compiledTokens, data):
 
-        fullString = "@"
+        fullString = data[cursor] # Capture the starting @ sign
         cursor += 1
 
         while(cursor < len(data) and data[cursor] in SelectorToken.can_contain and data[cursor] != "]"):
@@ -391,11 +342,10 @@ class SelectorToken(TokenizerModuleBase):
             fullString += data[cursor]
             cursor += 1
 
-        if data[cursor] == "]":
+        if data[cursor] == "]": # Bring in ending delimeter
             fullString += "]"
 
         compiledTokens.append(Token("selector", fullString))
-
 
         return cursor, compiledTokens, data
 
