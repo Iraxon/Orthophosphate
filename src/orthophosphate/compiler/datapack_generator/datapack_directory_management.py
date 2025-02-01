@@ -1,8 +1,9 @@
+import enum
+import functools
 import os
+import re
 import string
 import typing
-import enum
-import re
 
 # NOT IMPLEMENTED YET
 #
@@ -43,7 +44,7 @@ class FileRep(typing.NamedTuple):
     name: str
     content: str = ""
 
-    def realize(self, directory) -> None:
+    def realize(self, directory: str) -> None:
         """
         Creates this file inside the specified
         directory; now that it exists, other
@@ -76,7 +77,7 @@ class FolderRep(typing.NamedTuple):
     name: str
     content: frozenset["FolderRep | FileRep"] = frozenset_()
 
-    def realize(self, directory) -> None:
+    def realize(self, directory: str) -> None:
         """
         Creates this folder and its contents
         inside the specified directory
@@ -118,7 +119,8 @@ class FolderRep(typing.NamedTuple):
             )
         )
 
-def namespacify(name) -> str:
+@functools.cache
+def namespacify(name: str) -> str:
     """
     Converts an arbitrarily-formatted
     datapack name into a suitable namespace
@@ -139,7 +141,8 @@ def namespacify(name) -> str:
         )
     ).lower() # Lowercase capitals
 
-def tagify(set: frozenset[str], namespace, replace=False) -> str:
+@functools.cache
+def tagify(set: frozenset[str], namespace: str, replace=False) -> str:
     """
     Takes a frozenset of strings
     and returns the JSON for

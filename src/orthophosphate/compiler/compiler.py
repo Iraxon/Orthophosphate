@@ -1,5 +1,7 @@
-import typing
 import os
+import typing
+
+import regex #type: ignore
 
 from .parser import parser
 from .parser import post_parser
@@ -8,6 +10,21 @@ from .tokenizer import Tokenizer as tokenizer
 from .datapack_generator import datapack_generator
 from .datapack_generator import datapack_directory_management as ddm
 
+ELLIPSIS_MACRO = regex.compile(
+    r"\.\.\.([a-z_]+)"
+    # Regex!
+    #
+    # It matches any instances of ellipsis (...) followed by any word
+    # that can be an mangling-compatible name
+)
+
+def resolve_macros(data: str, namespace: str) -> str:
+    def handle_name_mangling(m: regex.Match) -> str:
+        print(m.group())
+        name_to_mangle: str = m.group(1)
+        return namespace + "." + name_to_mangle
+    return regex.subn(ELLIPSIS_MACRO, handle_name_mangling, data)[0]
+
 def pure_function_compile(src_file_path: str, do_prints: bool=False) -> ddm.FolderRep:
     """
     This compiles everything and returns the resulting FolderRep without realizing it
@@ -15,9 +32,10 @@ def pure_function_compile(src_file_path: str, do_prints: bool=False) -> ddm.Fold
     When do_prints is False, this is a pure function
     """
     SEPARATOR = "\n### ### ###\n"
+    NAME = os.path.splitext(os.path.basename(src_file_path))[0]
 
     with open(src_file_path) as file:
-        src = file.read()
+        src = resolve_macros(file.read(), ddm.namespacify(NAME))
 
     if do_prints:
         print(SEPARATOR)
@@ -45,7 +63,7 @@ def pure_function_compile(src_file_path: str, do_prints: bool=False) -> ddm.Fold
 
     directory_rep = datapack_generator.generate_datapack(
         ast2,
-        name=os.path.splitext(os.path.basename(src_file_path))[0]
+        name=NAME
     )
     return directory_rep
 

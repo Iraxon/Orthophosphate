@@ -34,19 +34,39 @@ tick_func core // core is the Orthophosphate equivalent of main()
     /* Namespaces aren't required
     when calling another function in the
     same namespace*/
+
+    :function hello_world:other_function:;
+    /*You can use liteals for calls with a namespace*/
 }
 
 func other_function
 {
     :say other_function called:;
 
-    after 20 {
-        :say this runs once a second!
-            (Every 20 function calls,
-            and the function is called ever tick)
-        :;
-        :say and so does this:;
-    }
+    obj ...timers; /* Name mangling is a macro that
+    replaces itself with the name of the Orthophosphate
+    project followed by a period. The ellipsis must be
+    written without spaces between the dots. There also
+    must not be a space between the ellipsis and the name
+    being mangled.*/
+
+    /* Name mangling should never be used for anything
+    that uses colons for the namespace (equivalently,
+    anything defined with curly brace blocks in
+    Orthophosphate). It is meant for scoreboards
+    and scoreboard tags. */
+
+    counter $T20 ...timers 20;
+
+    update $T20 ...timers;
+    /* Counters will increment themselves and then
+    %= their period (the parameter used in defining them)
+    whenever updated. The update should occur
+    after the timer is read. */
+
+    :say You can use a litreal ellipsis by ensuring it isn't immediately followed by text:;
+    :say This will name mangle: ...stuff:;
+    :say But this won't: ... stuff, stuff...:;
 }
 
 namespace secondary_namespace // You can also declare namespaces explicitly
