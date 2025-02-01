@@ -3,14 +3,14 @@ tick_func core
 {
     while (1)
     {
-        :say hello world:;
+        |say hello world|;
         123;
         "456";
     }
-    :say done looping!:;
+    |say done looping!|;
     while (0)
     {
-        :say this never:;
+        |say this never|;
         "gets executed";
     }
 }
