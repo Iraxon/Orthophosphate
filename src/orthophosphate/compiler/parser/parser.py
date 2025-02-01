@@ -6,7 +6,7 @@ from ..tokenizer.token import Token
 
 @functools.cache
 def _resolve_finite_tuple(
-    tokens: tuple,
+    tokens: tuple[Token, ...],
     cursor: int,
     description: tuple[tuple[str, ...], ...] | None = None,
     count: int = -1
@@ -52,7 +52,7 @@ def _resolve_finite_tuple(
     return tuple(node_list), iterating_cursor # No +1 because no closing token to skip
 
 @functools.cache
-def _resolve_node_tuple(tokens: tuple, cursor: int, end_token):
+def _resolve_node_tuple(tokens: tuple[Token, ...], cursor: int, end_token):
     """
     Makes a flat tuple of nodes from the tokens
     until it hits the specfied end token or EOF
@@ -96,10 +96,6 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
     it uses the private cursor parameter
     in the recursion calls; that parameter should not be set
     by outsider callers
-
-    @return Node [outside calls]
-
-    @return (Node, cursor) [recursive calls]
     """
     # print(f"cursor at {_cursor}-- parse(), selecting {tokens[_cursor]}")
     t = tokens[_cursor]
