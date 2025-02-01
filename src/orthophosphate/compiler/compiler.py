@@ -11,7 +11,7 @@ from .datapack_generator import datapack_generator
 from .datapack_generator import datapack_directory_management as ddm
 
 ELLIPSIS_MACRO = regex.compile(
-    r"\.\.\.([a-z_]+)"
+    r"\.\.\.([\w\d_]+)"
     # Regex!
     #
     # It matches any instances of ellipsis (...) followed by any word

@@ -28,7 +28,7 @@ class AlphanumericToken(TokenizerModuleBase):
                 "func" | "tick_func" | "return"
                 | "while"
                 | "namespace" | "tag"
-                | "obj" | "scoreboard" | "constant" | "reset"
+                | "obj" | "score" | "constant" | "reset"
                 | "after" | "call"
             ) as kw:
                 compiledTokens.append(Token("keyword", kw))
@@ -120,7 +120,7 @@ class StringToken(TokenizerModuleBase):
 
 class MCFunctionLiteralToken(TokenizerModuleBase):
 
-    matches = (":",)
+    matches = ("|",)
 
     isTerminating = True
 
@@ -131,7 +131,12 @@ class MCFunctionLiteralToken(TokenizerModuleBase):
 
         fullString = ""
 
-        while(data[cursor] != ":" and cursor < len(data)):
+        while(
+            (
+                data[cursor] != "|"
+            )
+            and cursor < len(data)
+        ):
 
             #making this command valid by resolving all whitespace to a single space
             if(data[cursor] in WhiteSpaceToken.matches):
@@ -260,7 +265,7 @@ class OperatorToken(TokenizerModuleBase):
         # should not be any operator precedence because only
         # one operator is allowed there.
 
-        if (compiledTokens[-3].type, compiledTokens[-3].value) == ("keyword", "scoreboard"):
+        if (compiledTokens[-3].type, compiledTokens[-3].value) == ("keyword", "score"):
             match op_string:
                 case "=" | "+=" | "-=" | "/=" | "%=" | "<==" | ">==" | "><" as o:
                     compiledTokens.append(Token("op", o))

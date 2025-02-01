@@ -200,7 +200,7 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
                 type=NodeType.OBJ_DEF,
                 value=value
             )
-        case ("keyword", "scoreboard"):
+        case ("keyword", "score"):
             # The description for _resolve_finite_tuple
             # depends on whether it's a score or a constant
             # as the second operand ("source score"). So we
@@ -232,7 +232,8 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
                             (NodeType.NAME,),
                         )
                     )
-
+                case _:
+                    raise ValueError(f"Unexpected scoreboard token {t} with ahead_token {ahead_token}")
             node = Node(
                 type=NodeType.SCOREBOARD_OPERATION,
                 value=value
