@@ -1,1 +1,3 @@
 __pycache__/
+/src/orthophosphate/stored_values
+/src/orthophosphate/compiler/datapack_generator/testing_grounds
