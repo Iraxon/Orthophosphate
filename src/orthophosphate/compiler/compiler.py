@@ -1,7 +1,6 @@
 import os
+import re
 import typing
-
-import regex #type: ignore
 
 from .parser import parser
 from .parser import post_parser
@@ -10,7 +9,7 @@ from .tokenizer import Tokenizer as tokenizer
 from .datapack_generator import datapack_generator
 from .datapack_generator import datapack_directory_management as ddm
 
-ELLIPSIS_MACRO = regex.compile(
+ELLIPSIS_MACRO = re.compile(
     r"\.\.\.([\w\d_]+)"
     # Regex!
     #
@@ -19,11 +18,11 @@ ELLIPSIS_MACRO = regex.compile(
 )
 
 def resolve_macros(data: str, namespace: str) -> str:
-    def handle_name_mangling(m: regex.Match) -> str:
+    def handle_name_mangling(m: re.Match) -> str:
         print(m.group())
         name_to_mangle: str = m.group(1)
         return namespace + "." + name_to_mangle
-    return regex.subn(ELLIPSIS_MACRO, handle_name_mangling, data)[0]
+    return re.subn(ELLIPSIS_MACRO, handle_name_mangling, data)[0]
 
 def pure_function_compile(src_file_path: str, do_prints: bool=False) -> ddm.FolderRep:
     """
