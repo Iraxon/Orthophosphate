@@ -1,9 +1,15 @@
 // Top level function definitions are put
 // in a default namespace that is named after the filename
 
-tick_func core // core is the Orthophosphate equivalent of main()
+tick_func core
+/* Think of `core` as the Orthophosphate
+equivalent of `main()`. The `tick_func` part
+makes this run every tick. It is conventional to
+use exactly one tick function as a single point
+of entry. This makes it easier to control the order
+that things get executed in. */
 {
-    |say hello world|; // Literal commands are delimited by vertical bars
+    |say hello world|; // Literal commands are delimited like so
 
     obj testObj;
     score $x testObj += constant 1;
@@ -35,9 +41,8 @@ tick_func core // core is the Orthophosphate equivalent of main()
     when calling another function in the
     same namespace*/
 
-    |function hello_world:other_function|;
-    /*You can use literals for calls with a namespace. The
-    literal will not terminate unless the colon is followed by a semicolon*/
+    |function secondary_namespace:a_function_in_a_specified_namespace|;
+    /* You can use literals for calls with a namespace. */
 }
 
 func other_function
