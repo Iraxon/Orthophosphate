@@ -24,6 +24,28 @@ def _compile_line(command_list: list[str], statement: Node, namespace: str, curs
                 assert isinstance(cmd, str)
                 add_to_cmd_list(cmd)
 
+            case (NodeType.CONCAT, contents, _):
+                assert isinstance(contents, tuple)
+                literal, block_or_statement = contents
+
+                assert isinstance(literal.value, str)
+                concat_statement = f"execute {literal.value.strip()} run "
+
+                if block_or_statement.type == NodeType.STATEMENT:
+                    command_list, cursor = _compile_line()
+
+                elif block_or_statement.type == NodeType.BLOCK:
+                    assert isinstance(block_or_statement.value, tuple)
+
+                    for inner_Line in block_or_statement.value:
+                        command_list, cursor = _compile_line(
+                            command_list, inner_Line, namespace, cursor, exec_pre + concat_statement
+                        )
+                else:
+                    raise ValueError(
+                        f"Unexpected children of CONCAT node:\n{block_or_statement}"
+                    )
+
             case (NodeType.OBJ_DEF, obj_tuple, _):
                 assert isinstance(obj_tuple, tuple)
                 add_to_cmd_list(f"scoreboard objectives add {obj_tuple[0].value} dummy")

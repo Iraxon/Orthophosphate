@@ -8,6 +8,7 @@ class NodeType(enum.StrEnum):
     """
 
     LITERAL_VALUE = enum.auto()
+    CONCAT = enum.auto()
     NAME = enum.auto()
     PLACEHOLDER = enum.auto() # It gets filled in the post-parser
 

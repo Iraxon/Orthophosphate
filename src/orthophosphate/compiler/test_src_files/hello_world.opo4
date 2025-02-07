@@ -25,6 +25,15 @@ enforced by Orthophosphate. */
 
     reset $x testObj;
 
+    // This can be used for saving typing with repeated conditions or other execute changes
+    // Do not include "execute" or "run" at the start or end of the fragment you want
+    // to concatenate; Orthophosphate will handle that
+    concat |as @e at @s if score @s notPlayer matches 1|
+    {
+        |say I am not a player.|;
+        |effect give @s minecraft:slowness 1 1 true|;
+    }
+
     |say you can put
     newlines
     and extra    spaces in your command literals,

@@ -273,6 +273,19 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
                 type=NodeType.TAG_DEF,
                 value=value
             )
+        case ("keyword", "concat"):
+            value, new_cursor = _resolve_finite_tuple(
+                tokens=tokens,
+                cursor=_cursor,
+                description=(
+                    (NodeType.LITERAL_VALUE),
+                    (NodeType.STATEMENT, NodeType.BLOCK)
+                )
+            )
+            node = Node(
+                type=NodeType.CONCAT,
+                value=value
+            )
         case ("type", typ):
             value, new_cursor = _resolve_finite_tuple(
                 tokens=tokens,

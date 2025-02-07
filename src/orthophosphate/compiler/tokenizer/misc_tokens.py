@@ -30,6 +30,7 @@ class AlphanumericToken(TokenizerModuleBase):
                 | "namespace" | "tag"
                 | "obj" | "score" | "constant" | "reset"
                 | "after" | "call"
+                | "concat"
             ) as kw:
                 compiledTokens.append(Token("keyword", kw))
             case "int" | "bool" as typ:
