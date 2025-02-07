@@ -7,7 +7,8 @@ equivalent of `main()`. The `tick_func` part
 makes this run every tick. It is conventional to
 use exactly one tick function as a single point
 of entry. This makes it easier to control the order
-that things get executed in. */
+that things get executed in. It is not, however,
+enforced by Orthophosphate. */
 {
     |say hello world|; // Literal commands are delimited like so
 
