@@ -1,1 +1,7 @@
 https://docs.google.com/document/d/1hyV6h3_-tEhn-8s3tv2vhtBbgZ4qyIKRogTCtNlEjSg/edit?usp=sharing
+
+I did a bit of data pack work the old fashioned way for a sense of what we might need.
+Conclusions:
+
+- We need the ability to optimize enum-type scoreboard selection by converting comparisons
+    to constant scores to selectors of the form `@e[scores={<whatever_obj>=<literal_number>}]`
