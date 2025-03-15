@@ -161,7 +161,7 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
                 data_type="sel"
             )
         case ("op", o):
-            if ("=" in o and o != "==" and o != "!=") or o in ("><",):
+            if ("=" in o and o not in ("==", "!=")) or o == "><":
                 node = Node(
                     type=NodeType.ASSIGN_OPERATOR,
                     value=t.value
