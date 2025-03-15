@@ -1,6 +1,5 @@
 import enum
 import typing
-from typing import Any
 
 class NodeType(enum.StrEnum):
     """
@@ -88,12 +87,12 @@ class Node(typing.NamedTuple):
         if len(self.value) == 0:
             return None
 
-        VALID_OPERANDS = (
+        VALID_OPERANDS = frozenset((
             NodeType.PREFIX_EXPRESSION,
             NodeType.LITERAL_VALUE,
             NodeType.NAME,
             NodeType.DECLARATION
-        )
+        ))
 
         match self.value:
             case (operand,):
