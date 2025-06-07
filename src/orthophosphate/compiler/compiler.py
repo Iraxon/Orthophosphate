@@ -14,7 +14,7 @@ ELLIPSIS_MACRO = re.compile(
     # Regex!
     #
     # It matches any instances of ellipsis (...) followed by any word
-    # that can be an mangling-compatible name
+    # that can be a mangling-compatible name
 )
 
 def resolve_macros(data: str, namespace: str) -> str:
