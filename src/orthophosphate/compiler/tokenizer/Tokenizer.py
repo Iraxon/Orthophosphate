@@ -2,7 +2,7 @@ import typing
 
 from .tokenizer_module_base import TokenizerModuleBase
 from .token import Token
-from .misc_tokens import *
+from .tokens import TOKEN_MODULES, PunctuationToken, WhiteSpaceToken
 
 #NEEDED CHANGES:
 #finish class lol
