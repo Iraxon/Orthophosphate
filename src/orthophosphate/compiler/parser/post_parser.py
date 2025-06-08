@@ -14,17 +14,11 @@ def strip_empties(ast: tree.Node | None) -> tree.Node | None:
         return None
     return ast
 
-def identity(x):
-    return x
-
-def simple_pass(node_in: tree.Node, f: typing.Callable[..., tree.Node | None]=identity) -> tree.Node | None:
+def simple_pass(node_in: tree.Node, f: typing.Callable[..., tree.Node | None]) -> tree.Node | None:
     """
     Does a pass over the tree, building
     a new tree by passing every node
     through the provided function;
-
-    if no function is provided, the identity
-    function is used
     """
     match node_in, node_in.value:
         case None, _:
