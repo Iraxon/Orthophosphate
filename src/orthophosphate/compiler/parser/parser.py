@@ -388,6 +388,11 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
 
 def resolve_expr_content(content: tuple[Node, ...]) -> Node:
     match len(content):
+        case 0:
+            return Node(
+                type=NodeType.EMPTY,
+                value=None
+            )
         case 1:
             return content[0]
         case n if (

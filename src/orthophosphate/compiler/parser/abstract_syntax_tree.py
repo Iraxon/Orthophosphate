@@ -39,6 +39,8 @@ class NodeType(enum.StrEnum):
 
     ROOT = enum.auto()
 
+    EMPTY = enum.auto()
+
 class Node(typing.NamedTuple):
     """
     A node in the abstract syntax tree

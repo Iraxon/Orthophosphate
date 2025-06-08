@@ -4,7 +4,7 @@ import typing
 from ..parser.abstract_syntax_tree import Node, NodeType
 from .datapack_directory_management import FolderRep, FileRep, datapack_directory, namespacify, frozenset_, namespace_directory
 
-def _compile_line(command_list: list[str], statement: Node, namespace: str, cursor=0, exec_pre = "") -> tuple[list[str], int]:
+def _compile_line(command_list: list[str], statement: Node, namespace: str, cursor=0, exec_pre: str = "") -> tuple[list[str], int]:
     """
     Private function: Compiles a single node into its corresponding commands;
     it operates recursively on constructions involving blocks of statements
