@@ -20,6 +20,7 @@ def _compile_line(command_list: list[str], statement: Node, namespace: str, curs
     for line in statement.value:
         assert isinstance(line, Node)
         match (line.type, line.value, line.data_type):
+
             case (NodeType.LITERAL_VALUE, cmd, "cmd"):
                 assert isinstance(cmd, str)
                 add_to_cmd_list(cmd)
@@ -32,7 +33,9 @@ def _compile_line(command_list: list[str], statement: Node, namespace: str, curs
                 concat_statement = f"execute {literal.value.strip()} run "
 
                 if block_or_statement.type == NodeType.STATEMENT:
-                    command_list, cursor = _compile_line()
+                    command_list, cursor = _compile_line(
+                        command_list, block_or_statement.value[0], namespace, cursor, exec_pre
+                    )
 
                 elif block_or_statement.type == NodeType.BLOCK:
                     assert isinstance(block_or_statement.value, tuple)

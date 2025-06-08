@@ -8,9 +8,9 @@ from ..tokenizer.token import Token
 def _resolve_finite_tuple(
     tokens: tuple[Token, ...],
     cursor: int,
-    description: tuple[tuple[str, ...], ...] | None = None,
+    description: tuple[tuple[typing.LiteralString | NodeType, ...], ...] | None = None,
     count: int = -1
-):
+) -> tuple[tuple[Node, ...], int]:
     """
     Makes a flat tuple of nodes from the tokens
     until the tuple contains the specified count and
@@ -52,7 +52,7 @@ def _resolve_finite_tuple(
     return tuple(node_list), iterating_cursor # No +1 because no closing token to skip
 
 @functools.cache
-def _resolve_node_tuple(tokens: tuple[Token, ...], cursor: int, end_token):
+def _resolve_node_tuple(tokens: tuple[Token, ...], cursor: int, end_token) -> tuple[tuple[Node, ...], int]:
     """
     Makes a flat tuple of nodes from the tokens
     until it hits the specfied end token or EOF
@@ -72,7 +72,8 @@ def _resolve_node_tuple(tokens: tuple[Token, ...], cursor: int, end_token):
             break
 
         next_node, iterating_cursor = parse(tokens, _cursor=iterating_cursor)
-        node_list.append(next_node)
+        if next_node is not None:
+            node_list.append(next_node)
         next_token = tokens[iterating_cursor]
 
     return tuple(node_list), iterating_cursor + 1 # Skip closing token
@@ -163,12 +164,12 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
         case ("op", o):
             if ("=" in o and o not in ("==", "!=")) or o == "><":
                 node = Node(
-                    type=NodeType.ASSIGN_OPERATOR,
+                    type=NodeType.ASSIGNMENT,
                     value=t.value
                 )
             else:
                 node = Node(
-                    type=NodeType.OPERATOR,
+                    type=NodeType.OPERATION,
                     value=t.value
                 )
         case ("keyword", "namespace"):
@@ -212,7 +213,7 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
                         description=(
                             (NodeType.NAME, NodeType.TARGET_SELECTOR),
                             (NodeType.NAME,),
-                            (NodeType.ASSIGN_OPERATOR,),
+                            (NodeType.ASSIGNMENT,),
                             (NodeType.CONSTANT_SCORE,),
                         )
                     )
@@ -223,7 +224,7 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
                         description=(
                             (NodeType.NAME, NodeType.TARGET_SELECTOR),
                             (NodeType.NAME,),
-                            (NodeType.ASSIGN_OPERATOR,),
+                            (NodeType.ASSIGNMENT,),
                             (NodeType.NAME, NodeType.TARGET_SELECTOR),
                             (NodeType.NAME,),
                         )
@@ -304,7 +305,7 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
                 tokens=tokens,
                 cursor=_cursor,
                 description=(
-                    (NodeType.LITERAL_VALUE, NodeType.PREFIX_EXPRESSION),
+                    (NodeType.LITERAL_VALUE, NodeType.EXPRESSION),
                     (NodeType.BLOCK,),
                 )
             )
@@ -367,17 +368,12 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
                 value=value
             )
         case ("punc", "("):
-            value, new_cursor = _resolve_node_tuple(
+            expr_content, new_cursor = _resolve_node_tuple(
                 tokens=tokens,
                 cursor=_cursor,
                 end_token=Token("punc", ")")
             )
-            pre_node = Node(
-                type=NodeType.GROUPED_EXPRESSION,
-                value=value,
-                data_type="*"
-            )
-            node = pre_node.reorder_expr()
+            node = resolve_expr_content(expr_content)
         case ("punc", ";") | ("punc", "}") | ("punc", ")") | ("punc", "EOF"):
             raise ValueError(
                 f"Found unexpected closing token:\n"
@@ -389,6 +385,27 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
             raise ValueError(f"Token {t} unknown to parser")
 
     return node, new_cursor
+
+def resolve_expr_content(content: tuple[Node, ...]) -> Node:
+    match len(content):
+        case 1:
+            return content[0]
+        case n if (
+            n >= 3
+            and content[-2].type in frozenset((NodeType.OPERATION, NodeType.ASSIGNMENT))
+        ):
+            rest = content[:-2]
+            return Node(
+                type=NodeType.EXPRESSION,
+                value=(
+                    content[-2],
+                    resolve_expr_content(rest),
+                    content[-1]
+                ),
+                data_type="*"
+            )
+        case _:
+            raise ValueError(f"Invalid expr content: {content}")
 
 if __name__ == "__main__":
     pass

@@ -50,10 +50,10 @@ def generate_expected_parse_for_equation(
                     type=tree.NodeType.STATEMENT,
                     value=(
                         tree.Node(
-                            type=tree.NodeType.PREFIX_EXPRESSION,
+                            type=tree.NodeType.EXPRESSION,
                             value=(
                                 tree.Node(
-                                    type=tree.NodeType.OPERATOR,
+                                    type=tree.NodeType.OPERATION,
                                     value=op
                                 ),
                                 tree.Node(
