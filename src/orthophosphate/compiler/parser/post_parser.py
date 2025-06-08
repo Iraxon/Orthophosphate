@@ -1,6 +1,8 @@
+import functools
 import typing
 from . import abstract_syntax_tree as tree
 
+@functools.cache
 def strip_empties(ast: tree.Node | None) -> tree.Node | None:
     """
     Strip empty STATEMENT nodes from the AST
