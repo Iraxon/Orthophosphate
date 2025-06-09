@@ -21,7 +21,7 @@ enforced by Orthophosphate. */
     /* comment */|say but this is code|;
 
     obj notPlayer;
-    score @a[type=!player] notPlayer = constant 1;
+    score @e[type=!player] notPlayer = constant 1;
 
     reset $x testObj;
 
