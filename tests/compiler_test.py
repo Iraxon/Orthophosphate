@@ -67,7 +67,7 @@ def generate_expected_parse_for_equation(
                                     data_type=typ
                                 ),
                             ),
-                            data_type=typ
+                            data_type="*" # CHANGE IF TYPING IS IMPLEMENTED
                         ),
                     )
                 ),
@@ -87,11 +87,13 @@ def test_expression_parsing() -> None:
         ("-", 7, 5, "int"),
         ("**", 2, 2, "int")
     )
-    for expression, parse in {
+    for expression, expected_parse in {
         eq: parse
         for eq, parse in map(
             lambda desc: generate_eq_pair(desc[0], desc[1], desc[2], desc[3]),
             EQUATIONS
         )
     }.items():
-        assert parser.parse(tokenizer.tokenize(expression)) == parse
+        parse = parser.parse(tokenizer.tokenize(expression))
+        print(parse)
+        assert parse == expected_parse
