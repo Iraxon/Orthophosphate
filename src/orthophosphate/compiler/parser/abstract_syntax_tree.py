@@ -79,21 +79,26 @@ class Node(typing.NamedTuple):
         dangerous to the sanity of anyone
         who works on it
         """
-        line_tuple = tuple(
-            element.render(pre + ("║ " if i < len(self.value) - 1 else "  "))
-            if isinstance(element, Node)
-            else "═ " + str(element)
-            for i, element in enumerate(self.value)
-        ) if isinstance(self.value, tuple) else ("═ " + str(self.value),)
+
+        render_contents = (
+            ("═ " + str(self.value),)
+            if not isinstance(self.value, tuple)
+            else tuple(
+                value_tuple_node.render(pre + ("║ " if i < len(self.value) - 1 else "  "))
+                # if isinstance(element, Node) # UNCOMMENT IF NON-NODE TUPLE ELEMENTS BECOME ALLOWED
+                # else "═ " + str(element)
+                for i, value_tuple_node in enumerate(self.value)
+            )
+        )
 
         return (
             f"{"" if pre == "" else'═'}{self.type}{': ' + self.data_type if self.data_type != "untyped" else ''}\n"
             + "".join(
                     tuple(
                         f"{pre}╠{element}\n"
-                        if i < len(line_tuple) - 1
+                        if i < len(render_contents) - 1
                         else f"{pre}╚{element}"
-                        for i, element in enumerate(line_tuple)
+                        for i, element in enumerate(render_contents)
                     )
                 )
         )
