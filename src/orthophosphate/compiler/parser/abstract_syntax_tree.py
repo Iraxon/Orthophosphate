@@ -1,45 +1,45 @@
-import enum
+from enum import StrEnum, auto
 import typing
 
-class NodeType(enum.StrEnum):
+class NodeType(StrEnum):
     """
     The types of nodes in the abstract syntax tree
     """
 
-    LITERAL_VALUE = enum.auto()
-    CONCAT = enum.auto()
-    NAME = enum.auto()
-    PLACEHOLDER = enum.auto() # It gets filled in the post-parser
+    LITERAL_VALUE = auto()
+    CONCAT = auto()
+    NAME = auto()
+    PLACEHOLDER = auto() # It gets filled in the post-parser
 
-    ASSIGNMENT = enum.auto()
-    OPERATION = enum.auto()
+    ASSIGNMENT = auto()
+    OPERATION = auto()
 
-    STATEMENT = enum.auto()
-    EXPRESSION = enum.auto()
-    DECLARATION = enum.auto()
-    OBJ_DEF = enum.auto()
+    STATEMENT = auto()
+    EXPRESSION = auto()
+    DECLARATION = auto()
+    OBJ_DEF = auto()
 
-    TARGET_SELECTOR = enum.auto()
+    TARGET_SELECTOR = auto()
 
-    SCOREBOARD_OPERATION = enum.auto()
-    CONSTANT_SCORE = enum.auto()
-    SCOREBOARD_RESET = enum.auto()
+    SCOREBOARD_OPERATION = auto()
+    CONSTANT_SCORE = auto()
+    SCOREBOARD_RESET = auto()
 
-    CALL = enum.auto()
+    CALL = auto()
 
-    BLOCK = enum.auto()
-    AFTER = enum.auto()
-    WHILE = enum.auto()
+    BLOCK = auto()
+    AFTER = auto()
+    WHILE = auto()
 
-    NAMESPACE = enum.auto()
+    NAMESPACE = auto()
 
-    FUNC_DEF = enum.auto()
-    TICK_FUNC_DEF = enum.auto()
-    TAG_DEF = enum.auto()
+    FUNC_DEF = auto()
+    TICK_FUNC_DEF = auto()
+    TAG_DEF = auto()
 
-    ROOT = enum.auto()
+    ROOT = auto()
 
-    EMPTY = enum.auto()
+    EMPTY = auto()
 
 class Node(typing.NamedTuple):
     """
