@@ -9,10 +9,17 @@ def strip_empties(ast: tree.Node | None) -> tree.Node | None:
     """
     if ast is None:
         return None
-    # If AST.value is a tuple and that tuple is empty, return None
-    if ast.type in frozenset((tree.NodeType.STATEMENT, tree.NodeType.EXPRESSION)) and isinstance(ast.value, tuple) and len(ast.value) == 0:
-        return None
-    return ast
+    match ast.type, ast.value, ast.data_type:
+        case tree.NodeType.EMPTY, _, _:
+            return None
+        case t, v, _ if (
+            t in frozenset((tree.NodeType.STATEMENT, tree.NodeType.EXPRESSION))
+            and isinstance(v, tuple)
+            and len(v) == 0
+        ):
+            return None
+        case _:
+            return ast
 
 def simple_pass(node_in: tree.Node, f: typing.Callable[..., tree.Node | None]) -> tree.Node | None:
     """
