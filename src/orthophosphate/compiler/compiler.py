@@ -75,7 +75,7 @@ def compile(src_file_path: str, destination_file_path: str | None, do_prints: bo
 
     directory_rep = pure_function_compile(src_file_path=src_file_path, do_prints=do_prints)
 
-    if destination_file_path is not None:
-        directory_rep.realize(destination_file_path)
-    else:
+    if destination_file_path is None:
         print(directory_rep)
+    else:
+        directory_rep.realize(destination_file_path)
