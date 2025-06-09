@@ -204,7 +204,11 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
             # look ahead in the tokens to check which it is.
             # If an index error arises, it's because the user didn't
             # supply the correct arguments to the scoreboard keyword
-            ahead_token = tokens[_cursor + 4]
+            ahead_token: Token
+            try:
+                ahead_token = tokens[_cursor + 4]
+            except IndexError:
+                raise ValueError(f"Insufficient number of tokens following score keyword")
             match (ahead_token.type, ahead_token.value):
                 case ("keyword", "constant"):
                     value, new_cursor = _resolve_finite_tuple(
