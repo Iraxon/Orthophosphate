@@ -183,7 +183,8 @@ def namespace_directory(
         functions: frozenset[FileRep],
         function_tags: frozenset[FileRep] = frozenset()
 ) -> FolderRep:
-    return (
+    raise DeprecationWarning
+    return ( # These folders are not correct for 1.20.1
         FolderRep(namespace, fzs(
                 FolderRep("function", functions),
                 FolderRep("structure", fzs()),
