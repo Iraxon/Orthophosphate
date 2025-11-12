@@ -21,7 +21,7 @@ DEFAULT_MC_META = """
 }
 """
 
-def frozenset_(*args: typing.Any) -> frozenset:
+def fzs[T](*args: T) -> frozenset[T]:
     """
     Custom constructor for frozenset
     objects that takes multiple args
@@ -75,7 +75,7 @@ class FolderRep(typing.NamedTuple):
     of a folder that can be realized
     """
     name: str
-    content: frozenset["FolderRep | FileRep"] = frozenset_()
+    content: frozenset["FolderRep | FileRep"] = fzs()
 
     def realize(self, directory: str) -> None:
         """
@@ -120,7 +120,7 @@ class FolderRep(typing.NamedTuple):
         )
 
 @functools.cache
-def namespacify(name: str) -> str:
+def namespaceFromString(name: str) -> str:
     """
     Converts an arbitrarily-formatted
     datapack name into a suitable namespace
@@ -149,7 +149,7 @@ def tagify(set: frozenset[str], namespace: str, replace=False) -> str:
     a tag file
     """
 
-    new_set = frozenset_(
+    new_set = fzs(
         *(
             ((namespace + ":") if re.search(r"^.*:",item) is None else "") + item
             for i, item in enumerate(set)
@@ -184,43 +184,39 @@ def namespace_directory(
         function_tags: frozenset[FileRep] = frozenset()
 ) -> FolderRep:
     return (
-        FolderRep(namespace, frozenset_(
+        FolderRep(namespace, fzs(
                 FolderRep("function", functions),
-                FolderRep("structure", frozenset_()),
-                FolderRep("tags", frozenset_(
+                FolderRep("structure", fzs()),
+                FolderRep("tags", fzs(
                     FolderRep("function", function_tags)
                 )),
-                FolderRep("advancement", frozenset_()),
-                FolderRep("banner_patern", frozenset_()),
-                FolderRep("chat_type", frozenset_()),
-                FolderRep("damage_type", frozenset_()),
-                FolderRep("dimension", frozenset_()),
-                FolderRep("dimension_type", frozenset_()),
-                FolderRep("enchantment", frozenset_()),
-                FolderRep("enchantment_provider", frozenset_()),
-                FolderRep("instrument", frozenset_()),
-                FolderRep("item_modifier", frozenset_()),
-                FolderRep("jukebox_song", frozenset_()),
-                FolderRep("loot_table", frozenset_()),
-                FolderRep("painting_variant", frozenset_()),
-                FolderRep("predicate", frozenset_()),
-                FolderRep("recipe", frozenset_()),
-                FolderRep("trim_material", frozenset_()),
-                FolderRep("trim_pattern", frozenset_()),
-                FolderRep("wolf_variant", frozenset_()),
-                FolderRep("worldgen", frozenset_(
+                FolderRep("advancement", fzs()),
+                FolderRep("banner_patern", fzs()),
+                FolderRep("chat_type", fzs()),
+                FolderRep("damage_type", fzs()),
+                FolderRep("dimension", fzs()),
+                FolderRep("dimension_type", fzs()),
+                FolderRep("enchantment", fzs()),
+                FolderRep("enchantment_provider", fzs()),
+                FolderRep("instrument", fzs()),
+                FolderRep("item_modifier", fzs()),
+                FolderRep("jukebox_song", fzs()),
+                FolderRep("loot_table", fzs()),
+                FolderRep("painting_variant", fzs()),
+                FolderRep("predicate", fzs()),
+                FolderRep("recipe", fzs()),
+                FolderRep("trim_material", fzs()),
+                FolderRep("trim_pattern", fzs()),
+                FolderRep("wolf_variant", fzs()),
+                FolderRep("worldgen", fzs(
                     # There are subfolders that go in here, but we probably won't
                     # have to worry about them for a long time
                 ))
         ))
     )
 
-# These overloads tell the type checker
-# That this function always returns a FolderRep if given a FolderRep
-# and a FileRep or None if given a FileRep
-
 @typing.overload
-def strip_empty_folders(folder: FolderRep) -> FolderRep: ...
+def strip_empty_folders(folder: FolderRep) -> FolderRep | None: ...
 
 @typing.overload
 def strip_empty_folders(folder: FileRep) -> FileRep | None: ...
@@ -229,16 +225,14 @@ def strip_empty_folders(folder: FolderRep | FileRep) -> FolderRep | FileRep | No
 
     if isinstance(folder, FileRep):
         return folder
-    assert not isinstance(folder, FileRep)
 
     if len(folder.content) == 0:
         return None
 
     new_folder_contents = frozenset(
-        tuple(
+        stripped_item for stripped_item in tuple(
             strip_empty_folders(item) for item in folder.content
-            if strip_empty_folders(item) is not None
-        )
+        ) if stripped_item is not None
     )
 
     new_folder = FolderRep(name=folder.name, content=new_folder_contents) #type: ignore
@@ -249,9 +243,9 @@ def strip_empty_folders(folder: FolderRep | FileRep) -> FolderRep | FileRep | No
 def datapack_directory(
     name,
     primary_namespace: typing.Optional[str] = None,
-    tick_functions: frozenset[str]=frozenset_(),
-    load_functions: frozenset[str]=frozenset_(),
-    namespace_folders: frozenset[FolderRep]=frozenset_()
+    tick_functions: frozenset[str]=fzs(),
+    load_functions: frozenset[str]=fzs(),
+    namespace_folders: frozenset[FolderRep]=fzs()
 ) -> FolderRep:
     """
     Returns a
@@ -260,7 +254,7 @@ def datapack_directory(
     root folder name
     """
 
-    namespace = primary_namespace if primary_namespace is not None else namespacify(name)
+    namespace = primary_namespace if primary_namespace is not None else namespaceFromString(name)
 
     tick_json = FileRep(
         "tick.json",
@@ -277,13 +271,13 @@ def datapack_directory(
         )
     )
 
-    output = FolderRep(name, frozenset_(
+    output = FolderRep(name, fzs(
         FileRep("pack.mcmeta", DEFAULT_MC_META),
         FolderRep(
             "data",
             frozenset(
                 (
-                    namespace_directory("minecraft", functions=frozenset(), function_tags=frozenset_(
+                    namespace_directory("minecraft", functions=frozenset(), function_tags=fzs(
                         tick_json,
                         load_json
                     )),
@@ -294,6 +288,6 @@ def datapack_directory(
         )
     ))
 
-    return strip_empty_folders(output)
+    return typing.cast(FolderRep, strip_empty_folders(output))
 
 ROOT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))

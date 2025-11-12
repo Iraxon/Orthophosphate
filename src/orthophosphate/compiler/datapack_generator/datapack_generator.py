@@ -2,7 +2,7 @@ import random
 import typing
 
 from ..parser.abstract_syntax_tree import Node, NodeType
-from .datapack_directory_management import FolderRep, FileRep, datapack_directory, namespacify, frozenset_, namespace_directory
+from .datapack_directory_management import FolderRep, FileRep, datapack_directory, namespaceFromString, fzs, namespace_directory
 
 def _compile_line(command_list: list[str], statement: Node, namespace: str, cursor=0, exec_pre: str = "") -> tuple[list[str], int]:
     """
@@ -197,7 +197,7 @@ def generate_datapack(ast: Node, name: typing.Optional[str]=None, in_secondary_n
                 for _ in range(2)
             ))
         )
-    namespace = namespacify(name)
+    namespace = namespaceFromString(name)
 
     namespace_folders = []
     tick_functions: tuple[str, ...] = tuple()

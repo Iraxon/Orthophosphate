@@ -34,7 +34,7 @@ def pure_function_compile(src_file_path: str, do_prints: bool=False) -> ddm.Fold
     NAME = os.path.splitext(os.path.basename(src_file_path))[0]
 
     with open(src_file_path) as file:
-        src = resolve_macros(file.read(), ddm.namespacify(NAME))
+        src = resolve_macros(file.read(), ddm.namespaceFromString(NAME))
 
     if do_prints:
         print(SEPARATOR)
