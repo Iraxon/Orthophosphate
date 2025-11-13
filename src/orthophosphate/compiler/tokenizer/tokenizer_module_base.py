@@ -29,7 +29,7 @@ class TokenizerModuleBase(typing.NamedTuple):
             if compiledTokens[cursor] not in TokenizerModuleBase.matches:
                 raise ValueError(
                     f"Calculate called for single-character token {compiledTokens[cursor]}, "
-                    f"which is not a match for {TokenizerModuleBase}; "
+                    f"which is not a match for {typing.Self}; "
                     f"matches: {TokenizerModuleBase.matches}"
                 )
             cursor += 1
