@@ -1,7 +1,7 @@
 import typing
 
 from .tokenizer_module_base import TokenizerModuleBase
-from .token import Token
+from .token import Token, TokenType
 from .tokens import TOKEN_MODULES, PunctuationToken, WhiteSpaceToken
 
 #NEEDED CHANGES:
@@ -22,8 +22,8 @@ def get_ln_and_col(s: str, index) -> tuple[int, int]:
     return len(lines), col
 
 #helper data set. Maps every token string to the token it is a part of
-tokenStrings: dict[str, typing.Type[TokenizerModuleBase]] = {
-    match: token
+token_strings: dict[str, typing.Callable[[int, list[Token], str], tuple[int, list[Token], str]]] = {
+    match: token.calculate
     for token in TOKEN_MODULES #this is defined in token_modules
     for match in token.matches
 }
@@ -42,7 +42,7 @@ def tokenize(input : str) -> tuple[Token, ...]:
     compiledTokens : list[Token] = []
 
     # Invisible punctuation added to start of file
-    compiledTokens.append(Token("punc", "file_start"))
+    compiledTokens.append(Token(TokenType.PUNC, "file_start"))
     PunctuationToken.start(compiledTokens)
 
     #logic
@@ -59,7 +59,7 @@ def tokenize(input : str) -> tuple[Token, ...]:
             inner_cursor = cursor
             while (inner_cursor < len(data)) and (data[inner_cursor] not in WhiteSpaceToken.matches):
                 inner_token += data[inner_cursor]
-                if inner_token in tokenStrings:
+                if inner_token in token_strings:
                     possible_tokens.append(inner_token)
                 inner_cursor += 1
                 # print(f"Inner tokenizer loop running: {cursor}:{inner_cursor} on {inner_token}")
@@ -72,10 +72,10 @@ def tokenize(input : str) -> tuple[Token, ...]:
                 raise ValueError(f"Token {token} has no matches")
 
             # Apply calculate()
-            cursor, compiledTokens, data = tokenStrings[chosen_token].calculate(
-                cursor=cursor,
-                compiledTokens=compiledTokens,
-                data=data
+            cursor, compiledTokens, data = token_strings[chosen_token](
+                cursor,
+                compiledTokens,
+                data
             )
             # print(compiledTokens[-1])
         cursor += 1
@@ -84,7 +84,7 @@ def tokenize(input : str) -> tuple[Token, ...]:
     # Close the excess start token that will be found
     # after the last semicolon
     PunctuationToken.semicolon(compiledTokens, include_start=False)
-    compiledTokens.append(Token("punc", "EOF"))
+    compiledTokens.append(Token(TokenType.PUNC, "EOF"))
 
     return tuple(compiledTokens)
 
