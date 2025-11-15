@@ -7,4 +7,4 @@ def test_namespacing():
         "This.thing+" : "this.thing",
         "Name Space 99": "name_space_99"
         }.items():
-        assert ddm.namespaceFromString(k) == v
+        assert ddm.namespace_from_str(k) == v

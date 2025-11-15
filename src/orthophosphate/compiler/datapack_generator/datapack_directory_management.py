@@ -120,7 +120,7 @@ class FolderRep(typing.NamedTuple):
         )
 
 @functools.cache
-def namespaceFromString(name: str) -> str:
+def namespace_from_str(name: str) -> str:
     """
     Converts an arbitrarily-formatted
     datapack name into a suitable namespace
@@ -255,7 +255,7 @@ def datapack_directory(
     root folder name
     """
 
-    namespace = primary_namespace if primary_namespace is not None else namespaceFromString(name)
+    namespace = primary_namespace if primary_namespace is not None else namespace_from_str(name)
 
     tick_json = FileRep(
         "tick.json",

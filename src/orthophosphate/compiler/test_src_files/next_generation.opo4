@@ -1,0 +1,49 @@
+// Top level function definitions are put
+// in a default namespace that is named after the filename
+
+function this:core
+/* Think of `core` as the Orthophosphate
+equivalent of `main()`. It is conventional to
+use exactly one core function that runs every tick as a single point
+of entry. This makes it easier to control the order
+that things get executed in. It is not, however,
+enforced by Orthophosphate.
+
+The "this:" namespace uses the file name
+to generate a namespace. Use it for your datapack's
+main namespace.
+*/
+{
+    |say hello world|; // Literal commands are delimited like so
+
+    # line comment
+    // line comment
+    /* comment */|say but this is code|;
+
+    |say you can put
+    newlines
+    and extra    spaces in your command literals,
+    and they get replaced with single spaces
+    so that really long commands like this can be
+       aligned
+          with
+    each other,
+        nested
+            arbitrarily,
+    and split between lines|;
+}
+
+tag function minecraft:tick {
+    this:core
+}
+
+function this:other_function
+{
+    |say other_function called|;
+}
+
+function secondary_namespace:a_function_in_a_specified_namespace {
+        |say running function from secondary_namespace|;
+}
+
+/* Welcome to Orthophosphate! */

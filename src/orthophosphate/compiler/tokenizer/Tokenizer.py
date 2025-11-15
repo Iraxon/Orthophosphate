@@ -43,7 +43,6 @@ def tokenize(input : str) -> tuple[Token, ...]:
 
     # Invisible punctuation added to start of file
     compiledTokens.append(Token(TokenType.PUNC, "file_start"))
-    PunctuationToken.start(compiledTokens)
 
     #logic
     while(cursor < len(data)):
@@ -80,10 +79,6 @@ def tokenize(input : str) -> tuple[Token, ...]:
             # print(compiledTokens[-1])
         cursor += 1
         # print(f"Outer tokenizer loop running: {cursor} on {token}")
-
-    # Close the excess start token that will be found
-    # after the last semicolon
-    PunctuationToken.semicolon(compiledTokens, include_start=False)
     compiledTokens.append(Token(TokenType.PUNC, "EOF"))
 
     return tuple(compiledTokens)

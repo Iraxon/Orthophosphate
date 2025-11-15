@@ -1,3 +1,4 @@
+import os
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
@@ -75,9 +76,9 @@ def set_up_window(root: Tk,
 
     # Check for stored paths
     global file_path_in
-    file_path_in = StringVar(value=(path_in_str if (path_in_str := load_path_in_function()) else "No file selected"))
+    file_path_in = StringVar(value=(os.path.normcase(path_in_str) if (path_in_str := load_path_in_function()) else "No file selected"))
     global file_path_out
-    file_path_out = StringVar(value=(path_out_str if (path_out_str := load_path_out_function()) else "No directory selected"))
+    file_path_out = StringVar(value=(os.path.normcase(path_out_str) if (path_out_str := load_path_out_function()) else "default"))
 
     # Input button, entry, and labels
 
@@ -108,7 +109,10 @@ def set_up_window(root: Tk,
         global file_path_in
         global file_path_out
 
-        compile_function(file_path_in.get(), file_path_out.get())
+        path_in = file_path_in.get()
+        path_out = file_path_out.get()
+
+        compile_function(path_in, path_out if path_out != "default" else os.path.dirname(path_in))
         save_func()
 
     # Compilation button (and maybe settings in the future)

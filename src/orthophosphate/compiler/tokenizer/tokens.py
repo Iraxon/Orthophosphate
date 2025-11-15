@@ -1,5 +1,5 @@
 from .tokenizer_module_base import TokenizerModuleBase
-from .token import Token
+from .token import Token, TokenType
 import string
 
 #
@@ -11,7 +11,7 @@ import string
 class AlphanumericToken(TokenizerModuleBase):
 
     matches = tuple(char for char in string.ascii_letters) + ("_", "$")
-    can_contain = matches + tuple(char for char in string.digits) + (".",)
+    can_contain = matches + tuple(char for char in string.digits) + (".", ":", "/")
 
     @staticmethod
     def calculate(cursor, compiledTokens, data):
@@ -23,20 +23,7 @@ class AlphanumericToken(TokenizerModuleBase):
             fullString += data[cursor]
             cursor += 1
 
-        match fullString:
-            case (
-                "func" | "tick_func" | "return"
-                | "while"
-                | "namespace" | "tag"
-                | "obj" | "score" | "constant" | "reset"
-                | "after" | "call"
-                | "concat"
-            ) as kw:
-                compiledTokens.append(Token("keyword", kw))
-            case "int" | "bool" as typ:
-                compiledTokens.append(Token("type", typ))
-            case _:
-                compiledTokens.append(Token("name", fullString))
+        compiledTokens.append(Token(TokenType.NAME, fullString))
 
         cursor -= 1
 
@@ -68,7 +55,7 @@ class NumberToken(TokenizerModuleBase):
 
         cursor -= 1
 
-        compiledTokens.append(Token("int", fullNum))
+        compiledTokens.append(Token(TokenType.INT, fullNum))
 
         return cursor, compiledTokens, data
 
@@ -101,7 +88,7 @@ class StringToken(TokenizerModuleBase):
             fullString += data[cursor]
             cursor += 1
 
-        compiledTokens.append(Token("string", fullString))
+        compiledTokens.append(Token(TokenType.STRING, fullString))
 
         return cursor, compiledTokens, data
 
@@ -134,7 +121,7 @@ class MCFunctionLiteralToken(TokenizerModuleBase):
 
             cursor += 1
 
-        compiledTokens.append(Token("literal", fullString))
+        compiledTokens.append(Token(TokenType.LITERAL, fullString))
 
         return cursor, compiledTokens, data
 
@@ -144,49 +131,9 @@ class PunctuationToken(TokenizerModuleBase):
     isTerminating = True
 
     @staticmethod
-    def semicolon(compiledTokens, include_start=True):
-            """
-            A function for adding a semicolon,
-            to avoid reduplication of associated logic
-            """
-            paren(compiledTokens, ")")
-            compiledTokens.append(Token("punc", ";"))
-            if include_start:
-                PunctuationToken.start(compiledTokens)
-
-    @staticmethod
-    def start(compiledTokens):
-        """
-        For adding invisible start tokens; exists for the
-        same reason as the semicolon one
-        """
-        compiledTokens.append(Token("punc", "start"))
-        paren(compiledTokens, "(")
-
-    @staticmethod
     def calculate(cursor, compiledTokens, data):
         if(data[cursor] in PunctuationToken.matches):
-
-            # Some of the punctuation characters have special actions,
-            # so we handle those with this statement
-            match data[cursor]:
-                case ";":
-                    PunctuationToken.semicolon(compiledTokens)
-                case "{":
-                    compiledTokens.append(Token("punc", "{"))
-                    PunctuationToken.start(compiledTokens)
-                case "}":
-                    PunctuationToken.semicolon(compiledTokens, include_start=False)
-                    compiledTokens.append(Token("punc", "}"))
-                    PunctuationToken.semicolon(compiledTokens)
-                case "(" | ")" as p:
-                    # Parens need to be multiplied because of the
-                    # operator-precedence algorithm used by the
-                    # operators
-                    paren(compiledTokens, p)
-
-                case _:
-                    compiledTokens.append(Token("punc", data[cursor]))
+            compiledTokens.append(Token(TokenType.PUNC, data[cursor]))
         return cursor, compiledTokens, data
 
 # Constant function that returns the paren count for
@@ -195,13 +142,14 @@ class PunctuationToken(TokenizerModuleBase):
 MAX_PAREN_COUNT = 5
 
 def paren(compiledTokens, p):
-    """
-    Applies the equivalent of a single source-code paren
-    """
-    if p not in ("(", ")"):
-        raise ValueError(f"'{p}' is not a paren")
-    for _ in range(MAX_PAREN_COUNT + 1):
-        compiledTokens.append(Token("punc", p))
+    # """
+    # Applies the equivalent of a single source-code paren
+    # """
+    # if p not in ("(", ")"):
+    #     raise ValueError(f"'{p}' is not a paren")
+    # for _ in range(MAX_PAREN_COUNT + 1):
+    #     compiledTokens.append(Token(TokenType.PUNC, p))
+    pass
 
 class OperatorToken(TokenizerModuleBase):
     matches = ("+", "-", "*", "/", "%", "**", "=", "+=", "-=",
@@ -232,9 +180,9 @@ class OperatorToken(TokenizerModuleBase):
 
         # Small sub-functions to save typing
         def single_paren_close():
-            compiledTokens.append(Token("punc", ")"))
+            compiledTokens.append(Token(TokenType.PUNC, ")"))
         def single_paren_open():
-            compiledTokens.append(Token("punc", "("))
+            compiledTokens.append(Token(TokenType.PUNC, "("))
 
         def parenthesize(paren_count, operator):
             """
@@ -242,20 +190,20 @@ class OperatorToken(TokenizerModuleBase):
             appends the operator, and then
             applies n opening parens
             """
-            for _ in range(paren_count):
-                single_paren_close()
-            compiledTokens.append(Token("op", operator))
-            for _ in range(paren_count):
-                single_paren_open()
+            # for _ in range(paren_count):
+            #     single_paren_close()
+            compiledTokens.append(Token(TokenType.OP, operator))
+            # for _ in range(paren_count):
+            #     single_paren_open()
 
         # In the special case of scoreboard operations, there
         # should not be any operator precedence because only
         # one operator is allowed there.
 
-        if (compiledTokens[-3].type, compiledTokens[-3].value) == ("keyword", "score"):
+        if (compiledTokens[-3].type, compiledTokens[-3].value) == (TokenType.NAME, "score"):
             match op_string:
                 case "=" | "+=" | "-=" | "/=" | "%=" | "<==" | ">==" | "><" as o:
-                    compiledTokens.append(Token("op", o))
+                    compiledTokens.append(Token(TokenType.OP, o))
                 case _ as o:
                     raise ValueError(f"Not a scoreboard operation: {o}")
             return cursor, compiledTokens, data
@@ -346,7 +294,7 @@ class SelectorToken(TokenizerModuleBase):
         if data[cursor] == "]": # Bring in ending delimeter
             fullString += "]"
 
-        compiledTokens.append(Token("selector", fullString))
+        compiledTokens.append(Token(TokenType.SELECTOR, fullString))
 
         return cursor, compiledTokens, data
 

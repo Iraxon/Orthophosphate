@@ -1,91 +1,140 @@
-import functools
+import dataclasses
 import typing
-from .abstract_syntax_tree import NodeType
-from .abstract_syntax_tree import Node
-from ..tokenizer.token import Token
 
-@functools.cache
-def _resolve_finite_tuple(
-    tokens: tuple[Token, ...],
-    cursor: int,
-    description: tuple[tuple[typing.LiteralString | NodeType, ...], ...] | None = None,
-    count: int = -1
-) -> tuple[tuple[Node, ...], int]:
-    """
-    Makes a flat tuple of nodes from the tokens
-    until the tuple contains the specified count and
-    type of nodes
+from .abstract_syntax_tree import *
+from ..tokenizer.token import Token, TokenType
 
-    The description should be a tuple of tuples of NodeTypes
-    where each inner tupple contains all node types allowed
-    in that position or the string "*" if any should
-    be permitted
+type Parser[T] = typing.Callable[[ParseState], T]
 
-    If a count is specified, the description will be auto-intialized
-    to accept the correct number of tokens of any type
-    """
+@dataclasses.dataclass
+class ParseState:
+    tokens: typing.Sequence[Token]
+    cursor: int = 0
+    function_bindings: dict[ColonIdentifier, MCFunction] = dataclasses.field(default_factory=dict)
+    scope: list[str] = dataclasses.field(default_factory=list)
 
-    if count != -1:
-        description = tuple(
-            ("*",) for _ in range(count)
-        )
-    assert description is not None
+    def grab(self) -> Token:
+        r_val = self.tokens[self.cursor]
+        self.skip()
+        return r_val
 
-    iterating_cursor = cursor + 1 # Skip opening token
-    node_list: list = []
-    counter = 0
+    def skip(self) -> None:
+        self.cursor += 1
 
-    while iterating_cursor < len(tokens):
-        if len(node_list) >= len(description):
-            break
-        next_node, iterating_cursor = parse(tokens, _cursor=iterating_cursor)
+    def peek(self, i: int = 0) -> Token:
+        return self.tokens[self.cursor + i]
 
-        if next_node is None:
-            raise ValueError(f"Expected Node of a type in {description[counter]}; got None")
+    def in_range(self) -> bool:
+        return 0 <= self.cursor < len(self.tokens)
 
-        if next_node.type not in description[counter] and description[counter] != ("*",):
-            raise ValueError(f"Expected Node of a type in {description[counter]}; got {repr(next_node)}")
+    def display_token(self, n: int = 0) -> str:
+        return str(self.peek(n)) if (self.cursor + n >= 0 and self.cursor + n < len(self.tokens)) else ''
 
-        node_list.append(next_node)
-        counter += 1
+    def error_readout(self, i: int = -1) -> str:
+        return f"".join(tuple(f"\t{self.display_token(n)}{' <<< HERE' if n == i else ''}\n" for n in range(-20, 10)))
 
-    return tuple(node_list), iterating_cursor # No +1 because no closing token to skip
+    def scope_in(self, next: str) -> None:
+        self.scope.append(next)
 
-@functools.cache
-def _resolve_node_tuple(tokens: tuple[Token, ...], cursor: int, end_token) -> tuple[tuple[Node, ...], int]:
-    """
-    Makes a flat tuple of nodes from the tokens
-    until it hits the specfied end token or EOF
-    """
-    iterating_cursor = cursor + 1 # Skip opening token
-    next_token = tokens[iterating_cursor]
-    node_list = []
+    def scope_out(self) -> None:
+        self.scope.pop()
 
-    # While not out of file and it is not the case
-    # that the current token matches end_token
+    def bind_function(self, name: ColonIdentifier, fn: MCFunction) -> MCFunction:
+        if (name in self.function_bindings):
+            err(self, f"Function {name} already exists:")
+        self.function_bindings[name] = fn
+        return fn
 
-    while iterating_cursor < len(tokens):
-        # print(f"cursor at {iterating_cursor}-- RNT(), selecting {tokens[iterating_cursor]}")
+    def checkref_function(self, name: ColonIdentifier) -> Ref[MCFunction]:
+        return Ref(self.deref_function(name))
 
-        # Check for end tokens
-        if next_token.type == end_token.type and (next_token.value == end_token.value or end_token.value == "*"):
-            break
+    def deref_function(self, name: ColonIdentifier) -> MCFunction:
+        fn = self.function_bindings.get(name)
+        if fn is None:
+            err(self, "Unknown function:")
+        return fn
 
-        next_node, iterating_cursor = parse(tokens, _cursor=iterating_cursor)
-        if next_node is not None:
-            node_list.append(next_node)
-        next_token = tokens[iterating_cursor]
+def parse_top_level(state: ParseState) -> TextFile:
+    t = state.grab()
+    match t:
+        case (TokenType.NAME, "function"):
+            name = ColonIdentifier.of(state.grab().require_name().value)
+            body = parse_block(state)
+            return state.bind_function(name, MCFunction(name, body))
+        case (TokenType.NAME, "tag"):
+            type = state.grab().require_name().value
+            name = ColonIdentifier.of(state.grab().require_name().value)
+            match type:
+                case "function":
+                    return Tag[MCFunction](name, parse_tag_list(state))
+                case _:
+                    err(state, "Not a supported tag type:")
+        case _:
+            err(state)
 
-    return tuple(node_list), iterating_cursor + 1 # Skip closing token
+def parse_block(state: ParseState) -> Block:
+    if (state.peek() == Token(TokenType.PUNC, "{")):
+        state.grab()
+        body = _resolve_node_tuple(state, Token(TokenType.PUNC, "}"), parse_cmd)
+        return Block(body)
+    return Block((parse_cmd(state),))
 
-@typing.overload
-def parse(tokens: tuple[Token, ...]) -> Node: ...
+def parse_cmd(state: ParseState) -> CMD:
+    t = state.grab()
+    match t:
+        case (TokenType.LITERAL, cmd):
+            if state.grab() != (TokenType.PUNC, ";"):
+                err(state, "Missing semicolon:")
+            return LiteralCMD(value=cmd)
+        case (TokenType.NAME, "obj"):
+            obj_name = state.grab().require_name()
+            return LiteralCMD("   PLACEHOLDER   obj")
+        case (TokenType.NAME, "score"):
+            operand1 = parse_score(state, prohibit_const=True)
+            operation = ScoreboardOperator.of(state.grab().require(TokenType.OP).value)
+            operand2 = parse_score(state)
+            return ScoreboardOperation(operand1, operand2, operation)
+        case (TokenType.NAME, "while"):
+            raise NotImplementedError
+        case (TokenType.NAME, "call"):
+            function_id = state.grab().require_name()
+            raise NotImplementedError
+        case _:
+            err(state)
 
-@typing.overload
-def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> tuple[Node | None, int]: ...
+def parse_score(state: ParseState, prohibit_const: bool = False) -> Score:
+    score = (state.grab(), state.grab())
+    match score:
+        case ((TokenType.NAME, "constant"), (TokenType.INT, x)):
+            if prohibit_const:
+                err(state, "A constant score is not allowed here:")
+            return ConstantScore(int(x))
+        case ((TokenType.NAME, n), (TokenType.NAME, obj)):
+            return VariableScore(n, OBJ(obj))
+        case ((TokenType.SELECTOR, s), (TokenType.NAME, obj)):
+            return VariableScore(TargetSelector.of(s), OBJ(obj))
+        case _:
+            err(state)
 
-@functools.cache
-def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | None, int]:
+def parse_tag_list(state: ParseState) -> tuple[Ref[MCFunction], ...]:
+    vals: tuple[ColonIdentifier, ...]
+    if (state.peek() == Token(TokenType.PUNC, "{")):
+        state.grab()
+        body = _resolve_node_tuple(state, Token(TokenType.PUNC, "}"), parse_colon_id)
+        vals = body
+    else:
+        vals = (parse_colon_id(state),)
+    return tuple(state.checkref_function(v) for v in vals)
+
+def parse_colon_id(state: ParseState) -> ColonIdentifier:
+    t = state.grab()
+    match t:
+        case (TokenType.NAME, n):
+            return ColonIdentifier.of(n)
+        case _:
+            err(state)
+
+def parse(tokens: tuple[Token, ...]) -> Root:
     """
     Accepts a tuple of tokens from the tokenizer
 
@@ -98,323 +147,41 @@ def parse(tokens: tuple[Token, ...], _cursor: int = 0) -> Node | tuple[Node | No
     in the recursion calls; that parameter should not be set
     by outsider callers
     """
-    # print(f"cursor at {_cursor}-- parse(), selecting {tokens[_cursor]}")
-    t = tokens[_cursor]
-
-    # inits root node
-    if _cursor == 0:
-        return Node(
-            type=NodeType.ROOT,
-            value=_resolve_node_tuple(
-                tokens=tokens,
-                cursor=0,
-                end_token=Token("punc", "EOF")
-            )[0]
+    state = ParseState(tokens)
+    assert state.grab() == Token(TokenType.PUNC, "file_start")
+    return Root(
+        value=_resolve_node_tuple(
+            state,
+            Token(TokenType.PUNC, "EOF"),
+            parse_top_level
         )
+    )
 
-    # The recursive sorcery begins here
+def _resolve_node_tuple[T](state: ParseState, end_token: Token, parse_function: Parser[T]) -> tuple[T, ...]:
+    """
+    Makes a flat tuple of nodes from the tokens
+    until it hits the specfied end token or EOF
+    """
+    node_list: list[T] = []
 
-    # This value might be changed by a case block;
-    # if it is not, then we default to cursor + 1
-    new_cursor: int = _cursor + 1
-    node: Node | None
+    # While not out of file and it is not the case
+    # that the current token matches end_token
 
-    match (t.type, t.value):
-        case ("punc", "start"):
-            value, new_cursor = _resolve_node_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                end_token=Token("punc", ";")
-            )
-            pre_node = Node(
-                type=NodeType.STATEMENT,
-                value=value
-            )
-            node = pre_node.check_statement()
-        case ("int", n):
-            node = Node(
-                type=NodeType.LITERAL_VALUE,
-                value=int(t.value),
-                data_type="int"
-            )
-        case ("string", s):
-            node = Node(
-                type=NodeType.LITERAL_VALUE,
-                value=t.value,
-                data_type="str"
-            )
-        case ("literal", x):
-            node = Node(
-                type=NodeType.LITERAL_VALUE,
-                value=t.value,
-                data_type="cmd"
-            )
-        case ("name", n):
-            node = Node(
-                type=NodeType.NAME,
-                value=t.value,
-                data_type="*"
-            )
-        case ("selector", s):
-            node = Node(
-                type=NodeType.NAME,
-                value=t.value,
-                data_type="sel"
-            )
-        case ("op", o):
-            if ("=" in o and o not in ("==", "!=")) or o == "><":
-                node = Node(
-                    type=NodeType.ASSIGNMENT,
-                    value=t.value
-                )
-            else:
-                node = Node(
-                    type=NodeType.OPERATION,
-                    value=t.value
-                )
-        case ("keyword", "namespace"):
-            value, new_cursor = _resolve_finite_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                description=(
-                    (NodeType.NAME,),
-                    (NodeType.BLOCK,)
-                )
-            )
-            node = Node(
-                type=NodeType.NAMESPACE,
-                value=value
-            )
-        case ("keyword", "obj"):
-            value, new_cursor = _resolve_finite_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                description=(
-                    (NodeType.NAME,),
-                )
-            )
-            node = Node(
-                type=NodeType.OBJ_DEF,
-                value=value
-            )
-        case ("keyword", "score"):
-            # The description for _resolve_finite_tuple
-            # depends on whether it's a score or a constant
-            # as the second operand ("source score"). So we
-            # look ahead in the tokens to check which it is.
-            # If an index error arises, it's because the user didn't
-            # supply the correct arguments to the scoreboard keyword
-            ahead_token: Token
-            try:
-                ahead_token = tokens[_cursor + 4]
-            except IndexError:
-                raise ValueError(f"Insufficient number of tokens following score keyword")
-            match (ahead_token.type, ahead_token.value):
-                case ("keyword", "constant"):
-                    value, new_cursor = _resolve_finite_tuple(
-                        tokens=tokens,
-                        cursor=_cursor,
-                        description=(
-                            (NodeType.NAME, NodeType.TARGET_SELECTOR),
-                            (NodeType.NAME,),
-                            (NodeType.ASSIGNMENT,),
-                            (NodeType.CONSTANT_SCORE,),
-                        )
-                    )
-                case ("name", _):
-                    value, new_cursor = _resolve_finite_tuple(
-                        tokens=tokens,
-                        cursor=_cursor,
-                        description=(
-                            (NodeType.NAME, NodeType.TARGET_SELECTOR),
-                            (NodeType.NAME,),
-                            (NodeType.ASSIGNMENT,),
-                            (NodeType.NAME, NodeType.TARGET_SELECTOR),
-                            (NodeType.NAME,),
-                        )
-                    )
-                case _:
-                    raise ValueError(f"Unexpected scoreboard token {t} with ahead_token {ahead_token}")
-            node = Node(
-                type=NodeType.SCOREBOARD_OPERATION,
-                value=value
-            )
-        case ("keyword", "constant"):
-            value, new_cursor = _resolve_finite_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                description=(
-                    (NodeType.LITERAL_VALUE,),
-                )
-            )
-            node = Node(
-                type=NodeType.CONSTANT_SCORE,
-                value=value
-            )
-        case ("keyword", "reset"):
-            value, new_cursor = _resolve_finite_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                description=(
-                    (NodeType.TARGET_SELECTOR, NodeType.NAME,),
-                    (NodeType.NAME,),
-                )
-            )
-            node = Node(
-                type=NodeType.SCOREBOARD_RESET,
-                value=value
-            )
-        case ("keyword", "tag"):
-            value, new_cursor = _resolve_finite_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                description=(
-                    (NodeType.NAME,),
-                    (NodeType.NAME,),
-                    (NodeType.BLOCK,),
-                )
-            )
-            node = Node(
-                type=NodeType.TAG_DEF,
-                value=value
-            )
-        case ("keyword", "concat"):
-            value, new_cursor = _resolve_finite_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                description=(
-                    (NodeType.LITERAL_VALUE),
-                    (NodeType.STATEMENT, NodeType.BLOCK)
-                )
-            )
-            node = Node(
-                type=NodeType.CONCAT,
-                value=value
-            )
-        case ("type", typ):
-            value, new_cursor = _resolve_finite_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                description=(
-                    (NodeType.NAME,),
-                )
-            )
-            node = Node(
-                type=NodeType.DECLARATION,
-                value=value,
-                data_type=typ
-            )
-        case ("keyword", "while"):
-            value, new_cursor = _resolve_finite_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                description=(
-                    (NodeType.LITERAL_VALUE, NodeType.EXPRESSION),
-                    (NodeType.BLOCK,),
-                )
-            )
-            node = Node(
-                type=NodeType.WHILE,
-                value=value
-            )
-            pass
-        case ("keyword", "func" | "tick_func" as second_word):
-            value, new_cursor = _resolve_finite_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                description=(
-                    (NodeType.NAME,),
-                    (NodeType.BLOCK,),
-                )
-            )
-            node = Node(
-                type=(
-                    {
-                        "func": NodeType.FUNC_DEF,
-                        "tick_func": NodeType.TICK_FUNC_DEF
-                    }[second_word]
-                ),
-                value=value
-            )
-        case ("keyword", "call"):
-            value, new_cursor = _resolve_finite_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                description=(
-                    (NodeType.NAME,),
-                )
-            )
-            node = Node(
-                type=NodeType.CALL,
-                value=value
-            )
-        case ("keyword", "after"):
-            value, new_cursor = _resolve_finite_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                description=(
-                    (NodeType.LITERAL_VALUE,),
-                    (NodeType.BLOCK,)
-                )
-            )
-            node = Node(
-                type=NodeType.AFTER,
-                value=value
-            )
-        case ("punc", "{"):
-            value, new_cursor = _resolve_node_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                end_token=Token("punc", "}")
-            )
-            node = Node(
-                type=NodeType.BLOCK,
-                value=value
-            )
-        case ("punc", "("):
-            expr_content, new_cursor = _resolve_node_tuple(
-                tokens=tokens,
-                cursor=_cursor,
-                end_token=Token("punc", ")")
-            )
-            node = resolve_expr_content(expr_content)
-        case ("punc", ";") | ("punc", "}") | ("punc", ")") | ("punc", "EOF"):
-            raise ValueError(
-                f"Found unexpected closing token:\n"
-                + "".join(tuple(f"\t{(tokens[_cursor + n]) if (_cursor + n >= 0 and _cursor + n < len(tokens)) else ''}\n" for n in range(-20, 0)))
-                + f"\t{t} <<< HERE\n"
-                + "".join(tuple(f"\t{(tokens[_cursor + n]) if (_cursor + n >= 0 and _cursor + n < len(tokens)) else ''}\n" for n in range(1, 10)))
-            )
-        case _:
-            raise ValueError(f"Token {t} unknown to parser")
+    while state.in_range():
 
-    return node, new_cursor
+        # Check for end tokens
+        next_token = state.peek()
+        if next_token.type == end_token.type and (next_token.value == end_token.value or end_token.value == "*"):
+            state.skip() # Skip closing token
+            break
 
-def resolve_expr_content(content: tuple[Node, ...]) -> Node:
-    match len(content):
-        case 0:
-            return Node(
-                type=NodeType.EMPTY,
-                value=None
-            )
-        case 1:
-            return content[0]
-        case n if (
-            n >= 3
-            and content[-2].type in frozenset((NodeType.OPERATION, NodeType.ASSIGNMENT))
-        ):
-            rest = content[:-2]
-            return Node(
-                type=NodeType.EXPRESSION,
-                value=(
-                    content[-2],
-                    resolve_expr_content(rest),
-                    content[-1]
-                ),
-                data_type="*"
-            )
-        case _:
-            raise ValueError(f"Invalid expr content: {content}")
+        next_node = parse_function(state)
+        if next_node is not None:
+            node_list.append(next_node)
+    return tuple(node_list)
+
+def err(state: ParseState, message: str | None = None) -> typing.Never:
+    raise ValueError(f"{f'Invalid token {state.peek(-1)} at:' if message is None else message}\n{state.error_readout()}")
 
 if __name__ == "__main__":
     pass
