@@ -12,6 +12,10 @@ type Children = "tuple[Node | str, ...]"
 class Node(ABC):
     """
     A node in the abstract syntax tree
+
+    Other than the specified abstract methods, many Node subclasses
+    have a compile() method that returns a str or bytes object
+    that the node will compile to.
     """
     @abstractmethod
     def children(self) -> Children:
@@ -53,18 +57,6 @@ class Node(ABC):
         )
 
 @dataclasses.dataclass(frozen=True)
-class Ref[T](Node):
-    referent: T
-
-    @typing.override
-    def children(self) -> Children:
-        return (self.realize(),)
-
-    @abstractmethod
-    def realize(self) -> str:
-        raise NotImplementedError
-
-@dataclasses.dataclass(frozen=True)
 class Root(Node):
     value: "tuple[TextFile, ...]"
 
@@ -73,16 +65,35 @@ class Root(Node):
         return self.value
 
 @dataclasses.dataclass(frozen=True)
+class Ref[T](Node):
+    """
+    A reference to a value defined by another
+    node; this will compile to some
+    kind of resource location or ID as
+    opposed to a definition
+    """
+
+    referent: T
+
+    @typing.override
+    def children(self) -> Children:
+        return (self.compile(),)
+
+    @abstractmethod
+    def compile(self) -> str:
+        raise NotImplementedError
+
+@dataclasses.dataclass(frozen=True)
 class NamespacedIdentifier[T](Ref[T]):
     namespace: str
-    name: str
+    rest: str
 
     @typing.override
     def __str__(self):
-        return self.show()
+        return self.compile()
 
-    def show(self) -> str:
-        return f"{self.namespace}{self.sep()}{self.name}"
+    def compile(self) -> str:
+        return f"{self.namespace}{self.sep()}{self.rest}"
 
     @classmethod
     @abstractmethod
@@ -91,12 +102,20 @@ class NamespacedIdentifier[T](Ref[T]):
 
     @classmethod
     def of(cls, s: str | Token) -> typing.Self:
+        """
+        Returns an instance of this class from
+        a str and performs input validation
+        """
         if isinstance(s, Token):
             s = s.require_name().value
         return NamespacedIdentifier._of_helper(s, cls.sep(), cls)
 
     @staticmethod
-    def _of_helper[T](s: str, split_char: str, constructor: typing.Callable[[str, str], T]) -> T:
+    def _of_helper[V](s: str, split_char: str, constructor: typing.Callable[[str, str], V]) -> V:
+        """
+        Implements NamedpsacedIdentifier.of() statically to satisfy
+        the type checker
+        """
         match s.split(split_char):
             case (name,):
                 return constructor(_placeholder_namespace, name)
@@ -108,31 +127,31 @@ class NamespacedIdentifier[T](Ref[T]):
 _placeholder_namespace: typing.Final = "x"
 
 @dataclasses.dataclass(frozen=True)
-class ColonIdentifier(NamespacedIdentifier):
+class ColonIdentifier[T](NamespacedIdentifier[T]):
     @classmethod
     @typing.override
     def sep(cls) -> typing.Literal[":"]:
         return ":"
 
     @classmethod
-    def of_sequence(cls, *parts: str) -> typing.Self:
-        return cls(parts[0], "/".join(parts[1:]))
+    def of_sequence(cls, *parts: str, referent: T) -> typing.Self:
+        return cls(referent, parts[0], "/".join(parts[1:]))
 
 @dataclasses.dataclass(frozen=True)
-class DotIdentifier(NamespacedIdentifier):
+class DotIdentifier[T](NamespacedIdentifier[T]):
     @classmethod
     @typing.override
     def sep(cls) -> typing.Literal["."]:
         return "."
 
     @classmethod
-    def of_sequence(cls, *parts: str) -> typing.Self:
-        return cls(parts[0], ".".join(parts[1:]))
+    def of_sequence[V](cls, referent: V, *parts: str) -> "DotIdentifier[V]":
+        return DotIdentifier[V](referent, parts[0], ".".join(parts[1:]))
 
 @dataclasses.dataclass(frozen=True)
 class TextFile(Node):
     @abstractmethod
-    def realize(self) -> str:
+    def compile(self) -> str:
         raise NotImplementedError
 
 @dataclasses.dataclass(frozen=True)
@@ -142,10 +161,10 @@ class MCFunction(TextFile):
 
     @typing.override
     def children(self) -> Children:
-        return (self.id.show(), self.body)
+        return (self.id.compile(), self.body)
 
     @typing.override
-    def realize(self):
+    def compile(self):
         return (self.id, self.body)
 
 type Taggable = MCFunction
@@ -179,18 +198,17 @@ class Tag[T: Taggable](TextFile):
         return (str(self.replace),) + tuple(item for item in self.content)
 
     @typing.override
-    def realize(self) -> str:
-        raise NotImplementedError # Got to figure out how to get IDs and not str() output
+    def compile(self) -> str:
         return (
-        "{\n"
-        + f"  \"replace\": {'true' if self.replace else 'false'},\n"
-        + "  \"values\": [\n"
-        + "".join(tuple(
-            f"    \"{item}\"{',' if i < len(self.content) - 1 else ''}\n" for i, item in enumerate(self.content)
-        ))
-        + "  ]\n"
-        + "}"
-    )
+            "{\n"
+            + f"  \"replace\": {'true' if self.replace else 'false'},\n"
+            + "  \"values\": [\n"
+            + "".join(tuple(
+                f"    \"{item.compile()}\"{',' if i < len(self.content) - 1 else ''}\n" for i, item in enumerate(self.content)
+            ))
+            + "  ]\n"
+            + "}"
+        )
 
 @dataclasses.dataclass(frozen=True)
 class LiteralValue[T](Node):
@@ -203,7 +221,7 @@ class LiteralValue[T](Node):
 @dataclasses.dataclass(frozen=True)
 class CMD(Node):
     @abstractmethod
-    def realize(self) -> str:
+    def compile(self) -> str:
         raise NotImplementedError
 
 @dataclasses.dataclass(frozen=True)
@@ -215,7 +233,7 @@ class LiteralCMD(CMD):
         return (self.value,)
 
     @typing.override
-    def realize(self):
+    def compile(self):
         return f"{self.value}\n"
 
 class ScoreboardOperator(Enum):
@@ -249,9 +267,9 @@ class ScoreboardOperation(CMD):
         return (self.operand1, self.operation.value, self.operand2)
 
     @typing.override
-    def realize(self) -> str:
-        first_pre, first = self.operand1.realize()
-        second_pre, second = self.operand2.realize()
+    def compile(self) -> str:
+        first_pre, first = self.operand1.compile()
+        second_pre, second = self.operand2.compile()
         return (
             f"{first_pre}\n{second_pre}\n"
             + f"scoreboard players operation {first} {self.operation.value} {second}\n"
@@ -260,7 +278,7 @@ class ScoreboardOperation(CMD):
 @dataclasses.dataclass(frozen=True)
 class CMDFragment(Node):
     @abstractmethod
-    def realize(self) -> tuple[str, str]:
+    def compile(self) -> tuple[str, str]:
         """
         The first str is any preparation commands that must be run to calculate the value;
         the second is the name under which this value has been stored, for higher nodes to retrieve
@@ -283,8 +301,8 @@ class VariableScore(Score):
         return (self.name, self.objective)
 
     @typing.override
-    def realize(self) -> tuple[str, str]:
-        return ("", f"{self.name if isinstance(self.name, str) else self.name.realize()} {self.objective.realize()}")
+    def compile(self) -> tuple[str, str]:
+        return ("", f"{self.name if isinstance(self.name, str) else self.name.compile()} {self.objective.compile()}")
 
 @dataclasses.dataclass(frozen=True)
 class ConstantScore(Score):
@@ -295,7 +313,7 @@ class ConstantScore(Score):
         return (str(self.value),)
 
     @typing.override
-    def realize(self) -> tuple[str, str]:
+    def compile(self) -> tuple[str, str]:
         return (
             "scoreboard objectives add opo4.constants dummy\n"
             + f"scoreboard players set C{self.value} opo4.constants {self.value}\n",
@@ -311,7 +329,7 @@ class OBJ(CMDFragment):
         return (self.name,)
 
     @typing.override
-    def realize(self) -> tuple[str, str]:
+    def compile(self) -> tuple[str, str]:
         return ("", self.name)
 
 class SelectorVariable(Enum):
@@ -337,9 +355,9 @@ class TargetSelector(CMDFragment):
 
     @typing.override
     def children(self) -> Children:
-        return (self.realize()[1],)
+        return (self.compile()[1],)
 
-    def realize(self) -> tuple[str, str]:
+    def compile(self) -> tuple[str, str]:
         return ("", f"@{self.var.value}{f'[{self.arguments}]' if self.arguments != '' else ''}")
 
     @classmethod
@@ -361,5 +379,5 @@ class Block(CMDFragment):
         return self.value
 
     @typing.override
-    def realize(self) -> tuple[str, str]:
-        return ("", f"{"".join(cmd.realize() for cmd in self.value)}\n")
+    def compile(self) -> tuple[str, str]:
+        return ("", f"{"".join(cmd.compile() for cmd in self.value)}\n")
