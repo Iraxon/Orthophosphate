@@ -81,7 +81,7 @@ class ParseState:
         """
         value = self._ref_dict(type).get(id)
         if value is None:
-            err(self, "Unknown content item:")
+            err(self, "This is not a valid reference:")
         return value
 
 
