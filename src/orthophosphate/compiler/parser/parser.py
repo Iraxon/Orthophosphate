@@ -19,15 +19,15 @@ def parse(tokens: tuple[Token, ...]) -> Root:
         value=_resolve_node_tuple(
             state,
             Token(TokenType.PUNC, "EOF"),
-            parse_top_level
+            _parse_top_level
         )
     )
 
 type Parser[T] = typing.Callable[[ParseState], T]
+
 """
-All of the pares_* methods below are described by this type. They
-take the current ParseState and return the AST object that
-the tokens at the cursor represent.
+All of the pares_* methods below take the current ParseState
+and return the AST object that the tokens at the cursor represent.
 
 Parse methods can mutate the state
 of the passed ParseState object. They call other parse
@@ -35,33 +35,36 @@ methods according to what elements of the language
 should appear next.
 """
 
-def parse_top_level(state: ParseState) -> TextFile:
+def _parse_top_level(state: ParseState) -> TextFile:
     t = state.next_token()
     match t:
         case (TokenType.NAME, "function"):
             name = state.next_token().require_name().value
-            body = parse_block(state)
+            body = _parse_block(state)
             fn = MCFunction(name, body)
-            return state.bind_name(name, ColonIdentifier.of(name, fn), MCFunction)
+            state.bind_name(name, ColonIdentifier.of(name, fn), MCFunction)
+            return fn
         case (TokenType.NAME, "tag"):
             type = state.next_token().require_name().value
-            name = ColonIdentifier.of(state.next_token().require_name().value)
+            name = state.next_token().require_name().value
             match type:
                 case "function":
-                    return Tag[MCFunction](name, parse_tag_list(state))
+                    tag = Tag(name, _parse_tag_list(state, MCFunction))
+                    state.bind_name(name, ColonIdentifier.of(name, tag), Tag[MCFunction])
+                    return tag
                 case _:
                     err(state, "Not a supported tag type:")
         case _:
             err(state)
 
-def parse_block(state: ParseState) -> Block:
+def _parse_block(state: ParseState) -> Block:
     if (state.peek() == Token(TokenType.PUNC, "{")):
         state.next_token()
-        body = _resolve_node_tuple(state, Token(TokenType.PUNC, "}"), parse_cmd)
+        body = _resolve_node_tuple(state, Token(TokenType.PUNC, "}"), _parse_cmd)
         return Block(body)
-    return Block((parse_cmd(state),))
+    return Block((_parse_cmd(state),))
 
-def parse_cmd(state: ParseState) -> CMD:
+def _parse_cmd(state: ParseState) -> CMD:
     t = state.next_token()
     match t:
         case (TokenType.LITERAL, cmd):
@@ -72,9 +75,9 @@ def parse_cmd(state: ParseState) -> CMD:
             obj_name = state.next_token().require_name()
             return LiteralCMD("   PLACEHOLDER   obj")
         case (TokenType.NAME, "score"):
-            operand1 = parse_score(state, prohibit_const=True)
+            operand1 = _parse_score(state, prohibit_const=True)
             operation = ScoreboardOperator.of(state.next_token().require_type(TokenType.OP).value)
-            operand2 = parse_score(state)
+            operand2 = _parse_score(state)
             return ScoreboardOperation(operand1, operand2, operation)
         case (TokenType.NAME, "while"):
             raise NotImplementedError
@@ -84,7 +87,7 @@ def parse_cmd(state: ParseState) -> CMD:
         case _:
             err(state)
 
-def parse_score(state: ParseState, prohibit_const: bool = False) -> Score:
+def _parse_score(state: ParseState, prohibit_const: bool = False) -> Score:
     score = (state.next_token(), state.next_token())
     match score:
         case ((TokenType.NAME, "constant"), (TokenType.INT, x)):
@@ -98,21 +101,21 @@ def parse_score(state: ParseState, prohibit_const: bool = False) -> Score:
         case _:
             err(state)
 
-def parse_tag_list[T](state: ParseState) -> tuple[Ref[T], ...]:
-    vals: tuple[Ref[T], ...]
+def _parse_tag_list[T: Taggable](state: ParseState, type: type[T]) -> tuple[Ref[T], ...]:
+    vals: tuple[str, ...]
     if (state.peek() == Token(TokenType.PUNC, "{")):
         state.next_token()
-        body: tuple[Ref[T], ...] = _resolve_node_tuple(state, Token(TokenType.PUNC, "}"), parse_colon_id)
-        vals = body
+        vals = _resolve_node_tuple(state, Token(TokenType.PUNC, "}"), _parse_colon_id)
     else:
-        vals = (parse_colon_id(state),)
-    return tuple(state.checkref(v) for v in vals)
+        vals = (_parse_colon_id(state),)
+    return tuple(state.get_ref(v, type) for v in vals)
 
-def parse_colon_id[T](state: ParseState, require_exists: bool = True) -> ColonIdentifier[T]:
+def _parse_colon_id[T](state: ParseState, require_exists: bool = True) -> str:
     t = state.next_token()
     match t:
         case (TokenType.NAME, n):
-            return ColonIdentifier.of(n)
+            ColonIdentifier.split_namespace(n) # Checks validity as side effect
+            return n
         case _:
             err(state)
 
@@ -126,7 +129,7 @@ def _resolve_node_tuple[T](state: ParseState, end_token: Token, parse_function: 
     # While not out of file and it is not the case
     # that the current token matches end_token
 
-    while state.in_range():
+    while state.cursor_in_range():
 
         # Check for end tokens
         next_token = state.peek()
@@ -135,8 +138,7 @@ def _resolve_node_tuple[T](state: ParseState, end_token: Token, parse_function: 
             break
 
         next_node = parse_function(state)
-        if next_node is not None:
-            node_list.append(next_node)
+        node_list.append(next_node)
     return tuple(node_list)
 
 if __name__ == "__main__":

@@ -9,22 +9,30 @@ class ParseState:
     """
     tokens: typing.Sequence[Token]
     cursor: int = 0
+    _ref_dict_cache: dict[type, dict[str, Ref]] = dict()
 
     def next_token(self) -> Token:
-        r_val = self.tokens[self.cursor]
+        """
+        Returns the token under the cursor
+        and increments the cursor
+        """
+        t = self.tokens[self.cursor]
         self.skip()
-        return r_val
+        return t
 
     def skip(self) -> None:
+        """
+        Increments the cursor
+        """
         self.cursor += 1
 
     def peek(self, i: int = 0) -> Token:
         return self.tokens[self.cursor + i]
 
-    def in_range(self) -> bool:
+    def cursor_in_range(self) -> bool:
         return 0 <= self.cursor < len(self.tokens)
 
-    def token_str(self, n: int = 0) -> str:
+    def display_token(self, n: int = 0) -> str:
         """
         Returns a str representation of the token at the
         provided (default 0) offset from the cursor unless
@@ -39,7 +47,7 @@ class ParseState:
         """
         return f"".join(
             tuple(
-                f"\t{self.token_str(n)}{' <<< HERE' if n == i else ''}\n" for n in range(-20, 10)
+                f"\t{self.display_token(n)}{' <<< HERE' if n == i else ''}\n" for n in range(-20, 10)
             )
         )
 
@@ -49,13 +57,26 @@ class ParseState:
             err(self, f"{name} cannot be defined because it is already bound:")
         env[name] = value
 
-    def checkref[T](self, name: str, type: type[T]) -> None:
-        self.get_ref(name, type)
+    def checkref[T](self, id: str, type: type[T]) -> str:
+        """
+        Throws an error if the provided
+        id does not refer to a valid content
+        item of the given type
 
-    def get_ref[T](self, name: str, type: type[T]) -> Ref[T]:
-        value = self._ref_dict(type).get(name)
+        Returns the id unchanged
+        """
+        self.get_ref(id, type) # Using side effect
+        return id
+
+    def get_ref[T](self, id: str, type: type[T]) -> Ref[T]:
+        """
+        Returns a Ref object pointing to the content item
+        of the provided type that has the provided id
+        or throws an error if there is no such item
+        """
+        value = self._ref_dict(type).get(id)
         if value is None:
-            err(self, "Unknown function:")
+            err(self, "Unknown content item:")
         return value
 
 
@@ -67,8 +88,6 @@ class ParseState:
         if type not in self._ref_dict_cache.keys():
             self._ref_dict_cache[type] = dict()
         return self._ref_dict_cache[type]
-
-    _ref_dict_cache: dict[type, dict[str, Ref]] = dict()
 
 def err(state: ParseState, message: str | None = None) -> typing.Never:
     """

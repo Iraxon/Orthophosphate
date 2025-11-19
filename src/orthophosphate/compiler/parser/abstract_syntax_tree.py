@@ -18,7 +18,7 @@ class Node(ABC):
     that the node will compile to.
 
     Some may also implement a ref() method that returns a Ref pointing
-    to the object itself
+    to the object itself given a ParseState
     """
     @abstractmethod
     def children(self) -> Children:
@@ -115,7 +115,7 @@ class NamespacedIdentifier[T](Ref[T]):
         """
         if isinstance(s, Token):
             s = s.require_name().value
-        namespace, name = cls._split_namespace(s)
+        namespace, name = cls.split_namespace(s)
         return cls(referent, namespace, name)
 
     @classmethod
@@ -125,13 +125,15 @@ class NamespacedIdentifier[T](Ref[T]):
         return cls(referent, parts[0], "/".join(parts[1:]))
 
     @classmethod
-    def _split_namespace(cls, s: str) -> tuple[str, str]:
+    def split_namespace(cls, s: str) -> tuple[str, str]:
         """
         Splits a full namespace into the namespace part and
         the rest (e.g. this:core --> (this, core))
 
         Further divisions aren't touched: (e.g.this.globals.x -->
         this, globals.x)
+
+        Throws an error if the name is malformed
         """
         split_char = cls.sep()
         match s.split(split_char):
@@ -166,15 +168,15 @@ class TextFile(Node):
 
 @dataclasses.dataclass(frozen=True)
 class MCFunction(TextFile):
-    namespace: str
+    id: str
     body: "Block"
 
     def ref(self, state: ParseState) -> "Ref[MCFunction]":
-        return state.get_ref(self.namespace, MCFunction)
+        return state.get_ref(self.id, MCFunction)
 
     @typing.override
     def children(self) -> Children:
-        return (self.namespace, self.body)
+        return (self.id, self.body)
 
     @typing.override
     def compile(self):
@@ -202,9 +204,12 @@ type Taggable = MCFunction
 
 @dataclasses.dataclass(frozen=True)
 class Tag[T: Taggable](TextFile):
-    id: ColonIdentifier
+    id: str
     content: "tuple[Ref[T] | Ref[Tag[T]], ...]"
     replace: bool = False
+
+    def ref(self, state: ParseState) -> "Ref[MCFunction]":
+        return state.get_ref(self.id, MCFunction)
 
     @typing.override
     def children(self) -> Children:
