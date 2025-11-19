@@ -9,7 +9,7 @@ class ParseState:
     """
     tokens: typing.Sequence[Token]
     cursor: int = 0
-    _ref_dict_cache: dict[type, dict[str, Ref]] = dict()
+    _ref_dict_cache: dict[type, dict[str, Ref]] = dataclasses.field(default_factory=dict)
 
     def next_token(self) -> Token:
         """
