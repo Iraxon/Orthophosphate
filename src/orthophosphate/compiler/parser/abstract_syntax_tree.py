@@ -4,7 +4,6 @@ from enum import Enum
 import typing
 
 from ..tokenizer.token import Token
-from .parse_state import ParseState
 
 type Children = "tuple[Node | str, ...]"
 
@@ -171,9 +170,6 @@ class MCFunction(TextFile):
     id: str
     body: "Block"
 
-    def ref(self, state: ParseState) -> "Ref[MCFunction]":
-        return state.get_ref(self.id, MCFunction)
-
     @typing.override
     def children(self) -> Children:
         return (self.id, self.body)
@@ -207,9 +203,6 @@ class Tag[T: Taggable](TextFile):
     id: str
     content: "tuple[Ref[T] | Ref[Tag[T]], ...]"
     replace: bool = False
-
-    def ref(self, state: ParseState) -> "Ref[MCFunction]":
-        return state.get_ref(self.id, MCFunction)
 
     @typing.override
     def children(self) -> Children:
