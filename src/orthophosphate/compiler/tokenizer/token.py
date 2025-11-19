@@ -15,9 +15,20 @@ class Token(typing.NamedTuple):
     value: str
 
     def require_name(self) -> typing.Self:
-        return self.require(TokenType.NAME)
+        """
+        Raises an error if the token isn't of type TokenType.NAME
 
-    def require(self, type: TokenType) -> typing.Self:
+        Returns self so you can chain it
+        """
+        return self.require_type(TokenType.NAME)
+
+    def require_type(self, type: TokenType) -> typing.Self:
+        """
+        Raises an error if the token does not have the provided type
+
+        Returns self so you can chain it
+        """
+
         if (self.type != type):
             raise ValueError(f"Expected {type}, which {self} is not")
         return self
