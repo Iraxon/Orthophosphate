@@ -37,8 +37,7 @@ tag function minecraft:tick {
     this:core
 }
 
-function this:other_function
-{
+function this:other_function {
     |say other_function called|;
 }
 
