@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 import dataclasses
 from enum import Enum
-import os
 import typing
 
 from ..tokenizer.token import Token
+from .parse_state import ParseState
 
 type Children = "tuple[Node | str, ...]"
 
@@ -16,6 +16,9 @@ class Node(ABC):
     Other than the specified abstract methods, many Node subclasses
     have a compile() method that returns a str or bytes object
     that the node will compile to.
+
+    Some may also implement a ref() method that returns a Ref pointing
+    to the object itself
     """
     @abstractmethod
     def children(self) -> Children:
@@ -98,29 +101,44 @@ class NamespacedIdentifier[T](Ref[T]):
     @classmethod
     @abstractmethod
     def sep(cls) -> typing.Literal[":", "."]:
+        """
+        Returns the separator character used by this
+        kind of namespace
+        """
         raise NotImplementedError
 
     @classmethod
-    def of(cls, s: str | Token) -> typing.Self:
+    def of(cls, s: str | Token, referent: T) -> typing.Self:
         """
         Returns an instance of this class from
-        a str and performs input validation
+        a str or Token and performs input validation
         """
         if isinstance(s, Token):
             s = s.require_name().value
-        return NamespacedIdentifier._of_helper(s, cls.sep(), cls)
+        namespace, name = cls._split_namespace(s)
+        return cls(referent, namespace, name)
 
-    @staticmethod
-    def _of_helper[V](s: str, split_char: str, constructor: typing.Callable[[str, str], V]) -> V:
+    @classmethod
+    def of_sequence(cls, *parts: str, referent: T) -> typing.Self:
+        if len(parts) <= 1:
+            raise ValueError(f"{parts} does not describe a valid namespace because it is too short")
+        return cls(referent, parts[0], "/".join(parts[1:]))
+
+    @classmethod
+    def _split_namespace(cls, s: str) -> tuple[str, str]:
         """
-        Implements NamedpsacedIdentifier.of() statically to satisfy
-        the type checker
+        Splits a full namespace into the namespace part and
+        the rest (e.g. this:core --> (this, core))
+
+        Further divisions aren't touched: (e.g.this.globals.x -->
+        this, globals.x)
         """
+        split_char = cls.sep()
         match s.split(split_char):
             case (name,):
-                return constructor(_placeholder_namespace, name)
+                return (_placeholder_namespace, name)
             case first, second:
-                return constructor(first, second)
+                return (first, second)
             case _:
                 raise ValueError(f"Malformed namespace: {s}")
 
@@ -133,20 +151,12 @@ class ColonIdentifier[T](NamespacedIdentifier[T]):
     def sep(cls) -> typing.Literal[":"]:
         return ":"
 
-    @classmethod
-    def of_sequence(cls, *parts: str, referent: T) -> typing.Self:
-        return cls(referent, parts[0], "/".join(parts[1:]))
-
 @dataclasses.dataclass(frozen=True)
 class DotIdentifier[T](NamespacedIdentifier[T]):
     @classmethod
     @typing.override
     def sep(cls) -> typing.Literal["."]:
         return "."
-
-    @classmethod
-    def of_sequence[V](cls, referent: V, *parts: str) -> "DotIdentifier[V]":
-        return DotIdentifier[V](referent, parts[0], ".".join(parts[1:]))
 
 @dataclasses.dataclass(frozen=True)
 class TextFile(Node):
@@ -156,12 +166,15 @@ class TextFile(Node):
 
 @dataclasses.dataclass(frozen=True)
 class MCFunction(TextFile):
-    id: ColonIdentifier
+    namespace: str
     body: "Block"
+
+    def ref(self, state: ParseState) -> "Ref[MCFunction]":
+        return state.get_ref(self.namespace, MCFunction)
 
     @typing.override
     def children(self) -> Children:
-        return (self.id.compile(), self.body)
+        return (self.namespace, self.body)
 
     @typing.override
     def compile(self):
