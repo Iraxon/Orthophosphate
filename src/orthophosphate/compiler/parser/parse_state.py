@@ -27,6 +27,11 @@ class ParseState:
         self.cursor += 1
 
     def peek(self, i: int = 0) -> Token:
+        """
+        Returns the token at the provided
+        offset from the cursor (zero by default)
+        without changing the cursor
+        """
         return self.tokens[self.cursor + i]
 
     def cursor_in_range(self) -> bool:
