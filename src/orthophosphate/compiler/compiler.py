@@ -1,38 +1,36 @@
 import os
 import re
-import typing
 
 from .parser import parser
 from .parser.abstract_syntax_tree import Node
 from .tokenizer import Tokenizer as tokenizer
 from .datapack_generator import second_generation_datapack_generator as dg
 
-ELLIPSIS_MACRO = re.compile(
-    r"\.\.\.([\w\d_]+)"
-    # Regex!
-    #
-    # It matches any instances of ellipsis (...) followed by any word
-    # that can be a mangling-compatible name
-)
+# ELLIPSIS_MACRO = re.compile(
+#     r"\.\.\.([\w\d_]+)"
+#     # Regex!
+#     #
+#     # It matches any instances of ellipsis (...) followed by any word
+#     # that can be a mangling-compatible name
+# )
 
-def resolve_macros(data: str, namespace: str) -> str:
-    def handle_name_mangling(m: re.Match) -> str:
-        print(m.group())
-        name_to_mangle: str = m.group(1)
-        return namespace + "." + name_to_mangle
-    return re.subn(ELLIPSIS_MACRO, handle_name_mangling, data)[0]
+# def resolve_macros(data: str, namespace: str) -> str:
+#     def handle_name_mangling(m: re.Match) -> str:
+#         print(m.group())
+#         name_to_mangle: str = m.group(1)
+#         return namespace + "." + name_to_mangle
+#     return re.subn(ELLIPSIS_MACRO, handle_name_mangling, data)[0]
 
-def pure_function_compile(src_file_path: str, do_prints: bool=False) -> dg.DataPack:
+def partial_compile(src_file_path: str, do_prints: bool=False) -> dg.DataPack:
     """
-    This compiles everything and returns the resulting FolderRep without realizing it
-
-    When do_prints is False, this is a pure function
+    This compiles everything and returns the resulting data pack
+    without writing it to the file system
     """
     SEPARATOR = "\n### ### ###\n"
     NAME = os.path.splitext(os.path.basename(src_file_path))[0]
 
     with open(src_file_path) as file:
-        src = resolve_macros(file.read(), dg.namespace_from_str(NAME))
+        src = file.read()
 
     if do_prints:
         print(SEPARATOR)
@@ -66,9 +64,9 @@ def compile(src_file_path: str, destination_file_path: str | None, do_prints: bo
     If destination_file_path is None then the result is printed to terminal instead of realized
     """
 
-    directory_rep = pure_function_compile(src_file_path=src_file_path, do_prints=do_prints)
+    directory_rep = partial_compile(src_file_path=src_file_path, do_prints=do_prints)
 
     if destination_file_path is None:
         print(directory_rep)
     else:
-        dg.realize(directory_rep, destination_file_path)
+        dg.write_to_files(directory_rep, destination_file_path)

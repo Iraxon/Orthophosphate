@@ -16,7 +16,7 @@ def compile_test_src(name: str, nameIncludesExtension: bool = False) -> ddm.Fold
     Name should not include the .opo4 extension unless
     specified by boolean arg
     """
-    return compiler.pure_function_compile(
+    return compiler.partial_compile(
             os.path.join(TEST_SRC_PATH, name + (".opo4" if not nameIncludesExtension else ""))
         )
 

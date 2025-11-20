@@ -1,7 +1,7 @@
 // Top level function definitions are put
 // in a default namespace that is named after the filename
 
-function this:core
+function core
 /* Think of `core` as the Orthophosphate
 equivalent of `main()`. It is conventional to
 use exactly one core function that runs every tick as a single point
@@ -9,10 +9,9 @@ of entry. This makes it easier to control the order
 that things get executed in. It is not, however,
 enforced by Orthophosphate.
 
-The "this:" namespace uses the file name
-to generate a namespace. Use it for your datapack's
-main namespace.
-*/
+No namespace or the "this:" namespace are replaced
+with the a namespace generated from the file name. Use
+that for your data pack's main namespace. */
 {
     |say hello world|; // Literal commands are delimited like so
 
@@ -34,10 +33,10 @@ main namespace.
 }
 
 tag function minecraft:tick {
-    this:core
+    core
 }
 
-function this:other_function {
+function other_function {
     |say other_function called|;
 }
 
