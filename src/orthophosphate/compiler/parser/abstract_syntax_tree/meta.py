@@ -61,12 +61,28 @@ class Node(ABC):
 @dataclasses.dataclass(frozen=True)
 class Ref[T](Node):
     """
-    A reference to a value defined by another
-    node; this will compile to some
+    A reference to a value defined elsewhere,
+    whether in Orthophosphate or in
+    Minecraft itself; this will compile to some
     kind of resource location or ID as
     opposed to a definition
     """
 
+    @typing.override
+    def children(self) -> Children:
+        return (self.compile(),)
+
+    @abstractmethod
+    def compile(self) -> str:
+        raise NotImplementedError
+
+@dataclasses.dataclass(frozen=True)
+class NodeRef[T](Ref[T]):
+    """
+    A Ref that refers to
+    something represented in the
+    AST
+    """
     referent: T
 
     @typing.override
@@ -78,7 +94,7 @@ class Ref[T](Node):
         raise NotImplementedError
 
 @dataclasses.dataclass(frozen=True)
-class NamespacedIdentifier[T](Ref[T]):
+class NamespacedIdentifier[T](NodeRef[T]):
     namespace: str
     rest: str
 
