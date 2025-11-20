@@ -5,17 +5,10 @@ import string
 
 from ..parser.abstract_syntax_tree import *
 
-class MCVersion(enum.Enum):
-    V1d20d1 = enum.auto()
-    VDefault = V1d20d1
-
-    def render(self) -> str:
-        return self.name.replace("d", ".").replace("V", "")
-
 type DataPack = dict[Path, Node]
 type Path = str | os.PathLike
 
-def realize(pack: DataPack, root: Path) -> None:
+def write_to_files(pack: DataPack, root: Path) -> None:
         for path, content in pack.items():
             with open(os.path.join(root, path), "x") as osFile:
                 osFile.write(str(content))
