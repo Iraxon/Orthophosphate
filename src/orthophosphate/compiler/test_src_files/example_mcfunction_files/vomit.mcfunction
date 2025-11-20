@@ -5,7 +5,7 @@
 # infected mobs
 
 # Notice how terrible this looks to write; this is why we're making
-# a compiler
+# a compiler. See vomit.opo4 for how much better that looks.
 
 # I have this here primarily so I can think about what I might
 # want to add --COMMANDO66
