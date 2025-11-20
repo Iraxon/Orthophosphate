@@ -26,6 +26,15 @@ class ParseState:
         """
         self.cursor += 1
 
+    def reset(self) -> None:
+        """
+        Decrements the cursor,
+        setting it back to where it was
+        before the previous next_token()
+        call
+        """
+        self.cursor -= 1
+
     def peek(self, i: int = 0) -> Token:
         """
         Returns the token at the provided
