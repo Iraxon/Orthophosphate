@@ -1,4 +1,7 @@
 import dataclasses
+import typing
+
+from ..tokenizer.token import Token
 from .abstract_syntax_tree import *
 
 @dataclasses.dataclass

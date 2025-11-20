@@ -72,8 +72,8 @@ def _parse_cmd(state: ParseState) -> CMD:
                 err(state, "Missing semicolon:")
             return LiteralCMD(value=cmd)
         case (TokenType.NAME, "obj"):
-            obj_name = state.next_token().require_name()
-            return LiteralCMD("   PLACEHOLDER   obj")
+            obj_name = state.next_token().require_name().value
+            return OBJ(obj_name)
         case (TokenType.NAME, "score"):
             operand1 = _parse_score(state, prohibit_const=True)
             operation = ScoreboardOperator.of(state.next_token().require_type(TokenType.OP).value)
