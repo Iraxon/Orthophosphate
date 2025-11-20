@@ -1,6 +1,9 @@
 # From Lethal Autonomous Weapon, which adds an infectious
 # enemy to the game
 
+# This function controls an attack used by some
+# infected mobs
+
 # Notice how terrible this looks to write; this is why we're making
 # a compiler
 
