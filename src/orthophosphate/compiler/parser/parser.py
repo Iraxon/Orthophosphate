@@ -4,7 +4,7 @@ from .abstract_syntax_tree import *
 from .parse_state import ParseState, err
 from ..tokenizer.token import Token, TokenType
 
-def parse(tokens: tuple[Token, ...]) -> Root:
+def parse(tokens: tuple[Token, ...]) -> PackRoot:
     """
     Accepts a tuple of tokens from the tokenizer
 
@@ -15,8 +15,8 @@ def parse(tokens: tuple[Token, ...]) -> Root:
     """
     state = ParseState(tokens)
     assert state.next_token() == Token(TokenType.PUNC, "file_start")
-    return Root(
-        value=_resolve_node_tuple(
+    return PackRoot(
+        files=_resolve_node_tuple(
             state,
             Token(TokenType.PUNC, "EOF"),
             _parse_top_level
@@ -35,7 +35,7 @@ methods according to what elements of the language
 should appear next.
 """
 
-def _parse_top_level(state: ParseState) -> TextFile:
+def _parse_top_level(state: ParseState) -> PackFile:
     t = state.next_token()
     match t:
         case (TokenType.NAME, "function"):

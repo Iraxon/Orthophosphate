@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import dataclasses
 from enum import Enum
+import enum
 import typing
 
 from ..tokenizer.token import Token
@@ -58,13 +59,28 @@ class Node(ABC):
                 )
         )
 
+class MCVersion(enum.Enum):
+    V1_20_1 = enum.auto()
+    DEFAULT = V1_20_1
+
+    @typing.override
+    def __str__(self) -> str:
+        return self.name[1:].replace("_", ".")
+
 @dataclasses.dataclass(frozen=True)
-class Root(Node):
-    value: "tuple[TextFile, ...]"
+class PackRoot(Node):
+    files: "tuple[PackFile, ...]"
+    # pack_version: MCVersion = MCVersion.DEFAULT
+
+    def compile(self) -> dict[str, str | bytes]:
+        return {
+            f.path(): f.compile()
+            for f in self.files
+        }
 
     @typing.override
     def children(self) -> Children:
-        return self.value
+        return self.files
 
 @dataclasses.dataclass(frozen=True)
 class Ref[T](Node):
@@ -90,10 +106,6 @@ class NamespacedIdentifier[T](Ref[T]):
     namespace: str
     rest: str
 
-    @typing.override
-    def __str__(self):
-        return self.compile()
-
     def compile(self) -> str:
         return f"{self.namespace}{self.sep()}{self.rest}"
 
@@ -116,6 +128,10 @@ class NamespacedIdentifier[T](Ref[T]):
             s = s.require_name().value
         namespace, name = cls.split_namespace(s)
         return cls(referent, namespace, name)
+
+    @typing.override
+    def __str__(self):
+        return self.compile()
 
     @classmethod
     def of_sequence(cls, *parts: str, referent: T) -> typing.Self:
@@ -143,7 +159,7 @@ class NamespacedIdentifier[T](Ref[T]):
             case _:
                 raise ValueError(f"Malformed namespace: {s}")
 
-_placeholder_namespace: typing.Final = "x"
+_placeholder_namespace: typing.Final = "this"
 
 @dataclasses.dataclass(frozen=True)
 class ColonIdentifier[T](NamespacedIdentifier[T]):
@@ -160,15 +176,28 @@ class DotIdentifier[T](NamespacedIdentifier[T]):
         return "."
 
 @dataclasses.dataclass(frozen=True)
-class TextFile(Node):
+class PackFile(Node):
+    @abstractmethod
+    def path(self) -> str:
+        """
+        Returns the file path this file will
+        be written to, relative to the pack root
+        (the directory that contains pack.mcmeta)
+        """
+        raise NotImplementedError
     @abstractmethod
     def compile(self) -> str:
         raise NotImplementedError
 
 @dataclasses.dataclass(frozen=True)
-class MCFunction(TextFile):
+class MCFunction(PackFile):
     id: str
     body: "Block"
+
+    @typing.override
+    def path(self):
+        namespace, name = self.id.split(":", 1)
+        return f"data/{namespace}/functions/{name}"
 
     @typing.override
     def children(self) -> Children:
@@ -199,7 +228,7 @@ type Taggable = MCFunction
 #     DAMAGE_TYPE = "damage_type"
 
 @dataclasses.dataclass(frozen=True)
-class Tag[T: Taggable](TextFile):
+class Tag[T: Taggable](PackFile):
     id: str
     content: "tuple[Ref[T] | Ref[Tag[T]], ...]"
     replace: bool = False
