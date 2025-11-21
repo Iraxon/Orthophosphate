@@ -3,7 +3,7 @@ import dataclasses
 from enum import Enum
 import typing
 
-from .meta import Children, DotIdentifier, Node, Ref
+from .meta import Children, Node
 
 @dataclasses.dataclass(frozen=True)
 class CMD(Node):
