@@ -14,6 +14,6 @@ if __name__ == "__main__":
         save_path_out_function=save_out,
         load_path_in_function=load_in,
         load_path_out_function=load_out,
-        compile_function=compiler.compiler.compile
+        compile_function=compiler.compiler.compile,
     )
     root.mainloop()

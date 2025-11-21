@@ -1,6 +1,7 @@
 import enum
 import typing
 
+
 class TokenType(enum.Enum):
     NAME = enum.auto()
     PUNC = enum.auto()
@@ -9,6 +10,7 @@ class TokenType(enum.Enum):
     LITERAL = enum.auto()
     SELECTOR = enum.auto()
     OP = enum.auto()
+
 
 class Token(typing.NamedTuple):
     type: TokenType
@@ -29,7 +31,7 @@ class Token(typing.NamedTuple):
         Returns self so you can chain it
         """
 
-        if (self.type != type):
+        if self.type != type:
             raise ValueError(f"Expected {type}, which {self} is not")
         return self
 

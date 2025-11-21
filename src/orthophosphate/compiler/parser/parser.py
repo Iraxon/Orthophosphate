@@ -4,6 +4,7 @@ from .abstract_syntax_tree import *
 from .parse_state import ParseState, err
 from ..tokenizer.token import Token, TokenType
 
+
 def parse(tokens: tuple[Token, ...]) -> PackRoot:
     """
     Accepts a tuple of tokens from the tokenizer
@@ -16,12 +17,9 @@ def parse(tokens: tuple[Token, ...]) -> PackRoot:
     state = ParseState(tokens)
     assert state.next_token() == Token(TokenType.PUNC, "file_start")
     return PackRoot(
-        files=_resolve_node_tuple(
-            state,
-            Token(TokenType.PUNC, "EOF"),
-            _parse_top_level
-        )
+        files=_resolve_node_tuple(state, Token(TokenType.PUNC, "EOF"), _parse_top_level)
     )
+
 
 type Parser[T] = typing.Callable[[ParseState], T]
 
@@ -34,6 +32,7 @@ of the passed ParseState object. They call other parse
 methods according to what elements of the language
 should appear next.
 """
+
 
 def _parse_top_level(state: ParseState) -> PackFile:
     t = state.next_token()
@@ -50,19 +49,23 @@ def _parse_top_level(state: ParseState) -> PackFile:
             match type:
                 case "function":
                     tag = Tag(name, _parse_tag_list(state, MCFunction))
-                    state.bind_name(name, ColonIdentifier.of(name, tag), Tag[MCFunction])
+                    state.bind_name(
+                        name, ColonIdentifier.of(name, tag), Tag[MCFunction]
+                    )
                     return tag
                 case _:
                     err(state, "Not a supported tag type:")
         case _:
             err(state)
 
+
 def _parse_block(state: ParseState) -> Block:
-    if (state.peek() == Token(TokenType.PUNC, "{")):
+    if state.peek() == Token(TokenType.PUNC, "{"):
         state.next_token()
         body = _resolve_node_tuple(state, Token(TokenType.PUNC, "}"), _parse_cmd)
         return Block(body)
     return Block((_parse_cmd(state),))
+
 
 def _parse_cmd(state: ParseState) -> CMD:
     t = state.next_token()
@@ -78,7 +81,9 @@ def _parse_cmd(state: ParseState) -> CMD:
         case (TokenType.NAME, "score"):
             raise NotImplementedError
             operand1 = _parse_score(state, prohibit_const=True)
-            operation = ScoreboardOperator.of(state.next_token().require_type(TokenType.OP).value)
+            operation = ScoreboardOperator.of(
+                state.next_token().require_type(TokenType.OP).value
+            )
             operand2 = _parse_score(state)
             return ScoreboardOperation(operand1, operand2, operation)
         case (TokenType.NAME, "call"):
@@ -86,6 +91,7 @@ def _parse_cmd(state: ParseState) -> CMD:
             raise NotImplementedError
         case _:
             err(state)
+
 
 def _parse_score(state: ParseState, prohibit_const: bool = False) -> Score:
     raise NotImplementedError
@@ -95,31 +101,45 @@ def _parse_score(state: ParseState, prohibit_const: bool = False) -> Score:
             if prohibit_const:
                 err(state, "A constant score is not allowed here:")
             return ConstantScore(int(x))
-        case ((TokenType.NAME | TokenType.SELECTOR as t, n), (TokenType.NAME, obj_name)):
-            state.bind_name(obj_name, DotIdentifier.of(obj_name, ScoreboardObjective(obj_name)), ScoreboardObjective)
+        case (
+            (TokenType.NAME | TokenType.SELECTOR as t, n),
+            (TokenType.NAME, obj_name),
+        ):
+            state.bind_name(
+                obj_name,
+                DotIdentifier.of(obj_name, ScoreboardObjective(obj_name)),
+                ScoreboardObjective,
+            )
             return VariableScore(n, ScoreboardObjective(obj_name))
         case _:
             err(state)
 
-def _parse_tag_list[T: Taggable](state: ParseState, type: type[T]) -> tuple[Ref[T], ...]:
+
+def _parse_tag_list[T: Taggable](
+    state: ParseState, type: type[T]
+) -> tuple[Ref[T], ...]:
     vals: tuple[str, ...]
-    if (state.peek() == Token(TokenType.PUNC, "{")):
+    if state.peek() == Token(TokenType.PUNC, "{"):
         state.next_token()
         vals = _resolve_node_tuple(state, Token(TokenType.PUNC, "}"), _parse_colon_id)
     else:
         vals = (_parse_colon_id(state),)
     return tuple(state.get_ref(v, type) for v in vals)
 
+
 def _parse_colon_id[T](state: ParseState, require_exists: bool = True) -> str:
     t = state.next_token()
     match t:
         case (TokenType.NAME, n):
-            ColonIdentifier.split_namespace(n) # Checks validity as side effect
+            ColonIdentifier.split_namespace(n)  # Checks validity as side effect
             return n
         case _:
             err(state)
 
-def _resolve_node_tuple[T](state: ParseState, end_token: Token, parse_function: Parser[T]) -> tuple[T, ...]:
+
+def _resolve_node_tuple[T](
+    state: ParseState, end_token: Token, parse_function: Parser[T]
+) -> tuple[T, ...]:
     """
     Makes a flat tuple of nodes from the tokens
     until it hits the specfied end token or EOF
@@ -133,13 +153,16 @@ def _resolve_node_tuple[T](state: ParseState, end_token: Token, parse_function: 
 
         # Check for end tokens
         next_token = state.peek()
-        if next_token.type == end_token.type and (next_token.value == end_token.value or end_token.value == "*"):
-            state.skip() # Skip closing token
+        if next_token.type == end_token.type and (
+            next_token.value == end_token.value or end_token.value == "*"
+        ):
+            state.skip()  # Skip closing token
             break
 
         next_node = parse_function(state)
         node_list.append(next_node)
     return tuple(node_list)
+
 
 def is_semicolon(state: ParseState) -> bool:
     """
@@ -150,6 +173,7 @@ def is_semicolon(state: ParseState) -> bool:
     state.reset()
     return t == Token(TokenType.PUNC, ";")
 
+
 def require_semicolon(state: ParseState) -> None:
     """
     Throws an error if there is not a semicolon at the
@@ -157,6 +181,7 @@ def require_semicolon(state: ParseState) -> None:
     """
     if not is_semicolon(state):
         err(state, "There should be a semicolon after this token:")
+
 
 if __name__ == "__main__":
     pass

@@ -8,6 +8,7 @@ import string
 #
 #
 
+
 class AlphanumericToken(TokenizerModuleBase):
 
     matches = tuple(char for char in string.ascii_letters) + ("_", "$")
@@ -18,7 +19,7 @@ class AlphanumericToken(TokenizerModuleBase):
 
         fullString = ""
 
-        while(cursor < len(data) and data[cursor] in AlphanumericToken.can_contain):
+        while cursor < len(data) and data[cursor] in AlphanumericToken.can_contain:
 
             fullString += data[cursor]
             cursor += 1
@@ -29,6 +30,7 @@ class AlphanumericToken(TokenizerModuleBase):
 
         return cursor, compiledTokens, data
 
+
 class NumberToken(TokenizerModuleBase):
     matches = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
 
@@ -37,16 +39,16 @@ class NumberToken(TokenizerModuleBase):
 
         fullNum = ""
 
-        #adds the whole number
-        while(cursor < len(data) and data[cursor] in NumberToken.matches):
+        # adds the whole number
+        while cursor < len(data) and data[cursor] in NumberToken.matches:
 
             fullNum += data[cursor]
             cursor += 1
 
-        #remove leading zeros; set value to "0" if this empties the string
-        #(because the number was 0)
+        # remove leading zeros; set value to "0" if this empties the string
+        # (because the number was 0)
         for i in range(len(fullNum)):
-            if(fullNum[i] == "0"):
+            if fullNum[i] == "0":
                 fullNum = fullNum[1:]
             else:
                 break
@@ -59,6 +61,7 @@ class NumberToken(TokenizerModuleBase):
 
         return cursor, compiledTokens, data
 
+
 class WhiteSpaceToken(TokenizerModuleBase):
     matches = (" ", "", "\n")
 
@@ -69,21 +72,22 @@ class WhiteSpaceToken(TokenizerModuleBase):
 
         return cursor, compiledTokens, data
 
+
 class StringToken(TokenizerModuleBase):
 
-    matches = ("\"",)
+    matches = ('"',)
 
     isTerminating = True
 
     @staticmethod
     def calculate(cursor, compiledTokens, data):
 
-        #getting past first token
+        # getting past first token
         cursor += 1
 
         fullString = ""
 
-        while(data[cursor] != "\""):
+        while data[cursor] != '"':
 
             fullString += data[cursor]
             cursor += 1
@@ -91,6 +95,7 @@ class StringToken(TokenizerModuleBase):
         compiledTokens.append(Token(TokenType.STRING, fullString))
 
         return cursor, compiledTokens, data
+
 
 class MCFunctionLiteralToken(TokenizerModuleBase):
 
@@ -100,20 +105,15 @@ class MCFunctionLiteralToken(TokenizerModuleBase):
 
     @staticmethod
     def calculate(cursor, compiledTokens, data):
-        #getting past the first character
+        # getting past the first character
         cursor += 1
 
         fullString = ""
 
-        while(
-            (
-                data[cursor] != "|"
-            )
-            and cursor < len(data)
-        ):
+        while (data[cursor] != "|") and cursor < len(data):
 
-            #making this command valid by resolving all whitespace to a single space
-            if(data[cursor] in WhiteSpaceToken.matches):
+            # making this command valid by resolving all whitespace to a single space
+            if data[cursor] in WhiteSpaceToken.matches:
                 if fullString[-1] != " ":
                     fullString += " "
             else:
@@ -125,6 +125,7 @@ class MCFunctionLiteralToken(TokenizerModuleBase):
 
         return cursor, compiledTokens, data
 
+
 class PunctuationToken(TokenizerModuleBase):
     matches = (";", "(", ")", "{", "}")
 
@@ -132,14 +133,16 @@ class PunctuationToken(TokenizerModuleBase):
 
     @staticmethod
     def calculate(cursor, compiledTokens, data):
-        if(data[cursor] in PunctuationToken.matches):
+        if data[cursor] in PunctuationToken.matches:
             compiledTokens.append(Token(TokenType.PUNC, data[cursor]))
         return cursor, compiledTokens, data
+
 
 # Constant function that returns the paren count for
 # the least binding operator currently in
 # the language
 MAX_PAREN_COUNT = 5
+
 
 def paren(compiledTokens, p):
     # """
@@ -151,17 +154,39 @@ def paren(compiledTokens, p):
     #     compiledTokens.append(Token(TokenType.PUNC, p))
     pass
 
-class OperatorToken(TokenizerModuleBase):
-    matches = ("+", "-", "*", "/", "%", "**", "=", "+=", "-=",
-        "*=", "/=", "%=", "**=", "==", "!=", "<", ">", "<=", ">=",
-        "<==", ">==", "><")
 
-        # Scoreboard assign operators;
-        # <== : assign if the value is less than current value
-        # >== : assign if the value is greater than current value
-        # >< : swap values of two scores (might not be supported)
-        # These operators are added for low-level score management;
-        # Minecraft has them
+class OperatorToken(TokenizerModuleBase):
+    matches = (
+        "+",
+        "-",
+        "*",
+        "/",
+        "%",
+        "**",
+        "=",
+        "+=",
+        "-=",
+        "*=",
+        "/=",
+        "%=",
+        "**=",
+        "==",
+        "!=",
+        "<",
+        ">",
+        "<=",
+        ">=",
+        "<==",
+        ">==",
+        "><",
+    )
+
+    # Scoreboard assign operators;
+    # <== : assign if the value is less than current value
+    # >== : assign if the value is greater than current value
+    # >< : swap values of two scores (might not be supported)
+    # These operators are added for low-level score management;
+    # Minecraft has them
 
     isTerminating = True
 
@@ -181,6 +206,7 @@ class OperatorToken(TokenizerModuleBase):
         # Small sub-functions to save typing
         def single_paren_close():
             compiledTokens.append(Token(TokenType.PUNC, ")"))
+
         def single_paren_open():
             compiledTokens.append(Token(TokenType.PUNC, "("))
 
@@ -200,7 +226,10 @@ class OperatorToken(TokenizerModuleBase):
         # should not be any operator precedence because only
         # one operator is allowed there.
 
-        if (compiledTokens[-3].type, compiledTokens[-3].value) == (TokenType.NAME, "score"):
+        if (compiledTokens[-3].type, compiledTokens[-3].value) == (
+            TokenType.NAME,
+            "score",
+        ):
             match op_string:
                 case "=" | "+=" | "-=" | "/=" | "%=" | "<==" | ">==" | "><" as o:
                     compiledTokens.append(Token(TokenType.OP, o))
@@ -229,9 +258,12 @@ class OperatorToken(TokenizerModuleBase):
             case "**" as o:
                 parenthesize(1, o)
             case _ as o:
-                raise ValueError(f"Tokenizer does not support operator {o}; cursor = {cursor}")
+                raise ValueError(
+                    f"Tokenizer does not support operator {o}; cursor = {cursor}"
+                )
 
         return cursor, compiledTokens, data
+
 
 class CommentToken(TokenizerModuleBase):
 
@@ -242,14 +274,15 @@ class CommentToken(TokenizerModuleBase):
     @staticmethod
     def calculate(cursor, compiledTokens, data):
 
-        cursor += 1 # No need to compensate for two
+        cursor += 1  # No need to compensate for two
         # char start in case of // because loop
         # will roll over it all anyway
 
-        while(cursor < len(data) and data[cursor] != "\n"):
+        while cursor < len(data) and data[cursor] != "\n":
             cursor += 1
 
         return cursor, compiledTokens, data
+
 
 class MultilineCommentToken(TokenizerModuleBase):
 
@@ -260,16 +293,17 @@ class MultilineCommentToken(TokenizerModuleBase):
     @staticmethod
     def calculate(cursor, compiledTokens, data):
 
-        cursor += 1 # We don't need to compensate for
+        cursor += 1  # We don't need to compensate for
         # two character start because the loop will roll over
         # the asterisk anyway
 
-        while(cursor < len(data) - 2 and data[cursor:cursor+2] != "*/"):
+        while cursor < len(data) - 2 and data[cursor : cursor + 2] != "*/":
             cursor += 1
 
-        cursor += 1 # Compensate for two-character end marker
+        cursor += 1  # Compensate for two-character end marker
 
         return cursor, compiledTokens, data
+
 
 class SelectorToken(TokenizerModuleBase):
 
@@ -277,31 +311,43 @@ class SelectorToken(TokenizerModuleBase):
     can_contain = (
         AlphanumericToken.matches
         + WhiteSpaceToken.matches
-        + tuple(char for char in string.digits) + (".", ":", "!", "[", "]", "=", "*")
+        + tuple(char for char in string.digits)
+        + (".", ":", "!", "[", "]", "=", "*")
     )
 
     @staticmethod
     def calculate(cursor, compiledTokens, data):
 
-        fullString = data[cursor] # Capture the starting @ sign
+        fullString = data[cursor]  # Capture the starting @ sign
         cursor += 1
 
-        while(cursor < len(data) and data[cursor] in SelectorToken.can_contain and data[cursor] != "]"):
+        while (
+            cursor < len(data)
+            and data[cursor] in SelectorToken.can_contain
+            and data[cursor] != "]"
+        ):
 
             fullString += data[cursor]
             cursor += 1
 
-        if data[cursor] == "]": # Bring in ending delimeter
+        if data[cursor] == "]":  # Bring in ending delimeter
             fullString += "]"
 
         compiledTokens.append(Token(TokenType.SELECTOR, fullString))
 
         return cursor, compiledTokens, data
 
-#the list of all the recognized token modules. Used this to add new tokens
+
+# the list of all the recognized token modules. Used this to add new tokens
 TOKEN_MODULES = (
-    AlphanumericToken, NumberToken, WhiteSpaceToken,
-    StringToken, MCFunctionLiteralToken, PunctuationToken,
-    CommentToken, MultilineCommentToken, OperatorToken,
-    SelectorToken
+    AlphanumericToken,
+    NumberToken,
+    WhiteSpaceToken,
+    StringToken,
+    MCFunctionLiteralToken,
+    PunctuationToken,
+    CommentToken,
+    MultilineCommentToken,
+    OperatorToken,
+    SelectorToken,
 )

@@ -4,9 +4,10 @@ from .tokenizer_module_base import TokenizerModuleBase
 from .token import Token, TokenType
 from .tokens import TOKEN_MODULES, PunctuationToken, WhiteSpaceToken
 
-#NEEDED CHANGES:
-#finish class lol
-#one character sub for tokens in the code
+# NEEDED CHANGES:
+# finish class lol
+# one character sub for tokens in the code
+
 
 def get_ln_and_col(s: str, index) -> tuple[int, int]:
     """
@@ -17,38 +18,42 @@ def get_ln_and_col(s: str, index) -> tuple[int, int]:
         return 0, 0
     elif len(s) == 1:
         return 1, 1
-    lines = "\n".split(s[:index + 1])
+    lines = "\n".split(s[: index + 1])
     col = len(lines[-1])
     return len(lines), col
 
-#helper data set. Maps every token string to the token it is a part of
-token_strings: dict[str, typing.Callable[[int, list[Token], str], tuple[int, list[Token], str]]] = {
+
+# helper data set. Maps every token string to the token it is a part of
+token_strings: dict[
+    str, typing.Callable[[int, list[Token], str], tuple[int, list[Token], str]]
+] = {
     match: token.calculate
-    for token in TOKEN_MODULES #this is defined in token_modules
+    for token in TOKEN_MODULES  # this is defined in token_modules
     for match in token.matches
 }
 
-def tokenize(input : str) -> tuple[Token, ...]:
 
-    data : str = input
+def tokenize(input: str) -> tuple[Token, ...]:
 
-    #where the tokenizer is in the data
-    cursor : int = 0
+    data: str = input
 
-    #the current token. This is needed because most tokens are more than one character long
-    token : str = ""
+    # where the tokenizer is in the data
+    cursor: int = 0
 
-    #the currently compiled tokens
-    compiledTokens : list[Token] = []
+    # the current token. This is needed because most tokens are more than one character long
+    token: str = ""
+
+    # the currently compiled tokens
+    compiledTokens: list[Token] = []
 
     # Invisible punctuation added to start of file
     compiledTokens.append(Token(TokenType.PUNC, "file_start"))
 
-    #logic
-    while(cursor < len(data)):
+    # logic
+    while cursor < len(data):
         token = data[cursor]
 
-        if token not in WhiteSpaceToken.matches: # We don't do anything for whitespace
+        if token not in WhiteSpaceToken.matches:  # We don't do anything for whitespace
 
             # Look ahead with an inner loop
             # and try to see what tokens
@@ -56,7 +61,9 @@ def tokenize(input : str) -> tuple[Token, ...]:
             possible_tokens = []
             inner_token = ""
             inner_cursor = cursor
-            while (inner_cursor < len(data)) and (data[inner_cursor] not in WhiteSpaceToken.matches):
+            while (inner_cursor < len(data)) and (
+                data[inner_cursor] not in WhiteSpaceToken.matches
+            ):
                 inner_token += data[inner_cursor]
                 if inner_token in token_strings:
                     possible_tokens.append(inner_token)
@@ -66,15 +73,15 @@ def tokenize(input : str) -> tuple[Token, ...]:
 
             # Decide on which token module to get calculate() from
             if len(possible_tokens) >= 1:
-                chosen_token = sorted(possible_tokens, key=len, reverse=True)[0] # Get the longest of the possible tokens
+                chosen_token = sorted(possible_tokens, key=len, reverse=True)[
+                    0
+                ]  # Get the longest of the possible tokens
             else:
                 raise ValueError(f"Token {token} has no matches")
 
             # Apply calculate()
             cursor, compiledTokens, data = token_strings[chosen_token](
-                cursor,
-                compiledTokens,
-                data
+                cursor, compiledTokens, data
             )
             # print(compiledTokens[-1])
         cursor += 1
@@ -83,7 +90,8 @@ def tokenize(input : str) -> tuple[Token, ...]:
 
     return tuple(compiledTokens)
 
-#helper function to print all the tokens
-def printTokens(compiledTokens : list[Token]):
+
+# helper function to print all the tokens
+def printTokens(compiledTokens: list[Token]):
     for token in compiledTokens:
         print(token)
