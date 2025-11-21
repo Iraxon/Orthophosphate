@@ -6,6 +6,9 @@
         "ms-python.debugpy",
         "chang196700.newline",
         "davidanson.vscode-markdownlint",
-        "shardulm94.trailing-spaces"
+        "shardulm94.trailing-spaces",
+        "ms-python.vscode-python-envs",
+        "kevinrose.vsc-python-indent",
+        "mgesbert.python-path"
     ]
 }
