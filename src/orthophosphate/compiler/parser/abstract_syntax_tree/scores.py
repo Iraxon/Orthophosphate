@@ -5,6 +5,7 @@ import typing
 from .mcfunction import CMD
 from .meta import Children, Ref
 
+raise NotImplementedError
 
 class ScoreboardOperator(Enum):
     EQ = "="
