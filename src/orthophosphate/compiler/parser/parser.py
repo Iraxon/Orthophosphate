@@ -72,15 +72,15 @@ def _parse_cmd(state: ParseState) -> CMD:
                 err(state, "Missing semicolon:")
             return LiteralCMD(value=cmd)
         case (TokenType.NAME, "obj"):
+            raise NotImplementedError
             obj_name = state.next_token().require_name().value
-            return OBJ(obj_name)
+            return ScoreboardObjective(obj_name)
         case (TokenType.NAME, "score"):
+            raise NotImplementedError
             operand1 = _parse_score(state, prohibit_const=True)
             operation = ScoreboardOperator.of(state.next_token().require_type(TokenType.OP).value)
             operand2 = _parse_score(state)
             return ScoreboardOperation(operand1, operand2, operation)
-        case (TokenType.NAME, "while"):
-            raise NotImplementedError
         case (TokenType.NAME, "call"):
             function_id = state.next_token().require_name()
             raise NotImplementedError
@@ -88,16 +88,16 @@ def _parse_cmd(state: ParseState) -> CMD:
             err(state)
 
 def _parse_score(state: ParseState, prohibit_const: bool = False) -> Score:
+    raise NotImplementedError
     score = (state.next_token(), state.next_token())
     match score:
         case ((TokenType.NAME, "constant"), (TokenType.INT, x)):
             if prohibit_const:
                 err(state, "A constant score is not allowed here:")
             return ConstantScore(int(x))
-        case ((TokenType.NAME, n), (TokenType.NAME, obj)):
-            return VariableScore(n, OBJ(obj))
-        case ((TokenType.SELECTOR, s), (TokenType.NAME, obj)):
-            return VariableScore(TargetSelector.of(s), OBJ(obj))
+        case ((TokenType.NAME | TokenType.SELECTOR as t, n), (TokenType.NAME, obj_name)):
+            state.bind_name(obj_name, DotIdentifier.of(obj_name, ScoreboardObjective(obj_name)), ScoreboardObjective)
+            return VariableScore(n, ScoreboardObjective(obj_name))
         case _:
             err(state)
 
@@ -140,6 +140,23 @@ def _resolve_node_tuple[T](state: ParseState, end_token: Token, parse_function: 
         next_node = parse_function(state)
         node_list.append(next_node)
     return tuple(node_list)
+
+def is_semicolon(state: ParseState) -> bool:
+    """
+    Checks whether the next token is a semicolon
+    without consuming it
+    """
+    t = state.next_token()
+    state.reset()
+    return t == Token(TokenType.PUNC, ";")
+
+def require_semicolon(state: ParseState) -> None:
+    """
+    Throws an error if there is not a semicolon at the
+    current cursor position
+    """
+    if not is_semicolon(state):
+        err(state, "There should be a semicolon after this token:")
 
 if __name__ == "__main__":
     pass
