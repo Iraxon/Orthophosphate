@@ -1,59 +1,42 @@
 import os
-import re
+import typing
 
 from .parser import parser
 from .parser.abstract_syntax_tree import Node
 from .tokenizer import Tokenizer as tokenizer
-from .datapack_generator import second_generation_datapack_generator as dg
-
-# ELLIPSIS_MACRO = re.compile(
-#     r"\.\.\.([\w\d_]+)"
-#     # Regex!
-#     #
-#     # It matches any instances of ellipsis (...) followed by any word
-#     # that can be a mangling-compatible name
-# )
-
-# def resolve_macros(data: str, namespace: str) -> str:
-#     def handle_name_mangling(m: re.Match) -> str:
-#         print(m.group())
-#         name_to_mangle: str = m.group(1)
-#         return namespace + "." + name_to_mangle
-#     return re.subn(ELLIPSIS_MACRO, handle_name_mangling, data)[0]
+from .datapack_generator import datapack_generator as dg
 
 def partial_compile(src_file_path: str, do_prints: bool=False) -> dg.DataPack:
     """
     This compiles everything and returns the resulting data pack
     without writing it to the file system
     """
-    SEPARATOR = "\n### ### ###\n"
-    NAME = os.path.splitext(os.path.basename(src_file_path))[0]
+    PRINT_SEPARATOR: typing.Final = "\n### ### ###\n"
+    source_file_name: typing.Final = os.path.splitext(os.path.basename(src_file_path))[0]
 
     with open(src_file_path) as file:
         src = file.read()
 
     if do_prints:
-        print(SEPARATOR)
+        print(PRINT_SEPARATOR)
         print(src)
-        print(SEPARATOR)
+        print(PRINT_SEPARATOR)
 
     tokens = tokenizer.tokenize(src)
 
     if do_prints:
         print(src)
-        print(SEPARATOR)
+        print(PRINT_SEPARATOR)
         print("\n".join(str(token) for token in tokens))
     ast = parser.parse(tokens)
 
     if do_prints:
         print(ast)
-        print(SEPARATOR)
+        print(PRINT_SEPARATOR)
 
-    raise NotImplementedError
-
-    directory_rep = datapack_generator.generate_datapack(
+    directory_rep = dg.generate_datapack(
         ast,
-        name=NAME
+        source_file_name
     )
     return directory_rep
 
