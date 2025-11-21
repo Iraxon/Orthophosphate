@@ -3,7 +3,8 @@ import dataclasses
 import enum
 import typing
 
-from .meta import Node, Children, Ref
+from .references import Ref
+from .meta import Node, Children
 from .mcfunction import Block
 
 class MCVersion(enum.Enum):
