@@ -5,7 +5,8 @@ import typing
 from .mcfunction import CMD
 from .meta import Children, Ref
 
-raise NotImplementedError
+if not typing.TYPE_CHECKING:
+    raise NotImplementedError
 
 class ScoreboardOperator(Enum):
     EQ = "="
