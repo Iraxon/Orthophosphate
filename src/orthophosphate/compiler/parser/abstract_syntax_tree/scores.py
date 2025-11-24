@@ -8,6 +8,7 @@ from .meta import Children, Ref
 if not typing.TYPE_CHECKING:
     raise NotImplementedError
 
+
 class ScoreboardOperator(Enum):
     EQ = "="
     ADD = "+="
@@ -20,13 +21,15 @@ class ScoreboardOperator(Enum):
     SWP = "><"
 
     @staticmethod
-    def of(s:str) -> "ScoreboardOperator":
+    def of(s: str) -> "ScoreboardOperator":
         v = _op_map.get(s)
         if v is None:
             raise ValueError(f"Not a scoreboard operation: {s}")
         return v
 
+
 _op_map: typing.Final = {op.value: op for op in ScoreboardOperator}
+
 
 @dataclasses.dataclass(frozen=True)
 class ScoreboardOperation(CMD):
@@ -43,15 +46,20 @@ class ScoreboardOperation(CMD):
         first = self.operand1
         second = self.operand2
         if isinstance(second, ConstantScore):
-            return (
-                f"{second.compile()}\n"
-                + _operation_line(first, self.operation, second)
+            return f"{second.compile()}\n" + _operation_line(
+                first, self.operation, second
             )
         else:
             return _operation_line(first, self.operation, second)
 
-def _operation_line(target: "VariableScore", op: ScoreboardOperator, source: "VariableScore | ConstantScore") -> str:
+
+def _operation_line(
+    target: "VariableScore",
+    op: ScoreboardOperator,
+    source: "VariableScore | ConstantScore",
+) -> str:
     return f"scoreboard players operation {target.compile()} {op.value} {source.compile()}\n"
+
 
 @dataclasses.dataclass(frozen=True)
 class ScoreValue(Node):
@@ -62,6 +70,7 @@ class ScoreValue(Node):
     @abstractmethod
     def compile(self) -> str:
         raise NotImplementedError
+
 
 @dataclasses.dataclass(frozen=True)
 class Expression(ScoreValue):
@@ -77,7 +86,9 @@ class Expression(ScoreValue):
     def compile(self) -> str:
         raise NotImplementedError
 
+
 type Score = Ref[ScoreValue] | ConstantScore
+
 
 @dataclasses.dataclass(frozen=True)
 class VariableScore(Ref[ScoreValue]):
@@ -89,8 +100,13 @@ class VariableScore(Ref[ScoreValue]):
         return (self.score_holder, self.obj)
 
     def compile(self) -> str:
-        score_holder_str = self.score_holder if isinstance(self.score_holder, str) else self.score_holder.compile()
-        return (f"{score_holder_str} {self.obj.compile()}")
+        score_holder_str = (
+            self.score_holder
+            if isinstance(self.score_holder, str)
+            else self.score_holder.compile()
+        )
+        return f"{score_holder_str} {self.obj.compile()}"
+
 
 @dataclasses.dataclass(frozen=True)
 class ConstantScore(ScoreValue):
@@ -122,10 +138,8 @@ class ConstantScore(ScoreValue):
         without ParseState because constants
         are always stored in the same place
         """
-        return DotIdentifier.of(
-            f"C{self.value} opo4.constants",
-            self
-        )
+        return DotIdentifier.of(f"C{self.value} opo4.constants", self)
+
 
 @dataclasses.dataclass(frozen=True)
 class ScoreboardObjective(CMD):
