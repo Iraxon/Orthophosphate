@@ -1,9 +1,12 @@
+from abc import abstractmethod
 import dataclasses
 from enum import Enum
 import typing
 
-from .mcfunction import CMD
-from .meta import Children, Ref
+if typing.TYPE_CHECKING:  # Don't import at runtime to avoid circular import
+    from .mcfunction import CMD, TargetSelector
+from .meta import Children, Node
+from .references import DotIdentifier, Ref
 
 if not typing.TYPE_CHECKING:
     raise NotImplementedError
