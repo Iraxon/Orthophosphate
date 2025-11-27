@@ -1,11 +1,9 @@
 from abc import ABC, abstractmethod
 import dataclasses
-import typing
-
-from ...tokenizer.token import Token
 
 
 type Children = "tuple[Node | str, ...]"
+
 
 @dataclasses.dataclass(frozen=True)
 class Node(ABC):
@@ -19,6 +17,7 @@ class Node(ABC):
     Some may also implement a ref() method that returns a Ref pointing
     to the object itself given a ParseState
     """
+
     @abstractmethod
     def children(self) -> Children:
         """
@@ -41,19 +40,20 @@ class Node(ABC):
         children = self.children()
 
         render_contents: tuple[str, ...] = tuple(
-            child.render(f"{pre}{'║ ' if i < len(children) - 1 else '  '}")
-            if isinstance(child, Node)
-            else f"═ {child}"
+            (
+                child.render(f"{pre}{'║ ' if i < len(children) - 1 else '  '}")
+                if isinstance(child, Node)
+                else f"═ {child}"
+            )
             for i, child in enumerate(children)
         )
-        return (
-            f"{'' if pre == '' else'═'} {self.__class__.__name__}\n"
-            + "".join(
-                    tuple(
-                        f"{pre}╠{element}\n"
-                        if i < len(render_contents) - 1
-                        else f"{pre}╚{element}"
-                        for i, element in enumerate(render_contents)
-                    )
+        return f"{'' if pre == '' else'═'} {self.__class__.__name__}\n" + "".join(
+            tuple(
+                (
+                    f"{pre}╠{element}\n"
+                    if i < len(render_contents) - 1
+                    else f"{pre}╚{element}"
                 )
+                for i, element in enumerate(render_contents)
+            )
         )
