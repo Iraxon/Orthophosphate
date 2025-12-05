@@ -9,6 +9,7 @@
         "shardulm94.trailing-spaces",
         "ms-python.vscode-python-envs",
         "kevinrose.vsc-python-indent",
-        "mgesbert.python-path"
+        "mgesbert.python-path",
+        "ms-python.isort"
     ]
 }
