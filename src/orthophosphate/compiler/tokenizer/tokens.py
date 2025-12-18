@@ -127,7 +127,7 @@ class MCFunctionLiteralToken(TokenizerModuleBase):
 
 
 class PunctuationToken(TokenizerModuleBase):
-    matches = (";", "(", ")", "{", "}")
+    matches = (";", "(", ")", "{", "}", "[", "]")
 
     isTerminating = True
 
