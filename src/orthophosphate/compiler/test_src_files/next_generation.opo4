@@ -1,7 +1,6 @@
 // Top level function definitions are put
 // in a default namespace that is named after the filename
 
-function core
 /* Think of `core` as the Orthophosphate
 equivalent of `main()`. It is conventional to
 use exactly one core function that runs every tick as a single point
@@ -12,7 +11,9 @@ enforced by Orthophosphate.
 No namespace or the "this:" namespace are replaced
 with the a namespace generated from the file name. Use
 that for your data pack's main namespace. */
-{
+
+function core {
+
     |say hello world|; // Literal commands are delimited like so
 
     # line comment
@@ -32,9 +33,9 @@ that for your data pack's main namespace. */
     and split between lines|;
 }
 
-tag function minecraft:tick {
+tag function minecraft:tick [
     core
-}
+]
 
 function other_function {
     |say other_function called|;
