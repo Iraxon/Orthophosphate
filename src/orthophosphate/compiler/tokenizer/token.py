@@ -6,7 +6,7 @@ class TokenType(enum.Enum):
     NAME = enum.auto()
     PUNC = enum.auto()
     INT = enum.auto()
-    STRING = enum.auto()
+    STR = enum.auto()
     LITERAL = enum.auto()
     SELECTOR = enum.auto()
     OP = enum.auto()

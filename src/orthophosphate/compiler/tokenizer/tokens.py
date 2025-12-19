@@ -92,7 +92,7 @@ class StringToken(TokenizerModuleBase):
             fullString += data[cursor]
             cursor += 1
 
-        compiledTokens.append(Token(TokenType.STRING, fullString))
+        compiledTokens.append(Token(TokenType.STR, fullString))
 
         return cursor, compiledTokens, data
 
