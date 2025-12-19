@@ -43,7 +43,7 @@ def _parse_expr(state: ParseState) -> ExprNode:
     t = state.next_token()
     match t:
 
-        case (TokenType.PUNC, "%"):
+        case (TokenType.PUNC, "$"):
             return parse_def(state)
 
         case (TokenType.NAME, n):

@@ -10,7 +10,7 @@
 <literal> ::= <INT> | <STR> | <list_literal>
 <list_literal> ::= \[ {<expr>} \] | \{ {<expr>} \}
 
-<def> ::= % <ID> \[ {<ID>} \] \[ {<expr>} \] -> <expr>: <expr>
+<def> ::= $ <ID> \[ {<ID>} \] \[ {<expr>} \] -> <expr>: <expr>
 ```
 
 ## Present State
