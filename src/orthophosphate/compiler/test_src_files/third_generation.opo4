@@ -1,3 +1,5 @@
+% tag [tag_type name content] [str str list(str)] -> tag_file body_here
+
 tag(
     function
     minecraft_tick
