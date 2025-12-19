@@ -1,5 +1,4 @@
 import tkinter
-import user_interface.file_utils
 import user_interface.gui
 import compiler.compiler
 
