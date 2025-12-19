@@ -58,7 +58,7 @@ def tokenize(input: str) -> tuple[Token, ...]:
             # Look ahead with an inner loop
             # and try to see what tokens
             # this character could be the start of
-            possible_tokens = []
+            possible_tokens: list[str] = []
             inner_token = ""
             inner_cursor = cursor
             while (inner_cursor < len(data)) and (
