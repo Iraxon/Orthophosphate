@@ -1,11 +1,18 @@
 import typing
 
-from .abstract_syntax_tree import *
-from .parse_state import ParseState, err
 from ..tokenizer.token import Token, TokenType
+from .parse_tree import (
+    ApplicationNode,
+    DefNode,
+    ExprNode,
+    ListLiteralNode,
+    ProgramNode,
+    PyLiteralNode,
+)
+from .parse_state import ParseState, err
 
 
-def parse(tokens: tuple[Token, ...]) -> PackRoot:
+def parse(tokens: tuple[Token, ...]) -> ProgramNode:
     """
     Accepts a tuple of tokens from the tokenizer
 
@@ -15,17 +22,15 @@ def parse(tokens: tuple[Token, ...]) -> PackRoot:
     This method is the entry point for this module
     """
     state = ParseState(tokens)
-    assert state.next_token() == Token(TokenType.PUNC, "file_start")
-    return PackRoot(
-        files=_resolve_node_tuple(state, Token(TokenType.PUNC, "EOF"), _parse_top_level)
+    require_token(state, Token(TokenType.PUNC, "file_start"))
+    return ProgramNode(
+        _parse_expr_sequence(state, "EOF")
     )
 
 
-type Parser[T] = typing.Callable[[ParseState], T]
-
 """
-All of the pares_* methods below take the current ParseState
-and return the AST object that the tokens at the cursor represent.
+All of the parse_* methods below take the current ParseState
+and return the parse tree node that the tokens at the cursor represent.
 
 Parse methods can mutate the state
 of the passed ParseState object. They call other parse
@@ -34,111 +39,77 @@ should appear next.
 """
 
 
-def _parse_top_level(state: ParseState) -> PackFile:
+def _parse_expr(state: ParseState) -> ExprNode:
     t = state.next_token()
     match t:
-        case (TokenType.NAME, "function"):
-            name = state.next_token().require_name().value
-            body = _parse_block(state)
-            fn = MCFunction(name, body)
-            state.bind_name(name, ColonIdentifier.of(name, fn), MCFunction)
-            return fn
-        case (TokenType.NAME, "tag"):
-            type = state.next_token().require_name().value
-            name = state.next_token().require_name().value
-            match type:
-                case "function":
-                    tag = Tag(name, _parse_tag_list(state, MCFunction))
-                    state.bind_name(
-                        name, ColonIdentifier.of(name, tag), Tag[MCFunction]
-                    )
-                    return tag
-                case _:
-                    err(state, "Not a supported tag type:")
-        case _:
-            err(state)
 
+        case (TokenType.PUNC, "%"):
+            return parse_def(state)
 
-def _parse_block(state: ParseState) -> Block:
-    if state.peek() == Token(TokenType.PUNC, "{"):
-        state.next_token()
-        body = _resolve_node_tuple(state, Token(TokenType.PUNC, "}"), _parse_cmd)
-        return Block(body)
-    return Block((_parse_cmd(state),))
-
-
-def _parse_cmd(state: ParseState) -> CMD:
-    t = state.next_token()
-    match t:
-        case (TokenType.LITERAL, cmd):
-            if state.next_token() != (TokenType.PUNC, ";"):
-                err(state, "Missing semicolon:")
-            return LiteralCMD(value=cmd)
-        case (TokenType.NAME, "obj"):
-            raise NotImplementedError
-            obj_name = state.next_token().require_name().value
-            return ScoreboardObjective(obj_name)
-        case (TokenType.NAME, "score"):
-            raise NotImplementedError
-            operand1 = _parse_score(state, prohibit_const=True)
-            operation = ScoreboardOperator.of(
-                state.next_token().require_type(TokenType.OP).value
-            )
-            operand2 = _parse_score(state)
-            return ScoreboardOperation(operand1, operand2, operation)
-        case (TokenType.NAME, "call"):
-            function_id = state.next_token().require_name()
-            raise NotImplementedError
-        case _:
-            err(state)
-
-
-def _parse_score(state: ParseState, prohibit_const: bool = False) -> Score:
-    raise NotImplementedError
-    score = (state.next_token(), state.next_token())
-    match score:
-        case ((TokenType.NAME, "constant"), (TokenType.INT, x)):
-            if prohibit_const:
-                err(state, "A constant score is not allowed here:")
-            return ConstantScore(int(x))
-        case (
-            (TokenType.NAME | TokenType.SELECTOR as t, n),
-            (TokenType.NAME, obj_name),
-        ):
-            state.bind_name(
-                obj_name,
-                DotIdentifier.of(obj_name, ScoreboardObjective(obj_name)),
-                ScoreboardObjective,
-            )
-            return VariableScore(n, ScoreboardObjective(obj_name))
-        case _:
-            err(state)
-
-
-def _parse_tag_list[T: Taggable](
-    state: ParseState, type: type[T]
-) -> tuple[Ref[T], ...]:
-    vals: tuple[str, ...]
-    if state.peek() == Token(TokenType.PUNC, "{"):
-        state.next_token()
-        vals = _resolve_node_tuple(state, Token(TokenType.PUNC, "}"), _parse_colon_id)
-    else:
-        vals = (_parse_colon_id(state),)
-    return tuple(state.get_ref(v, type) for v in vals)
-
-
-def _parse_colon_id[T](state: ParseState, require_exists: bool = True) -> str:
-    t = state.next_token()
-    match t:
         case (TokenType.NAME, n):
-            ColonIdentifier.split_namespace(n)  # Checks validity as side effect
-            return n
+            if state.peek() == (TokenType.PUNC, "("):
+                state.next_token()
+                return ApplicationNode(n, _parse_expr_sequence(state, ")"))
+            return ApplicationNode(n, tuple())
+
+        case (TokenType.INT, x):
+            return PyLiteralNode(int, int(x))
+
+        case (TokenType.STR, s):
+            return PyLiteralNode(str, s)
+
+        case (TokenType.PUNC, "["):
+            return ListLiteralNode(_parse_expr_sequence(state, "]"))
+
+        case (TokenType.PUNC, "{"):
+            return ListLiteralNode(_parse_expr_sequence(state, "}"))
+
         case _:
             err(state)
 
 
-def _resolve_node_tuple[T](
-    state: ParseState, end_token: Token, parse_function: Parser[T]
+def parse_def(state: ParseState) -> DefNode:
+
+    name = state.next_token().require_name().value
+
+    require_token(state, Token(TokenType.PUNC, "["))
+    params = _parse_sequence(state, Token(TokenType.PUNC, "]"), parse_id)
+    require_token(state, Token(TokenType.PUNC, "["))
+    param_types = _parse_expr_sequence(state, "]")
+
+    param_map = {
+        params[i]: param_types[i] for i in range(min(len(params), len(param_types)))
+    }
+
+    require_token(state, Token(TokenType.PUNC, "->"))
+    return_type = _parse_expr(state)
+
+    body = _parse_expr(state)
+
+    return DefNode(name, param_map, return_type, body)
+
+
+def parse_id(state: ParseState) -> str:
+    return state.next_token().require_name().value
+
+
+def _parse_str(state: ParseState) -> str:
+    t = state.next_token()
+    match t:
+        case (TokenType.STR, s):
+            return s
+        case _:
+            err(state)
+
+
+def _parse_expr_sequence(state: ParseState, terminator: str) -> tuple[ExprNode, ...]:
+    return _parse_sequence(state, Token(TokenType.PUNC, terminator), _parse_expr)
+
+
+def _parse_sequence[T](
+    state: ParseState,
+    end_token: Token,
+    parse_function: typing.Callable[[ParseState], T],
 ) -> tuple[T, ...]:
     """
     Makes a flat tuple of nodes from the tokens
@@ -153,9 +124,7 @@ def _resolve_node_tuple[T](
 
         # Check for end tokens
         next_token = state.peek()
-        if next_token.type == end_token.type and (
-            next_token.value == end_token.value or end_token.value == "*"
-        ):
+        if next_token is not None and next_token == end_token:
             state.skip()  # Skip closing token
             break
 
@@ -164,14 +133,31 @@ def _resolve_node_tuple[T](
     return tuple(node_list)
 
 
+def check_token(state: ParseState, t: Token) -> bool:
+    """
+    Returns whether the next token equals the
+    provided one. Does not consume tokens.
+    """
+    return state.peek() == t
+
+
+def require_token(state: ParseState, t: Token) -> None:
+    """
+    Throws an error if the next token doesn't
+    equal t. Consumes the next token if it does.
+    """
+    if check_token(state, t):
+        state.skip()
+    else:
+        err(state, f"Expected token {t}")
+
+
 def is_semicolon(state: ParseState) -> bool:
     """
     Checks whether the next token is a semicolon
     without consuming it
     """
-    t = state.next_token()
-    state.reset()
-    return t == Token(TokenType.PUNC, ";")
+    return check_token(state, Token(TokenType.PUNC, ";"))
 
 
 def require_semicolon(state: ParseState) -> None:
@@ -179,8 +165,7 @@ def require_semicolon(state: ParseState) -> None:
     Throws an error if there is not a semicolon at the
     current cursor position
     """
-    if not is_semicolon(state):
-        err(state, "There should be a semicolon after this token:")
+    require_token(state, Token(TokenType.PUNC, ";"))
 
 
 if __name__ == "__main__":

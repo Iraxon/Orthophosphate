@@ -1,3 +1,5 @@
-tag function minecraft:tick [
-    core
-]
+tag(
+    function
+    minecraft_tick
+    [core]
+)

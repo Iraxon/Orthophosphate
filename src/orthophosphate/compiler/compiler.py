@@ -2,7 +2,6 @@ import os
 import typing
 
 from .parser import parser
-from .parser.abstract_syntax_tree import Node
 from .tokenizer import Tokenizer as tokenizer
 from .datapack_generator import datapack_generator as dg
 

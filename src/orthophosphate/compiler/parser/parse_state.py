@@ -2,7 +2,6 @@ import dataclasses
 import typing
 
 from ..tokenizer.token import Token
-from .abstract_syntax_tree import *
 
 
 @dataclasses.dataclass
@@ -14,9 +13,6 @@ class ParseState:
 
     tokens: typing.Sequence[Token]
     cursor: int = 0
-    _ref_dict_cache: dict[type, dict[str, Ref]] = dataclasses.field(
-        default_factory=dict
-    )
 
     def next_token(self) -> Token:
         """
@@ -42,13 +38,15 @@ class ParseState:
         """
         self.cursor -= 1
 
-    def peek(self, i: int = 0) -> Token:
+    def peek(self, i: int = 0) -> Token | None:
         """
         Returns the token at the provided
         offset from the cursor (zero by default)
         without changing the cursor
         """
-        return self.tokens[self.cursor + i]
+        if self.cursor_in_range():
+            return self.tokens[self.cursor + i]
+        return None
 
     def cursor_in_range(self) -> bool:
         return 0 <= self.cursor < len(self.tokens)
@@ -76,45 +74,6 @@ class ParseState:
                 for n in range(-20, 10)
             )
         )
-
-    def bind_name[T](
-        self, name: str, value: Ref[T], type: type[T], allow_overwrite: bool = False
-    ) -> None:
-        env = self._ref_dict(type)
-        if not allow_overwrite and name in env.keys():
-            err(self, f"{name} cannot be defined because it is already bound:")
-        env[name] = value
-
-    def checkref[T](self, id: str, type: type[T]) -> str:
-        """
-        Throws an error if the provided
-        id does not refer to a valid content
-        item of the given type
-
-        Returns the id unchanged
-        """
-        self.get_ref(id, type)  # Using side effect
-        return id
-
-    def get_ref[T](self, id: str, type: type[T]) -> Ref[T]:
-        """
-        Returns a Ref object pointing to the content item
-        of the provided type that has the provided id
-        or throws an error if there is no such item
-        """
-        value = self._ref_dict(type).get(id)
-        if value is None:
-            err(self, "This is not a valid reference:")
-        return value
-
-    def _ref_dict[T](self, type: type[T]) -> dict[str, Ref[T]]:
-        """
-        Returns the dict of name bindings for the provided type,
-        creating a new one if necessary
-        """
-        if type not in self._ref_dict_cache.keys():
-            self._ref_dict_cache[type] = dict()
-        return self._ref_dict_cache[type]
 
 
 def err(state: ParseState, message: str | None = None) -> typing.Never:

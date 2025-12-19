@@ -1,11 +1,10 @@
 import os
+from typing import Any
 
-from ..parser.abstract_syntax_tree import Node, PackRoot
-
-type DataPack = dict[str, Node]
+type DataPack = dict[str, Any] # Correct later
 
 
-def generate_datapack(ast: PackRoot, pack_name: str) -> DataPack:
+def generate_datapack(ast, pack_name: str) -> DataPack:
     raise NotImplementedError
 
 
