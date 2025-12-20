@@ -15,9 +15,6 @@
 
 ## Present State
 
-A simplified form of the full grammar is supported.
-All function applications must be fully parenthesized.
-
 ```opo4
 // Static function for making MCFunction files
 % function [name cmds] [str list(cmd)] -> mcfunction
