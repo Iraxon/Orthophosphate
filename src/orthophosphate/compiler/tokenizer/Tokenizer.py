@@ -1,13 +1,7 @@
 from enum import Enum, auto
 import string
-import typing
 
-from .tokenizer_module_base import TokenizerModuleBase
 from .token import Token, TokenType
-
-# NEEDED CHANGES:
-# finish class lol
-# one character sub for tokens in the code
 
 
 def get_ln_and_col(s: str, index) -> tuple[int, int]:
