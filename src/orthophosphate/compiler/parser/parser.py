@@ -48,6 +48,7 @@ def _parse_expr(state: ParseState) -> ExprNode:
             if state.peek() == (TokenType.PUNC, "("):
                 state.next_token()
                 return ApplicationNode(n, _parse_expr_sequence(state, ")"))
+            # A variable is a function of zero arguments
             return ApplicationNode(n, tuple())
 
         case (TokenType.INT, x):
