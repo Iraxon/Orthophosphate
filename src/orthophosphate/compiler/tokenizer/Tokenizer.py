@@ -40,17 +40,10 @@ def tokenize(input: str) -> tuple[Token, ...]:
         while j < len(input) + 1:  # j is an exclusive range closer
 
             current_str = input[i:j]
-            char = current_str[-1]  # The thing just added
 
-            if char.isspace() and not needs_whitespace(current_str):
-                if not current_str.isspace():
-                    # We hit whitespace after a token, and we don't need the whitespace, so we're done
-                    break
-                else:
-                    # The whole thing is whitespace, so we report that to properly skip it
-                    matched_str = current_str
-                    possible_token = SpecialCase.WHITESPACE
-                    break
+            if can_terminate(current_str):
+                # Stop looking ahead if we can
+                break
 
             match token_of(current_str):
                 case Token() | SpecialCase() as t:
@@ -79,8 +72,26 @@ def tokenize(input: str) -> tuple[Token, ...]:
     return tuple(output)
 
 
-def is_whitespace(s: str) -> bool:
-    return s.isspace()
+def can_terminate(s: str) -> bool:
+    """
+    Notices things such as "A token
+    made of non whitespace characters usually
+    can't contain whitespace, so we don't
+    need to keep looking ahead if we hit it"
+
+    s is the string being considered; s[-1] is
+    the newest character
+    """
+    before, char = s[:-1], s[-1]
+
+    if char.isspace() and not needs_whitespace(s):
+        return True
+
+    # Whitespace can't ever contain non-whitespace
+    if before.isspace() and not char.isspace():
+        return True
+
+    return False
 
 
 def needs_whitespace(s: str) -> bool:
@@ -91,12 +102,14 @@ def needs_whitespace(s: str) -> bool:
 
     (i.e. Could this be the beginning of a string or comment?)
     """
-    return any(s.startswith(prefix) for prefix in ('"', "//", "/*", "#"))
+    return (
+        any(s.startswith(prefix) for prefix in ('"', "//", "/*", "#")) or s[0].isspace()
+    )
 
 
 class SpecialCase(Enum):
     COMMENT = auto()
-    WHITESPACE = auto()  # Not used by token_of() but by lexing logic directly
+    WHITESPACE = auto()
 
 
 def token_of(s: str) -> Token | SpecialCase | None:
@@ -106,6 +119,9 @@ def token_of(s: str) -> Token | SpecialCase | None:
 
     Returns SpecialCase.COMMENT if this token is a comment.
     """
+
+    if s.isspace():
+        return SpecialCase.WHITESPACE
 
     if s.isdigit():
         return Token(TokenType.INT, s)
@@ -117,7 +133,7 @@ def token_of(s: str) -> Token | SpecialCase | None:
         (
             (s.startswith("#") or s.startswith("//"))
             and s.endswith("\n")
-            and "\n" not in s[0:-1] # Line comments can't contain newlines!
+            and "\n" not in s[0:-1]  # Line comments can't contain newlines!
         )
         or s.startswith("/*")
         and s.endswith("*/")
