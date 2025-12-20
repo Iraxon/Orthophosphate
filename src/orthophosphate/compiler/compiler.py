@@ -30,6 +30,7 @@ def partial_compile(src_file_path: str, do_prints: bool=False) -> dg.DataPack:
     ast = parser.parse(tokens)
 
     if do_prints:
+        print(PRINT_SEPARATOR)
         print(ast)
         print(PRINT_SEPARATOR)
 
