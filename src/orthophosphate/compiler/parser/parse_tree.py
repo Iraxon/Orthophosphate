@@ -2,27 +2,27 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import cast, override
 
-type Node = ProgramNode | ExprNode
+type ParseTreeNode = ProgramNode | ExprNode
 """
 A node on the parse tree
 """
 
 
 @dataclass(frozen=True)
-class _AbstractNode:
+class _AbstractParseTreeNode:
     """
     Only exists to override __str__ for all the nodes
 
-    Use type alias Node for literally all practical purposes
+    Use type alias ParseTreeNode for literally all practical purposes
     """
 
     @override
     def __str__(self) -> str:
-        return _display_node(cast(Node, self))
+        return _display_node(cast(ParseTreeNode, self))
 
 
 @dataclass(frozen=True)
-class ProgramNode(_AbstractNode):
+class ProgramNode(_AbstractParseTreeNode):
     content: "tuple[ExprNode, ...]"
 
 
@@ -30,13 +30,13 @@ type ExprNode = ApplicationNode | LiteralNode | DefNode
 
 
 @dataclass(frozen=True)
-class ApplicationNode(_AbstractNode):
+class ApplicationNode(_AbstractParseTreeNode):
     id: str
     args: tuple[ExprNode, ...]
 
 
 @dataclass(frozen=True)
-class DefNode(_AbstractNode):
+class DefNode(_AbstractParseTreeNode):
     id: str
     params: Mapping[str, ExprNode]
     """
@@ -57,17 +57,17 @@ type LiteralNode = PyLiteralNode[int] | PyLiteralNode[str] | ListLiteralNode
 
 
 @dataclass(frozen=True)
-class PyLiteralNode[T: (int, str)](_AbstractNode):
+class PyLiteralNode[T: (int, str)](_AbstractParseTreeNode):
     type: type[T]
     value: T
 
 
 @dataclass(frozen=True)
-class ListLiteralNode(_AbstractNode):
+class ListLiteralNode(_AbstractParseTreeNode):
     content: "tuple[ExprNode, ...]"
 
 
-def _children(node: Node) -> tuple[Node | str, ...]:
+def _children(node: ParseTreeNode) -> tuple[ParseTreeNode | str, ...]:
     """
     Provides that which the Node should display
     underneath itself when rendered (see below)
@@ -85,7 +85,7 @@ def _children(node: Node) -> tuple[Node | str, ...]:
             return l.content
 
 
-def _display_node(node: Node, pre="") -> str:
+def _display_node(node: ParseTreeNode, pre="") -> str:
     """
     Provides a nice readable string
     rep of the AST node with nesting
