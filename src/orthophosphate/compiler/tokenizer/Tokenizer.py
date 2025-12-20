@@ -113,8 +113,14 @@ def token_of(s: str) -> Token | SpecialCase | None:
     if len(s) >= 2 and s.startswith('"') and s.endswith('"'):
         return Token(TokenType.STR, s[1:-1])
 
-    if ((s.startswith("#") or s.startswith("//")) and s.endswith("\n")) or (
-        s.startswith("/*") and s.endswith("*/")
+    if (
+        (
+            (s.startswith("#") or s.startswith("//"))
+            and s.endswith("\n")
+            and "\n" not in s[0:-1] # Line comments can't contain newlines!
+        )
+        or s.startswith("/*")
+        and s.endswith("*/")
     ):
         return SpecialCase.COMMENT
 
