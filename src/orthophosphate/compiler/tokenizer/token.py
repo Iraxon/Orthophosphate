@@ -10,6 +10,7 @@ class TokenType(enum.Enum):
     LITERAL = enum.auto()
     SELECTOR = enum.auto()
     OP = enum.auto()
+    NEWLINE_INDENT = enum.auto()
 
 
 class Token(typing.NamedTuple):
