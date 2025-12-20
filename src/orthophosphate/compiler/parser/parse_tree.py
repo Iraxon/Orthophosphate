@@ -38,7 +38,7 @@ class ApplicationNode(_AbstractNode):
 @dataclass(frozen=True)
 class DefNode(_AbstractNode):
     id: str
-    args: Mapping[str, ExprNode]
+    params: Mapping[str, ExprNode]
     """
     Params for keys, types for values
     """
@@ -47,16 +47,10 @@ class DefNode(_AbstractNode):
 
     def _str_args(self) -> str:
         """
-        Str rep of the args:
-        [arg1 arg2 ...] [typ1 typ2 ...]
+        Str rep of the params:
+        [p1 p2 ...]
         """
-        return (
-            "["
-            + " ".join(self.args.keys())
-            + "] ["
-            + " ".join(map(str, self.args.values()))
-            + "]"
-        )
+        return "[" + " ".join(self.params.keys()) + "]"
 
 
 type LiteralNode = PyLiteralNode[int] | PyLiteralNode[str] | ListLiteralNode
@@ -84,7 +78,7 @@ def _children(node: Node) -> tuple[Node | str, ...]:
         case ApplicationNode() as a:
             return (a.id,) + a.args
         case DefNode() as d:
-            return (d.id, d._str_args(), d.return_type, d.body)
+            return (d.id, d._str_args(), *d.params.values(), d.return_type, d.body)
         case PyLiteralNode() as p:
             return (str(p.type), str(p.value))
         case ListLiteralNode() as l:
