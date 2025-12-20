@@ -5,7 +5,7 @@
 ```bnf
 <program> ::= {<expr>}
 
-<expr> ::= <application> | <literal> | (<expr>) | {<def>}
+<expr> ::= <application> | <literal> | <expr> | {<def>}
 <application> ::= <ID> [({<expr>})]
 <literal> ::= <INT> | <STR> | <list_literal>
 <list_literal> ::= \[ {<expr>} \] | \{ {<expr>} \}
