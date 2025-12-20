@@ -23,9 +23,7 @@ def parse(tokens: tuple[Token, ...]) -> ProgramNode:
     """
     state = ParseState(tokens)
     require_token(state, Token(TokenType.PUNC, "file_start"))
-    return ProgramNode(
-        _parse_expr_sequence(state, "EOF")
-    )
+    return ProgramNode(_parse_expr_sequence(state, "EOF"))
 
 
 """
