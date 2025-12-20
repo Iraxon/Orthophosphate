@@ -1,3 +1,14 @@
+
+// Static function for making MCFunction files
+
+$ function [name cmds] [str list(cmd)] -> mcfunction
+
+    text_file(
+        path([NAMESPACE name])
+        mcfunction_of_str(
+            join("\n" cmds)
+    ))
+
 $ tag [tag_type name content] [str str list(str)] -> tag_file body_here
 
 tag(

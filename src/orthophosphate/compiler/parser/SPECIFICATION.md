@@ -17,7 +17,7 @@
 
 ```opo4
 // Static function for making MCFunction files
-% function [name cmds] [str list(cmd)] -> mcfunction
+$ function [name cmds] [str list(cmd)] -> mcfunction
 
     text_file(
         path([NAMESPACE name])
@@ -31,7 +31,7 @@
 ```opo4
 // Static function for making MCFunction files
 
-% function [name cmds] [str list(cmd)] -> mcfunction
+$ function [name cmds] [str list(cmd)] -> mcfunction
 
     text_file
         path [NAMESPACE name]
