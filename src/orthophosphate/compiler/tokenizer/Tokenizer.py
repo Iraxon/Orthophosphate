@@ -26,7 +26,11 @@ def tokenize(input: str) -> tuple[Token, ...]:
     j: int = 0
     current_str: str
     matched_str: str
-    possible_token: Token | SpecialCase | None
+    matched_token: Token | SpecialCase | None
+
+    # Indentation tracking counters
+    indent_counter: int = 0
+    paren_counter: int = 0  # Needed because indentation inside parens doesn't matter
 
     output.append(Token(TokenType.PUNC, "file_start"))
 
@@ -35,7 +39,7 @@ def tokenize(input: str) -> tuple[Token, ...]:
         j = i + 1
         current_str = ""
         matched_str = ""
-        possible_token = None
+        matched_token = None
 
         while j < len(input) + 1:  # j is an exclusive range closer
 
@@ -45,10 +49,15 @@ def tokenize(input: str) -> tuple[Token, ...]:
                 # Stop looking ahead if we can
                 break
 
-            match token_of(current_str):
+            match token_of(
+                current_str,
+                indents_matter=(paren_counter == 0),
+                current_indentation=indent_counter,
+            ):
                 case Token() | SpecialCase() as t:
                     matched_str = current_str
-                    possible_token = t
+                    matched_token = t
+
                 case None:
                     pass  # Invalid token; don't overwrite
 
@@ -57,14 +66,33 @@ def tokenize(input: str) -> tuple[Token, ...]:
             )
             j += 1
 
-        if possible_token is None:
+        if matched_token is None:
+
             raise ValueError(
                 f"No token match for {current_str} or any fragment thereof; last token: {output.pop()}"
                 # Never an index error because of file_start Token
             )
-        if isinstance(possible_token, Token):
-            print(f"Matched {matched_str} -> {possible_token}")
-            output.append(possible_token)
+
+        elif isinstance(matched_token, Token):
+
+            print(f"Matched {matched_str} -> {matched_token}")
+            output.append(matched_token)
+
+            # Paren counting
+            if matched_token == Token(TokenType.PUNC, "("):
+                paren_counter += 1
+            elif matched_token == Token(TokenType.PUNC, ")"):
+                paren_counter -= 1
+
+            if paren_counter < 0:
+                raise ValueError(
+                    f"Unmatched closing parenthesis at {get_ln_and_col(input, i)}"
+                )
+
+            # Indent counting
+            if matched_token.type == TokenType.NEWLINE_INDENT:
+                indent_counter += int(matched_token.value)
+
         i += len(matched_str)
 
     output.append(Token(TokenType.PUNC, "EOF"))  # End of file
@@ -102,9 +130,7 @@ def needs_whitespace(s: str) -> bool:
 
     (i.e. Could this be the beginning of a string or comment?)
     """
-    return (
-        any(s.startswith(prefix) for prefix in ('"', "//", "/*", "#")) or s[0].isspace()
-    )
+    return any(s.startswith(prefix) for prefix in ('"', "//", "/*", "#")) or s.isspace()
 
 
 class SpecialCase(Enum):
@@ -112,16 +138,32 @@ class SpecialCase(Enum):
     WHITESPACE = auto()
 
 
-def token_of(s: str) -> Token | SpecialCase | None:
+def token_of(
+    s: str, indents_matter: bool, current_indentation: int
+) -> Token | SpecialCase | None:
     """
     Returns the type of Token s is, or
     None if its not a valid token.
 
-    Returns SpecialCase.COMMENT if this token is a comment.
+    Returns SpecialCase instances for things the lexer
+    recognizes that must be ignored (e.g. comments).
     """
 
     if s.isspace():
-        return SpecialCase.WHITESPACE
+
+        if indents_matter and "\n" in s:
+
+            new_indentation = len(s) - len(s.rstrip(" "))
+            indentation_delta = new_indentation - current_indentation
+
+            # Indentation logic to be turned on later when the Parser
+            # is upgraded to understand indentation
+
+            # return Token(TokenType.NEWLINE_INDENT, str(indentation_delta))
+            return SpecialCase.WHITESPACE
+
+        else:
+            return SpecialCase.WHITESPACE
 
     if s.isdigit():
         return Token(TokenType.INT, s)
