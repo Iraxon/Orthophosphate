@@ -5,20 +5,6 @@ import re
 from .token import Token, TokenType
 
 
-def get_ln_and_col(s: str, index) -> tuple[int, int]:
-    """
-    Returns the line and column of
-    an index in a string with newlines
-    """
-    if s == "":
-        return 0, 0
-    elif len(s) == 1:
-        return 1, 1
-    lines = "\n".split(s[: index + 1])
-    col = len(lines[-1])
-    return len(lines), col
-
-
 TOKENS: tuple[tuple[str, str], ...] = (
     ("INT", r"[0-9]+"),
     ("STR", r'"(?:\\"|[^"])*?"'),
@@ -82,47 +68,3 @@ def tokenize(input: str) -> Iterator[Token]:
                 )
 
     yield Token(TokenType.PUNC, "EOF")
-
-
-def can_terminate(s: str) -> bool:
-    """
-    Notices things such as "A token
-    made of non whitespace characters usually
-    can't contain whitespace, so we don't
-    need to keep looking ahead if we hit it"
-
-    s is the string being considered; s[-1] is
-    the newest character
-    """
-    before, char = s[:-1], s[-1]
-
-    if char.isspace() and not needs_whitespace(s):
-        return True
-
-    # Whitespace can't ever contain non-whitespace
-    if before.isspace() and not char.isspace():
-        return True
-
-    return False
-
-
-def needs_whitespace(s: str) -> bool:
-    """
-    Returns whether this token fragment
-    indicates that the tokenizer has to check
-    for match possibilities that include whitespace.
-
-    (i.e. Could this be the beginning of a string or comment?)
-    """
-    return any(s.startswith(prefix) for prefix in ('"', "//", "/*", "#")) or s.isspace()
-
-
-class SpecialCase(Enum):
-    COMMENT = auto()
-    WHITESPACE = auto()
-
-
-# helper function to print all the tokens
-def printTokens(compiledTokens: list[Token]):
-    for token in compiledTokens:
-        print(token)
