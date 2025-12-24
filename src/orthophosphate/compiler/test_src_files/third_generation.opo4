@@ -2,17 +2,21 @@
 // Static function for making MCFunction files
 
 $ function [name cmds] [str list(cmd)] -> mcfunction
-
-    text_file(
+    text_file
         path([NAMESPACE name])
-        mcfunction_of_str(
+        mcfunction_of_str
             join("\n" cmds)
-    ))
 
-$ tag [tag_type name content] [str str list(str)] -> tag_file body_here
+$ tag [tag_type name content] [str str list(str)] -> tag_file
+    body_here
 
-tag(
+tag
     function
     minecraft_tick
     [core]
-)
+
+# Comment test
+
+/* Multiline
+Comment
+test */
