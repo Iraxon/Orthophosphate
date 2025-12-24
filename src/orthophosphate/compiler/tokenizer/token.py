@@ -10,7 +10,7 @@ class TokenType(enum.Enum):
     LITERAL = enum.auto()
     SELECTOR = enum.auto()
     OP = enum.auto()
-    LINE = enum.auto()
+    NEWLINE = enum.auto()
     INDENT_DEDENT = enum.auto()
 
 class IndentType(enum.StrEnum):

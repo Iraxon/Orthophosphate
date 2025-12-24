@@ -13,7 +13,7 @@ def remove_blank_lines(raw: tuple[Token, ...]) -> tuple[Token, ...]:
     return tuple(
         t
         for i, t in enumerate(raw)
-        if t.type != TokenType.LINE or i == 0 or raw[i - 1].type != TokenType.LINE
+        if t.type != TokenType.NEWLINE or i == 0 or raw[i - 1].type != TokenType.NEWLINE
     )
 
 
@@ -79,7 +79,7 @@ def raw_tokenize(input: str) -> Iterator[Token]:
                 line_start = match_object.start() + 1
                 line_num += 1
 
-                yield Token(TokenType.LINE, "")
+                yield Token(TokenType.NEWLINE, "")
 
                 new_indent_raw = len(lexeme) - 1  # Exclude newline itself
                 assert (
