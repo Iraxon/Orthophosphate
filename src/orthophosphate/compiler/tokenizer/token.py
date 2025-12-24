@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import enum
 import typing
 
@@ -13,11 +14,14 @@ class TokenType(enum.Enum):
     NEWLINE = enum.auto()
     INDENT_DEDENT = enum.auto()
 
+
 class IndentType(enum.StrEnum):
     INDENT = enum.auto()
     DEDENT = enum.auto()
 
-class Token(typing.NamedTuple):
+
+@dataclass(frozen=True, eq=False)
+class Token:
     type: TokenType
     value: str
 
