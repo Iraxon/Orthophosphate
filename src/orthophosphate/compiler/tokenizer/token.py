@@ -10,8 +10,12 @@ class TokenType(enum.Enum):
     LITERAL = enum.auto()
     SELECTOR = enum.auto()
     OP = enum.auto()
-    NEWLINE_INDENT = enum.auto()
+    LINE = enum.auto()
+    INDENT_DEDENT = enum.auto()
 
+class IndentType(enum.StrEnum):
+    INDENT = enum.auto()
+    DEDENT = enum.auto()
 
 class Token(typing.NamedTuple):
     type: TokenType
