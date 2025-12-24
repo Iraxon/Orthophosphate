@@ -1,36 +1,50 @@
-from collections.abc import Iterator
-from enum import Enum, auto
+from collections.abc import Iterable, Iterator
 import re
 
-from .token import Token, TokenType
+from .token import Token, TokenType, IndentType
+
+
+def tokenize(input: str) -> tuple[Token, ...]:
+    return remove_blank_lines(tuple(raw_tokenize(input)))
+
+
+def remove_blank_lines(raw: tuple[Token, ...]) -> tuple[Token, ...]:
+
+    return tuple(
+        t
+        for i, t in enumerate(raw)
+        if t.type != TokenType.LINE or i == 0 or raw[i - 1].type != TokenType.LINE
+    )
 
 
 TOKENS: tuple[tuple[str, str], ...] = (
     ("INT", r"[0-9]+"),
     ("STR", r'"(?:\\"|[^"])*?"'),
-    ("COMMENT", r"(?:(?:#|//).*?$)|/\*.*?\*/"),
-    ("PUNC", r"[;(){}\[\]\$]|->"),
+    ("COMMENT", r"(?:#|//)[^\n]*?(?=\n)|/\*(?:.|\n)*?\*/"),
+    ("PUNC", r"[;(){}\[\]]|->"),
     # (";" | "(" | ")" | "{" | "}" | "[" | "]" | "$" | "->")
     ("NAME", r"[a-zA-Z_\$][a-zA-Z0-9_\.:/]*"),
     # NAME_MATCHES = string.ascii_letters + "_$"
     # NAME_CAN_CONTAIN = NAME_MATCHES + string.digits + ".:/"
-    ("NEWLINE", r"\n"),
-    ("WHITESPACE", r"\s"),
+    ("LINE", r"(?:\n|^)[ ]*"),
+    ("WHITESPACE", r"\s+"),
     ("UNEXPECTED", r"."),
 )
 
 
 TOKEN_REGEX = re.compile(
-    "(?m)" + "|".join(rf"(?P<{name}>{pattern})" for name, pattern in TOKENS)
+    "|".join(rf"(?P<{name}>{pattern})" for name, pattern in TOKENS)
 )
 
 
-def tokenize(input: str) -> Iterator[Token]:
+def raw_tokenize(input: str) -> Iterator[Token]:
 
     yield Token(TokenType.PUNC, "file_start")
 
     line_start = 0
     line_num = 1
+
+    current_indent = 0
 
     for match_object in re.finditer(TOKEN_REGEX, input):
 
@@ -47,7 +61,12 @@ def tokenize(input: str) -> Iterator[Token]:
                 yield Token(TokenType.STR, lexeme)
 
             case "COMMENT":
-                pass
+
+                newline_count = count_newlines(lexeme)
+
+                if newline_count > 0:
+                    line_num += newline_count
+                    line_start = 0
 
             case "PUNC":
                 yield Token(TokenType.PUNC, lexeme)
@@ -55,9 +74,28 @@ def tokenize(input: str) -> Iterator[Token]:
             case "NAME":
                 yield Token(TokenType.NAME, lexeme)
 
-            case "NEWLINE":
-                line_start = match_object.end()
+            case "LINE":
+
+                line_start = match_object.start() + 1
                 line_num += 1
+
+                yield Token(TokenType.LINE, "")
+
+                new_indent_raw = len(lexeme) - 1  # Exclude newline itself
+                assert (
+                    new_indent_raw % 4 == 0
+                ), f"Indentation on line {line_num} is not divisible by 4"
+                new_indent = round(new_indent_raw / 4)
+                indentation_delta = new_indent - current_indent
+                is_dedent = indentation_delta < 0
+
+                for _ in range(abs(indentation_delta)):
+                    yield Token(
+                        TokenType.INDENT_DEDENT,
+                        IndentType.DEDENT if is_dedent else IndentType.INDENT,
+                    )
+
+                current_indent = new_indent
 
             case "WHITESPACE":
                 pass
@@ -68,3 +106,7 @@ def tokenize(input: str) -> Iterator[Token]:
                 )
 
     yield Token(TokenType.PUNC, "EOF")
+
+
+def count_newlines(s: str) -> int:
+    return sum(1 if char == "\n" else 0 for char in s)
