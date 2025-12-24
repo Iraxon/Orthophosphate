@@ -21,7 +21,7 @@ def partial_compile(src_file_path: str, do_prints: bool=False) -> dg.DataPack:
         print(src)
         print(PRINT_SEPARATOR)
 
-    tokens = tuple(tokenizer.tokenize(src))
+    tokens = tokenizer.tokenize(src)
 
     if do_prints:
         print(PRINT_SEPARATOR)
