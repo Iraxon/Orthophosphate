@@ -3,18 +3,16 @@
 ## Grammar
 
 ```peg
-program        <- NEWLINE? expr+
+program        <- expr+ EOF
 
-expr           <- application / inline_expr end
+expr           <- application / inline_expr NEWLINE
 inline_expr    <- inline_app / literal
-
-end            <- NEWLINE / EOF
 
 // Variables are considered functions
 // of zero args and not treated
 // separately
 
-application    <- NAME inline_expr* end INDENT (expr+ / args_block) DEDENT
+application    <- NAME inline_expr* NEWLINE INDENT (expr+ / args_block) DEDENT
 inline_app     <- NAME ('('expr+ ')')?
 
 literal        <- INT / STR / list_literal
