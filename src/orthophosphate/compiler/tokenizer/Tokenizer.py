@@ -1,11 +1,14 @@
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 import re
 
 from .token import Token, TokenType, IndentType
 
 
 def tokenize(input: str) -> tuple[Token, ...]:
-    return remove_blank_lines(tuple(raw_tokenize(input)))
+    return strip_trailing_newline(remove_blank_lines(tuple(raw_tokenize(input))))
+
+
+BLANK_LINE_CONTENT = frozenset({TokenType.NEWLINE, TokenType.INDENT_DEDENT})
 
 
 def remove_blank_lines(raw: tuple[Token, ...]) -> tuple[Token, ...]:
@@ -13,8 +16,19 @@ def remove_blank_lines(raw: tuple[Token, ...]) -> tuple[Token, ...]:
     return tuple(
         t
         for i, t in enumerate(raw)
-        if t.type != TokenType.NEWLINE or i == 0 or raw[i - 1].type != TokenType.NEWLINE
+        if t.type != TokenType.NEWLINE
+        or i == 0
+        or raw[i - 1].type not in BLANK_LINE_CONTENT
     )
+
+
+def strip_trailing_newline(raw: tuple[Token, ...]) -> tuple[Token, ...]:
+
+    if raw[-2].type == TokenType.NEWLINE:
+        return raw[:-2] + raw[-1:]
+
+    return raw
+
 
 
 TOKENS: tuple[tuple[str, str], ...] = (
