@@ -1,15 +1,14 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import cast, override
 
-type ParseTreeNode = ProgramNode | ExprNode
+type ParseTreeNode = ProgramNode | ConcreteExprNode
 """
 A node on the parse tree
 """
 
 
 @dataclass(frozen=True)
-class _AbstractParseTreeNode:
+class _DisplaysAsNode:
     """
     Only exists to override __str__ for all the nodes
 
@@ -22,95 +21,86 @@ class _AbstractParseTreeNode:
 
 
 @dataclass(frozen=True)
-class ProgramNode(_AbstractParseTreeNode):
-    content: "tuple[ExprNode, ...]"
+class ProgramNode(_DisplaysAsNode):
+    content: "tuple[ConcreteExprNode, ...]"
 
 
-type ExprNode = ApplicationNode | LiteralNode | DefNode
-
-
-@dataclass(frozen=True)
-class ApplicationNode(_AbstractParseTreeNode):
-    id: str
-    args: tuple[ExprNode, ...]
+type ConcreteExprNode = ConcreteApplicationNode | LiteralNode
 
 
 @dataclass(frozen=True)
-class DefNode(_AbstractParseTreeNode):
-    id: str
-    params: Mapping[str, ExprNode]
+class ConcreteApplicationNode(_DisplaysAsNode):
     """
-    Params for keys, types for values
+    Function application node storing the
+    str name for the function; AbstractApplicationNode
+    will point directly to the function definition
     """
-    return_type: ExprNode
-    body: ExprNode
 
-    def _str_args(self) -> str:
-        """
-        Str rep of the params:
-        [p1 p2 ...]
-        """
-        return "[" + " ".join(self.params.keys()) + "]"
+    id: str
+    args: tuple[ConcreteExprNode, ...]
 
 
 type LiteralNode = PyLiteralNode[int] | PyLiteralNode[str] | ListLiteralNode
 
 
 @dataclass(frozen=True)
-class PyLiteralNode[T: (int, str)](_AbstractParseTreeNode):
+class PyLiteralNode[T: (int, str)](_DisplaysAsNode):
     type: type[T]
     value: T
 
 
 @dataclass(frozen=True)
-class ListLiteralNode(_AbstractParseTreeNode):
-    content: "tuple[ExprNode, ...]"
+class ListLiteralNode(_DisplaysAsNode):
+    content: "tuple[ConcreteExprNode, ...]"
 
 
-def _children(node: ParseTreeNode) -> tuple[ParseTreeNode | str, ...]:
+def _render_contents(
+    node: ParseTreeNode | str,
+) -> tuple[str, tuple[ParseTreeNode | str, ...]]:
     """
-    Provides that which the Node should display
-    underneath itself when rendered (see below)
+    Provides the header and children that a
+    Node should display when rendered (see below
+    _display_node function)
     """
     match node:
+
+        case str(s):
+            return (s, tuple())
+
         case ProgramNode() as p:
-            return p.content
-        case ApplicationNode() as a:
-            return (a.id,) + a.args
-        case DefNode() as d:
-            return (d.id, d._str_args(), *d.params.values(), d.return_type, d.body)
+            return ("Program", p.content)
+
+        case ConcreteApplicationNode() as a:
+            return (a.id, a.args)
+
         case PyLiteralNode() as p:
-            return (str(p.type), str(p.value))
+            return (f"Literal {str(p.type)} {str(p.value)}", tuple())
+
         case ListLiteralNode() as l:
-            return l.content
+            return ("List Literal", l.content)
 
 
-def _display_node(node: ParseTreeNode, pre="") -> str:
+def _display_node(node: ParseTreeNode | str, pre="") -> str:
     """
     Provides a nice readable string
-    rep of the AST node with nesting
+    rep of the Node with nesting
 
     This function is recursive and
     dangerous to the sanity of anyone
     who works on it
     """
-    children = _children(node)
+    header, children = _render_contents(node)
 
     render_contents: tuple[str, ...] = tuple(
-        (
-            _display_node(child, pre + ("║ " if i < len(children) - 1 else "  "))
-            if not isinstance(child, str)
-            else f"═ {child}"
-        )
+        _display_node(child, pre + ("║ " if i < len(children) - 1 else "  "))
         for i, child in enumerate(children)
     )
-    return f"{'' if pre == '' else'═'} {node.__class__.__name__}\n" + "".join(
-        tuple(
-            (
-                f"{pre}╠{element}\n"
-                if i < len(render_contents) - 1
-                else f"{pre}╚{element}"
-            )
-            for i, element in enumerate(render_contents)
+
+    return f"{'' if pre == '' else'═'} {header}\n" + "".join(
+        (
+            f"{pre}╠{element}"  # Normal case
+            if i < len(render_contents) - 1
+            else f"{pre}╚{element}"  # Last element
         )
+        for i, element in enumerate(render_contents)
     )

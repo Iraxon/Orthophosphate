@@ -1,15 +1,14 @@
 import typing
 
-from ..tokenizer.token import Token, TokenType
+from ..tokenizer.token import IndentType, Token, TokenType
+from .parse_state import ParseState, err
 from .parse_tree import (
-    ApplicationNode,
-    DefNode,
-    ExprNode,
+    ConcreteApplicationNode,
+    ConcreteExprNode,
     ListLiteralNode,
     ProgramNode,
     PyLiteralNode,
 )
-from .parse_state import ParseState, err
 
 
 def parse(tokens: tuple[Token, ...]) -> ProgramNode:
@@ -22,8 +21,12 @@ def parse(tokens: tuple[Token, ...]) -> ProgramNode:
     This method is the entry point for this module
     """
     state = ParseState(tokens)
-    require_token(state, Token(TokenType.PUNC, "file_start"))
-    return ProgramNode(_parse_expr_sequence(state, "EOF"))
+
+    require_token(state, TokenType.PUNC, "file_start")
+    if check_token(state, TokenType.NEWLINE, ""):
+        state.next_token()
+
+    return ProgramNode(_parse_expr_sequence(state, TokenType.PUNC, "EOF"))
 
 
 """
@@ -37,19 +40,48 @@ should appear next.
 """
 
 
-def _parse_expr(state: ParseState) -> ExprNode:
+def _parse_expr(state: ParseState) -> ConcreteExprNode:
     t = state.next_token()
-    match t:
+    match t.type, t.value:
 
-        case (TokenType.PUNC, "$"):
-            return parse_def(state)
+        case (TokenType.NAME, n) | (TokenType.PUNC, "$" as n) if not check_token(
+            state, TokenType.PUNC, "("
+        ):
+            inline_args = _parse_inline_expr_sequence(state, TokenType.NEWLINE, "")
 
-        case (TokenType.NAME, n):
-            if state.peek() == (TokenType.PUNC, "("):
+            indented_args: tuple[ConcreteExprNode, ...] = tuple()
+            if check_token(state, TokenType.INDENT_DEDENT, IndentType.INDENT):
                 state.next_token()
-                return ApplicationNode(n, _parse_expr_sequence(state, ")"))
+                indented_args = _parse_expr_sequence(
+                    state, TokenType.INDENT_DEDENT, IndentType.DEDENT
+                )
+
+            return ConcreteApplicationNode(n, inline_args + indented_args)
+
+        case _:
+            state.reset()
+            r_val = _parse_inline_expr(state)
+            require_token(state, TokenType.NEWLINE, "")
+            return r_val
+
+
+def _parse_inline_expr(state: ParseState) -> ConcreteExprNode:
+    t = state.next_token()
+    # print(f"Parsing inline expr on {t}")
+    match t.type, t.value:
+
+        case (
+            (TokenType.NAME, n)
+            | (TokenType.PUNC, "$" as n)
+            | (TokenType.PUNC, "->" as n)
+        ):
+            if check_token(state, TokenType.PUNC, "("):
+                state.next_token()
+                return ConcreteApplicationNode(
+                    n, _parse_inline_expr_sequence(state, TokenType.PUNC, ")")
+                )
             # A variable is a function of zero arguments
-            return ApplicationNode(n, tuple())
+            return ConcreteApplicationNode(n, tuple())
 
         case (TokenType.INT, x):
             return PyLiteralNode(int, int(x))
@@ -58,97 +90,86 @@ def _parse_expr(state: ParseState) -> ExprNode:
             return PyLiteralNode(str, s)
 
         case (TokenType.PUNC, "["):
-            return ListLiteralNode(_parse_expr_sequence(state, "]"))
+            return ListLiteralNode(
+                _parse_inline_expr_sequence(state, TokenType.PUNC, "]")
+            )
 
         case (TokenType.PUNC, "{"):
-            return ListLiteralNode(_parse_expr_sequence(state, "}"))
+            return ListLiteralNode(
+                _parse_inline_expr_sequence(state, TokenType.PUNC, "}")
+            )
 
         case _:
             err(state)
 
 
-def parse_def(state: ParseState) -> DefNode:
-
-    name = state.next_token().require_name().value
-
-    require_token(state, Token(TokenType.PUNC, "["))
-    params = _parse_sequence(state, Token(TokenType.PUNC, "]"), parse_id)
-    require_token(state, Token(TokenType.PUNC, "["))
-    param_types = _parse_expr_sequence(state, "]")
-
-    param_map = {
-        params[i]: param_types[i] for i in range(min(len(params), len(param_types)))
-    }
-
-    require_token(state, Token(TokenType.PUNC, "->"))
-    return_type = _parse_expr(state)
-
-    body = _parse_expr(state)
-
-    return DefNode(name, param_map, return_type, body)
+# def parse_id(state: ParseState) -> str:
+#     return state.next_token().require_name().value
 
 
-def parse_id(state: ParseState) -> str:
-    return state.next_token().require_name().value
+def _parse_expr_sequence(
+    state: ParseState, terminator_type: TokenType, terminator_value: str
+) -> tuple[ConcreteExprNode, ...]:
+
+    return _parse_sequence(state, terminator_type, terminator_value, _parse_expr)
 
 
-def _parse_str(state: ParseState) -> str:
-    t = state.next_token()
-    match t:
-        case (TokenType.STR, s):
-            return s
-        case _:
-            err(state)
+def _parse_inline_expr_sequence(
+    state: ParseState, terminator_type: TokenType, terminator_value: str
+) -> tuple[ConcreteExprNode, ...]:
 
-
-def _parse_expr_sequence(state: ParseState, terminator: str) -> tuple[ExprNode, ...]:
-    return _parse_sequence(state, Token(TokenType.PUNC, terminator), _parse_expr)
+    return _parse_sequence(state, terminator_type, terminator_value, _parse_inline_expr)
 
 
 def _parse_sequence[T](
     state: ParseState,
-    end_token: Token,
+    end_type: TokenType,
+    end_value: str,
     parse_function: typing.Callable[[ParseState], T],
 ) -> tuple[T, ...]:
     """
     Makes a flat tuple of nodes from the tokens
     until it hits the specfied end token or EOF
+
+    Expects cursor to be on the beginning of the
+    first sequence element (not a delimiter, if there
+    is one)
     """
-    node_list: list[T] = []
 
-    # While not out of file and it is not the case
-    # that the current token matches end_token
+    # print(f"Starting on {state.peek()}; is this the first element?")
 
-    while state.cursor_in_range():
+    output: list[T] = []
 
-        # Check for end tokens
-        next_token = state.peek()
-        if next_token is not None and next_token == end_token:
-            state.skip()  # Skip closing token
-            break
+    while state.cursor_in_range() and not check_token(state, end_type, end_value):
+        output.append(parse_function(state))
 
-        next_node = parse_function(state)
-        node_list.append(next_node)
-    return tuple(node_list)
+    # print(f"Detected end token: {state.peek()}")
+
+    state.next_token()  # Skip end token
+
+    return tuple(output)
 
 
-def check_token(state: ParseState, t: Token) -> bool:
+def check_token(state: ParseState, type: TokenType, value: str) -> bool:
     """
-    Returns whether the next token equals the
-    provided one. Does not consume tokens.
+    Returns whether the next token matches the
+    provided type and value. Does not consume tokens.
     """
-    return state.peek() == t
+    next = state.peek()
+    if next is None:
+        return False
+    return (next.type, next.value) == (type, value)
 
 
-def require_token(state: ParseState, t: Token) -> None:
+def require_token(state: ParseState, type: TokenType, value: str) -> None:
     """
     Throws an error if the next token doesn't
-    equal t. Consumes the next token if it does.
+    match. Consumes the next token if it does.
     """
-    if check_token(state, t):
+    if check_token(state, type, value):
         state.skip()
     else:
-        err(state, f"Expected token {t}")
+        err(state, f"Expected token type {type} with value {value})")
 
 
 def is_semicolon(state: ParseState) -> bool:
@@ -156,7 +177,7 @@ def is_semicolon(state: ParseState) -> bool:
     Checks whether the next token is a semicolon
     without consuming it
     """
-    return check_token(state, Token(TokenType.PUNC, ";"))
+    return check_token(state, TokenType.PUNC, ";")
 
 
 def require_semicolon(state: ParseState) -> None:
@@ -164,7 +185,7 @@ def require_semicolon(state: ParseState) -> None:
     Throws an error if there is not a semicolon at the
     current cursor position
     """
-    require_token(state, Token(TokenType.PUNC, ";"))
+    require_token(state, TokenType.PUNC, ";")
 
 
 if __name__ == "__main__":
