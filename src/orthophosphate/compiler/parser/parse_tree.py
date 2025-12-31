@@ -80,7 +80,7 @@ def _render_contents(
             return ("List Literal", l.content)
 
 
-def _display_node(node: ParseTreeNode | str, pre="") -> str:
+def _display_node(node: ParseTreeNode | str, pre: str="") -> str:
     """
     Provides a nice readable string
     rep of the Node with nesting
