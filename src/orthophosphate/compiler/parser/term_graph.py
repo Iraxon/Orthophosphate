@@ -1,7 +1,10 @@
 from dataclasses import dataclass
+from functools import cache
 from typing import Self
 
 type TermGraph = Term
+
+type Opo4Primitive = str | int
 
 @dataclass(frozen=True)
 class Term:
@@ -16,5 +19,13 @@ class Term:
     data structure contents, etc.
     """
 
-    head: Self | str | int
+    head: Self | Opo4Primitive
     children: tuple[Self, ...] = tuple()
+
+    @classmethod
+    @cache
+    def of(cls, head: Self | Opo4Primitive, children: tuple[Self, ...] = tuple()) -> Self:
+        """
+        Use instead of constructor for cache optimization
+        """
+        return cls(head, children)
