@@ -27,10 +27,11 @@ class NestedTerm:
 
 
 @dataclass(frozen=True)
-class AtomicTerm[T: (int, str)]():
+class AtomicTerm[T]():
     """
     Primitive terms like integers
     and strings
     """
 
+    type: type[T]
     value: T
