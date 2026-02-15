@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from typing import Self
 
 
 @dataclass
@@ -15,4 +16,7 @@ class COWDict[K, V](Mapping[K, V]):
     def __len__(self):
         return len(self._dict)
 
-assert issubclass(COWDict, Mapping)
+    def set(self, k: K, v: V) -> Self:
+        copy = self._dict.copy()
+        copy[k] = v
+        return type(self)(copy)
