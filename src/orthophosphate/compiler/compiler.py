@@ -5,7 +5,7 @@ from .parser import parser
 from .tokenizer import Tokenizer as tokenizer
 from .datapack_generator import datapack_generator as dg
 
-def partial_compile(src_file_path: str, do_prints: bool=False) -> dg.DataPack:
+def partial_compile(src_file_path: str, do_prints: bool=True) -> dg.DataPack:
     """
     This compiles everything and returns the resulting data pack
     without writing it to the file system
