@@ -1,0 +1,23 @@
+def tag fn
+
+    list
+        param tag_type str
+        param name str
+        param content List(str)
+
+    cast TagFile(tag_type)
+        file name content
+
+def tag fn(f [x] sum(x 1))
+
+def inc fn(int int sum(_ 1))
+
+# def function list(cmd)
+
+
+def tag fn
+    [type name content]
+    cast TagFile(type) file name content
+
+sum(. 1)
+    4
