@@ -14,15 +14,14 @@ def lazy_value[T](supplier: Callable[[], T]) -> Callable[[], T]:
     :return: A lazy value from that supplier
     :rtype: Callable[[], T]
     """
-    return _LazyValue(supplier)
+    return Lazy(supplier)
 
 
 class _NoValue(Enum):
     NO_VALUE = auto()
 
-
 @dataclass
-class _LazyValue[T]:
+class Lazy[T]:
     supplier: Callable[[], T]
     _cache: T | _NoValue = field(init=False, default=_NoValue.NO_VALUE)
 
