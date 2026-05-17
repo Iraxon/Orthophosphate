@@ -1,34 +1,73 @@
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 import re
 
 from .token import Token, TokenType, IndentType
 
 
 def tokenize(input: str) -> tuple[Token, ...]:
-    return strip_trailing_newline(remove_blank_lines(tuple(raw_tokenize(input))))
+    return strip_trailing_newline(
+        normalize_indents(remove_blank_lines(raw_tokenize(input)))
+    )
 
 
 BLANK_LINE_CONTENT = frozenset({TokenType.NEWLINE, TokenType.INDENT_DEDENT})
 
 
-def remove_blank_lines(raw: tuple[Token, ...]) -> tuple[Token, ...]:
+def remove_blank_lines(raw: Iterable[Token]) -> Iterator[Token]:
 
-    return tuple(
-        t
-        for i, t in enumerate(raw)
-        if t.type != TokenType.NEWLINE
-        or i == 0
-        or raw[i - 1].type not in BLANK_LINE_CONTENT
+    return (
+        token
+        for raw_line in _split_into_lines(raw)
+        for token in _process_line(raw_line)
     )
 
 
-def strip_trailing_newline(raw: tuple[Token, ...]) -> tuple[Token, ...]:
+def _process_line(raw_line: Iterable[Token]) -> Iterator[Token]:
+    if all(t.type in BLANK_LINE_CONTENT for t in raw_line):
+        return (t for t in raw_line if t.type == TokenType.INDENT_DEDENT)
+    return iter(raw_line)
 
-    if raw[-2].type == TokenType.NEWLINE:
-        return raw[:-2] + raw[-1:]
 
-    return raw
+def _split_into_lines(raw: Iterable[Token]) -> Iterator[tuple[Token, ...]]:
+    current_line: list[Token] = []
+    for t in raw:
+        current_line.append(t)
+        if t.type == TokenType.NEWLINE:
+            yield tuple(current_line)
+            current_line.clear()
 
+
+def normalize_indents(raw: Iterable[Token]) -> Iterator[Token]:
+
+    indentation_delta: int = 0
+
+    for t in raw:
+
+        if t.type == TokenType.INDENT_DEDENT:
+            # Store indents away as an integer change in indentation
+            indentation_delta += 1 if t.value == IndentType.INDENT else -1
+
+        else:
+
+            # We hit a non-indent. Add back the saved indents.
+            indent_type = (
+                IndentType.INDENT if indentation_delta > 0 else IndentType.DEDENT
+            )
+            for _ in range(abs(indentation_delta)):
+                yield Token(TokenType.INDENT_DEDENT, indent_type)
+            indentation_delta = 0
+
+            yield t
+
+
+def strip_trailing_newline(raw: Iterable[Token]) -> tuple[Token, ...]:
+
+    as_tuple = tuple(raw)
+
+    if as_tuple[-2].type == TokenType.NEWLINE:
+        return as_tuple[:-2] + as_tuple[-1:]
+
+    return as_tuple
 
 
 TOKENS: tuple[tuple[str, str], ...] = (
@@ -37,7 +76,7 @@ TOKENS: tuple[tuple[str, str], ...] = (
     ("COMMENT", r"(?:#|//)[^\n]*?(?=\n)|/\*(?:.|\n)*?\*/"),
     ("PUNC", r"[;(){}\[\]]|->"),
     # (";" | "(" | ")" | "{" | "}" | "[" | "]" | "$" | "->")
-    ("NAME", r"[a-zA-Z_\$][a-zA-Z0-9_\.:/]*"),
+    ("NAME", r"[a-zA-Z_\$][a-zA-Z0-9_\.:/]*|\."),
     # NAME_MATCHES = string.ascii_letters + "_$"
     # NAME_CAN_CONTAIN = NAME_MATCHES + string.digits + ".:/"
     ("LINE", r"(?:\n|^)[ ]*"),
