@@ -4,7 +4,7 @@ errors
 """
 
 from collections.abc import Callable
-from typing import Literal, overload
+from typing import Any, Literal, overload
 
 from ..utils.frozeniter import FrozenIter, get, next_frozen
 from .parse_result_guts.failure import Failure
@@ -233,6 +233,28 @@ def repeat_sequence[T, SRC](
     )
 
 
+def repeat_sequence_bracketed[T, SRC](
+    beginning_token_predicate: Callable[[SRC], bool],
+    end_token_predicate: Callable[[SRC], bool],
+    parser: Parser[T, SRC],
+    *,
+    allow_empty_sequence: bool = False,
+    allow_eof: bool = False,
+) -> Parser[tuple[T, ...], SRC]:
+    return chain(
+        return_second_arg,
+        match_one(
+            beginning_token_predicate, error_msg=f"No opening symbol for sequence"
+        ),
+        repeat_sequence(
+            end_token_predicate,
+            parser,
+            allow_empty_sequence=allow_empty_sequence,
+            allow_eof=allow_eof,
+        ),
+    )
+
+
 def _optional_raw[T, SRC](
     src: FrozenIter[SRC],
     option: Parser[T, SRC],
@@ -308,3 +330,7 @@ def empty_string_match[SRC](src: FrozenIter[SRC]) -> Success[None, SRC]:
 
 def eof_failure[SRC](src: FrozenIter[SRC]) -> Failure[SRC]:
     return failure(f"Unexpcted end of input", src)
+
+
+def return_second_arg[T](_: Any, second: T) -> T:
+    return second
