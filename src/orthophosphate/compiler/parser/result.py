@@ -10,13 +10,16 @@ from typing import assert_never
 from ..utils.or_supplier import OrSupplier, get
 from .context import ParseContext
 
-type ParseResult[T] = Value[T] | Failure
+type ParseResult[T] = Success[T] | Failure
 
 @dataclass(frozen=True)
-class Value[T]:
+class Success[T]:
     v: T
 
     # context: ParseContext
+
+def success[T](v: T) -> Success[T]:
+    return Success(v)
 
 type IndividualError = tuple[str, ParseContext]
 
@@ -29,8 +32,8 @@ def failure(msg: str) -> Failure:
 
 def mapResult[T, R](result: ParseResult[T], fn: Callable[[T], R]) -> ParseResult[R]:
     match result:
-        case Value(v):
-            return Value(fn(v),)
+        case Success(v):
+            return Success(fn(v),)
         case Failure() as f:
             return f
 
@@ -38,7 +41,7 @@ def error[T](msg: str, context: ParseContext, result: ParseResult[T] | None = No
 
     other_errors: tuple[IndividualError, ...]
     match result:
-        case Value() | None:
+        case Success() | None:
             other_errors = tuple()
         case Failure(oe):
             other_errors = oe
@@ -50,13 +53,13 @@ def error[T](msg: str, context: ParseContext, result: ParseResult[T] | None = No
 def first_success[T, U](first: OrSupplier[ParseResult[T]], second: OrSupplier[ParseResult[U]]) -> ParseResult[T] | ParseResult[U]:
 
     match get(first):
-        case Value() as v1:
+        case Success() as v1:
             return v1
         case Failure() as f1:
             pass
 
     match get(second):
-        case Value() as v2:
+        case Success() as v2:
             return v2
         case Failure() as f2:
             return Failure(f1.errors + f2.errors)
