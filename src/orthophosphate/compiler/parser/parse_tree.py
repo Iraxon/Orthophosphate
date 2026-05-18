@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import cast, override
+from functools import cache
+from typing import Self, cast, override
 
 type ParseTreeNode = ProgramNode | ConcreteExprNode
 """
@@ -25,19 +26,22 @@ class ProgramNode(_DisplaysAsNode):
     content: "tuple[ConcreteExprNode, ...]"
 
 
-type ConcreteExprNode = ConcreteApplicationNode | LiteralNode
+type ConcreteExprNode = ConcreteApplicationNode | LiteralNode | str  # Variable name
 
 
 @dataclass(frozen=True)
 class ConcreteApplicationNode(_DisplaysAsNode):
     """
     Function application node storing the
-    str name for the function; AbstractApplicationNode
-    will point directly to the function definition
+    str name for the function
     """
 
-    id: str
+    head: ConcreteExprNode
     args: tuple[ConcreteExprNode, ...]
+
+    @classmethod
+    def of(cls, *terms: *tuple[ConcreteExprNode, *tuple[ConcreteExprNode, ...]]) -> Self:
+        return cls(terms[0], terms[1:])
 
 
 type LiteralNode = PyLiteralNode[int] | PyLiteralNode[str] | ListLiteralNode
@@ -53,7 +57,7 @@ class PyLiteralNode[T: (int, str)](_DisplaysAsNode):
 class ListLiteralNode(_DisplaysAsNode):
     content: "tuple[ConcreteExprNode, ...]"
 
-
+@cache
 def _render_contents(
     node: ParseTreeNode | str,
 ) -> tuple[str, tuple[ParseTreeNode | str, ...]]:
@@ -71,7 +75,8 @@ def _render_contents(
             return ("Program", p.content)
 
         case ConcreteApplicationNode() as a:
-            return (a.id, a.args)
+            head = a.head
+            return (head if isinstance(head, str) else _inline_display(head), a.args)
 
         case PyLiteralNode() as p:
             return (f"Literal {str(p.type)} {str(p.value)}", tuple())
@@ -79,8 +84,8 @@ def _render_contents(
         case ListLiteralNode() as l:
             return ("List Literal", l.content)
 
-
-def _display_node(node: ParseTreeNode | str, pre: str="") -> str:
+@cache
+def _display_node(node: ParseTreeNode | str, pre: str = "") -> str:
     """
     Provides a nice readable string
     rep of the Node with nesting
@@ -104,3 +109,21 @@ def _display_node(node: ParseTreeNode | str, pre: str="") -> str:
         )
         for i, element in enumerate(render_contents)
     )
+
+
+def _inline_display(node: ParseTreeNode | str) -> str:
+    """
+    Produces an inline representation (e.g. "head(arg1 arg2 arg3)")
+
+    Does not handle indentation
+    """
+
+    match node:
+        case str(s):
+            return s
+
+        case ConcreteApplicationNode(head, args):
+            return f"{_inline_display(head)}({" ".join(_inline_display(arg) for arg in args)})"
+
+        case _:
+            return _display_node(node)
