@@ -4,7 +4,7 @@ errors
 """
 
 from collections.abc import Callable
-from typing import Any, Literal, overload
+from typing import Literal, overload
 
 from ..utils.frozeniter import FrozenIter, get, next_frozen
 from .parse_result_guts.failure import Failure
