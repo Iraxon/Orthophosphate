@@ -332,5 +332,5 @@ def eof_failure[SRC](src: FrozenIter[SRC]) -> Failure[SRC]:
     return failure(f"Unexpcted end of input", src)
 
 
-def return_second_arg[T](_: Any, second: T) -> T:
+def return_second_arg[T](_: object, second: T) -> T:
     return second
