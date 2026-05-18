@@ -4,6 +4,7 @@ errors
 """
 
 from collections.abc import Callable
+from typing import Literal, overload
 
 from ..utils.frozeniter import FrozenIter, get, next_frozen
 from .parse_result_guts.failure import Failure
@@ -24,6 +25,12 @@ def success[T, S](v: T, src: FrozenIter[S]) -> Success[T, S]:
 
 def failure[SRC](msg: str | tuple[str, ...], src: FrozenIter[SRC]) -> Failure[SRC]:
     return Failure((msg,) if isinstance(msg, str) else msg, src)
+
+
+@overload
+def is_successful[T, SRC](result: Success[T, SRC]) -> Literal[True]: ...
+@overload
+def is_successful[SRC](result: Failure[SRC]) -> Literal[False]: ...
 
 
 def is_successful[T, SRC](result: ParseResult[T, SRC]) -> bool:
@@ -117,10 +124,9 @@ def _chain_2_raw[T, U, R, SRC](
     second: Parser[U, SRC],
 ) -> ParseResult[R, SRC]:
 
-    first_val: T
-    second_val: U
-
     src_cursor = src
+
+    first_val: T
     match first(src_cursor):
         case Success(v, src):
             first_val = v
@@ -128,6 +134,7 @@ def _chain_2_raw[T, U, R, SRC](
         case Failure() as f:
             return f
 
+    second_val: U
     match second(src_cursor):
         case Success(v, src):
             second_val = v
@@ -138,6 +145,9 @@ def _chain_2_raw[T, U, R, SRC](
     return success(collector(first_val, second_val), src_cursor)
 
 
+# Begin chain implementations
+
+
 def chain[T, U, R, SRC](
     function: Callable[[T, U], R],
     first: Parser[T, SRC],
@@ -146,33 +156,34 @@ def chain[T, U, R, SRC](
     return lambda src: _chain_2_raw(src, function, first, second)
 
 
-# def _sequence_raw[T, SRC](
-#     src: FrozenIter[SRC], *parsers: Parser[T, SRC]
-# ) -> ParseResult[tuple[T, ...], SRC]:
-#     """
-#     Length of result tuple is the same
-#     as the number of provided parsers, excluding matches
-#     """
-
-#     r_val: list[T] = []
-#     current_src = src
-
-#     for parser in parsers:
-#         match parser(current_src):
-#             case Success(value, src_iter):
-#                 r_val.append(value)
-#                 current_src = src_iter
-#             case Failure() as f:
-#                 return f
-#     return Success(tuple(r_val), current_src)
+def chain3[T, U, V, R, SRC](
+    function: Callable[[T, U, V], R],
+    first: Parser[T, SRC],
+    second: Parser[U, SRC],
+    third: Parser[V, SRC],
+) -> Parser[R, SRC]:
+    return chain(
+        lambda fs, t: function(*fs, t),
+        chain(lambda f, s: (f, s), first, second),
+        third,
+    )
 
 
-# def sequence[T, SRC](*parsers: Parser[T, SRC]) -> Parser[tuple[T, ...], SRC]:
-#     """
-#     Length of result tuple is the same
-#     as the number of provided parsers, excluding matchers
-#     """
-#     return lambda src: _sequence_raw(src, *parsers)
+def chain4[T, U, V, W, R, SRC](
+    function: Callable[[T, U, V, W], R],
+    first: Parser[T, SRC],
+    second: Parser[U, SRC],
+    third: Parser[V, SRC],
+    fourth: Parser[W, SRC],
+) -> Parser[R, SRC]:
+    return chain(
+        lambda fs, tf: function(*fs, *tf),
+        chain(lambda f, s: (f, s), first, second),
+        chain(lambda t, f: (t, f), third, fourth),
+    )
+
+
+# End chain implementations
 
 
 def _repeat_sequence_raw[T, SRC](
@@ -289,6 +300,10 @@ def match_one[SRC](
 
 
 # Util
+
+
+def empty_string_match[SRC](src: FrozenIter[SRC]) -> Success[None, SRC]:
+    return success(None, src)
 
 
 def eof_failure[SRC](src: FrozenIter[SRC]) -> Failure[SRC]:
