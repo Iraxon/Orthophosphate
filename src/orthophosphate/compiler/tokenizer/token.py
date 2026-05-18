@@ -25,6 +25,9 @@ class Token:
     type: TokenType
     value: str
 
+    def matches(self, type: TokenType, value: str) -> bool:
+        return self.type == type and self.value == value
+
     def require_name(self) -> typing.Self:
         """
         Raises an error if the token isn't of type TokenType.NAME
