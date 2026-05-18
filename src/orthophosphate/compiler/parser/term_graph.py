@@ -1,14 +1,9 @@
-from dataclasses import dataclass
 from functools import cache
-from typing import Self
 
-type TermGraph = Term
+type Opo4Primitive = int | str
 
-type Opo4Primitive = str | int
-
-@dataclass(frozen=True)
-class Term:
-    """
+type Term = tuple[str, *tuple[Term, ...]] | Opo4Primitive
+"""
     A term always has a head;
     this could be the function being
     applied in an application or
@@ -19,13 +14,16 @@ class Term:
     data structure contents, etc.
     """
 
-    head: Self | Opo4Primitive
-    children: tuple[Self, ...] = tuple()
+@cache
+def term_of(head: str, children: tuple[Term, ...] = tuple()) -> Term:
+    return (head, *children)
 
-    @classmethod
-    @cache
-    def of(cls, head: Self | Opo4Primitive, children: tuple[Self, ...] = tuple()) -> Self:
-        """
-        Use instead of constructor for cache optimization
-        """
-        return cls(head, children)
+@cache
+def children(term: Term) -> tuple[Term, ...]:
+    match term:
+        case tuple(v):
+            return v[1:]
+        case int(x):
+            return (x - 1,)
+        case str(s):
+            return tuple(s)

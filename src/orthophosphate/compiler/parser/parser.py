@@ -61,8 +61,22 @@ def _parse_expr(state: ParseState) -> ConcreteExprNode:
         case _:
             state.reset()
             r_val = _parse_inline_expr(state)
-            require_token(state, TokenType.NEWLINE, "")
-            return r_val
+
+            if check_token(state, TokenType.NEWLINE, ""):
+                state.next_token()
+                return r_val
+
+            else: # Function application with inline args
+                inline_args = _parse_inline_expr_sequence(state, TokenType.NEWLINE, "")
+                require_token(state, TokenType.NEWLINE, "")
+
+                indented_args: tuple[ConcreteExprNode, ...] = tuple()
+                if check_token(state, TokenType.INDENT_DEDENT, IndentType.INDENT):
+                    state.next_token()
+                    indented_args = _parse_expr_sequence(
+                        state, TokenType.INDENT_DEDENT, IndentType.DEDENT
+                    )
+                return ConcreteApplicationNode(r_val, inline_args + indented_args)
 
 
 def _parse_inline_expr(state: ParseState) -> ConcreteExprNode:
@@ -144,8 +158,7 @@ def _parse_sequence[T](
         output.append(parse_function(state))
 
     # print(f"Detected end token: {state.peek()}")
-
-    state.next_token()  # Skip end token
+    # state.next_token()  # Skip end token
 
     return tuple(output)
 

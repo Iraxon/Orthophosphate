@@ -32,8 +32,7 @@ type ConcreteExprNode = ConcreteApplicationNode | LiteralNode | str  # Variable 
 @dataclass(frozen=True)
 class ConcreteApplicationNode(_DisplaysAsNode):
     """
-    Function application node storing the
-    str name for the function
+    Function application node
     """
 
     head: ConcreteExprNode

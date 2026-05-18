@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from functools import cache
 
+
 class _NoValue(Enum):
     NO_VALUE = auto()
 

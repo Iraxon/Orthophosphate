@@ -4,11 +4,10 @@ errors
 """
 
 from collections.abc import Callable
-from dataclasses import dataclass
-from typing import TypeVar
 
 from ..utils.frozeniter import FrozenIter, get, next_frozen
-from .context import ParseContext
+from .parse_result_guts.failure import Failure
+from .parse_result_guts.success import Success
 
 type ParseResult[T, SRC] = Success[T, SRC] | Failure[SRC]
 
@@ -18,29 +17,13 @@ Parsers should return a "moved-forward" src FrozenIter
 on success and an unchanged one on failure
 """
 
-V = TypeVar("V", covariant=True)
 
-@dataclass(frozen=True)
-class Success[V, SRC]:
-    value: V
-    src_iter: FrozenIter[SRC]
-
-
-def success[T, SRC](v: T, src: FrozenIter[SRC]) -> Success[T, SRC]:
+def success[T, S](v: T, src: FrozenIter[S]) -> Success[T, S]:
     return Success(v, src)
 
 
-type IndividualError = tuple[str, ParseContext]
-
-
-@dataclass(frozen=True)
-class Failure[SRC]:
-    errors: tuple[IndividualError, ...]
-    src_iter: FrozenIter[SRC]
-
-
-def failure[SRC](msg: str, src: FrozenIter[SRC]) -> Failure[SRC]:
-    return Failure(((msg, ParseContext("", (0, 0))),), src)
+def failure[SRC](msg: str | tuple[str, ...], src: FrozenIter[SRC]) -> Failure[SRC]:
+    return Failure((msg,) if isinstance(msg, str) else msg, src)
 
 
 def is_successful[T, SRC](result: ParseResult[T, SRC]) -> bool:
@@ -108,7 +91,7 @@ def _alternative_raw[T, SRC](
     Parsing expression grammar ordered choice operator
     """
 
-    failure_errors: list[tuple[str, ParseContext]] = []
+    failure_errors: list[str] = []
 
     for alt in alternatives:
         match alt(src):
@@ -116,7 +99,7 @@ def _alternative_raw[T, SRC](
                 return Success(v, src)
             case Failure() as f:
                 failure_errors.extend(f.errors)
-    return Failure(tuple(failure_errors), src)
+    return failure(tuple(failure_errors), src)
 
 
 def alternative[T, SRC](*alternatives: Parser[T, SRC]) -> Parser[T, SRC]:
@@ -131,7 +114,7 @@ def _chain_2_raw[T, U, R, SRC](
     src: FrozenIter[SRC],
     collector: Callable[[T, U], R],
     first: Parser[T, SRC],
-    second: Parser[U, SRC]
+    second: Parser[U, SRC],
 ) -> ParseResult[R, SRC]:
 
     first_val: T
@@ -153,6 +136,7 @@ def _chain_2_raw[T, U, R, SRC](
             return f
 
     return success(collector(first_val, second_val), src_cursor)
+
 
 def chain[T, U, R, SRC](
     function: Callable[[T, U], R],

@@ -19,5 +19,7 @@ def tag fn
     [type name content]
     cast TagFile(type) file name content
 
-sum(. 1)
-    4
+# test(thing)(thing2)
+
+# sum(. 1)
+#    4
