@@ -3,8 +3,9 @@ from typing import overload
 
 from .lazy_value import Lazy, lazy_of
 
-type FrozenIter[T] = tuple[T, Lazy[FrozenIter[T]]] | None
+type FrozenIter[T] = IterCons[T] | None
 
+type IterCons[T] = tuple[T, Lazy[FrozenIter[T]]]
 
 def next_frozen[T](frozeniter: FrozenIter[T]) -> FrozenIter[T]:
     match frozeniter:
@@ -47,3 +48,12 @@ def iter_of_frozeniter[T](frozeniter: FrozenIter[T]) -> Iterator[T]:
     while isinstance(next, tuple):
         yield next[0]
         next = next[1]()
+
+def display[T](frozeniter: FrozenIter[T], maxsize: int = 1000000, open_lazies: bool = False) -> str:
+    if maxsize <= 0:
+        return "..."
+    match frozeniter:
+        case None:
+            return "NIL"
+        case (item, _) as cons:
+            return f"{item} : {display(next_frozen(cons), maxsize - 1, open_lazies)}"
