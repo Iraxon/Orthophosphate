@@ -231,7 +231,9 @@ def repeat_sequence[T, SRC](
         return _repeat_sequence_raw(src, parser, allow_eof)
 
     if allow_empty_sequence:
-        return override_error_message(repeat_sequence_parser, lambda src: f"No items in sequence at {src}")
+        return override_error_message(
+            repeat_sequence_parser, lambda src: f"No items in sequence at {src}"
+        )
     return chain2(
         lambda first, rest: (first,) + rest, parser, repeat_sequence_parser, error_msg
     )
@@ -325,8 +327,10 @@ def empty_string_match[SRC](src: FrozenIter[SRC]) -> Success[None, SRC]:
 def eof_failure[SRC](src: FrozenIter[SRC]) -> Failure:
     return failure(f"Unexpected end of input at {src}")
 
+
 def return_first_arg[T](first: T, *__: object) -> T:
     return first
+
 
 def return_second_arg[T](_: object, second: T, *___: object) -> T:
     return second
