@@ -10,4 +10,4 @@ SRC = TypeVar("SRC")
 @dataclass(frozen=True)
 class Success(Generic[V, SRC]):
     value: V
-    src_iter: FrozenIter[SRC]
+    continuation_src: FrozenIter[SRC]
