@@ -6,6 +6,7 @@ from collections.abc import Callable
 from typing import Literal, overload
 
 from ..utils.frozeniter import FrozenIter, get, next_frozen
+from ..utils.inline_print import inline_print
 from .parse_result_guts.failure import Failure
 from .parse_result_guts.success import Success
 
@@ -304,6 +305,13 @@ def match_one[SRC](
     return lambda src: _match_one_raw(src, predicate, error_msg)
 
 
+# Util parsers
+
+
+def debug_parser[T, SRC](parser: Parser[T, SRC]) -> Parser[T, SRC]:
+    return lambda src: inline_print(parser(src))
+
+
 def override_error_message[T, SRC](
     parser: Parser[T, SRC], error_msg: ErrorMessageProvider[SRC]
 ) -> Parser[T, SRC]:
@@ -317,7 +325,7 @@ def override_error_message[T, SRC](
     return parser_overridden
 
 
-# Util
+# Misc utils
 
 
 def empty_string_match[SRC](src: FrozenIter[SRC]) -> Success[None, SRC]:
