@@ -54,4 +54,4 @@ class Token:
             case TokenType.INDENT_DEDENT, i:
                 return i
             case _:
-                return f"({self.type}, {self.value})"
+                return f"{str(self.type)} {str(self.value)}"
