@@ -1,22 +1,34 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from functools import cache
 
 
 class _NoValue(Enum):
     NO_VALUE = auto()
+
 
 @dataclass
 class Lazy[T]:
     supplier: Callable[[], T]
     _cached_value: T | _NoValue = field(init=False, default=_NoValue.NO_VALUE)
 
+    def unevaluated(self) -> bool:
+        """
+        Whether this Lazy has been evaluated
+
+        WARNING: Not a pure function
+        """
+        return self._cached_value is _NoValue.NO_VALUE
+
     def __call__(self) -> T:
         if self._cached_value is _NoValue.NO_VALUE:
             self._cached_value = self.supplier()
         return self._cached_value
-@cache
+
+    def __repr__(self) -> str:
+        return f"Lazy({self._cached_value})"
+
+
 def lazy_of[T](supplier: Callable[[], T]) -> Lazy[T]:
     """
     Makes a lazy value from the given supplier; the lazy value
