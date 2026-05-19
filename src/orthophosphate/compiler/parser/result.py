@@ -231,7 +231,7 @@ def repeat_sequence[T, SRC](
         return _repeat_sequence_raw(src, parser, allow_eof)
 
     if allow_empty_sequence:
-        return repeat_sequence_parser
+        return override_error_message(repeat_sequence_parser, lambda src: f"No items in sequence at {src}")
     return chain2(
         lambda first, rest: (first,) + rest, parser, repeat_sequence_parser, error_msg
     )
