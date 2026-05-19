@@ -28,6 +28,14 @@ class Lazy[T]:
     def __repr__(self) -> str:
         return f"Lazy({self._cached_value})"
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, type(self)):
+            return self() == other()
+        return False
+
+    def __hash__(self):
+        return hash(self())
+
 
 def lazy_of[T](supplier: Callable[[], T]) -> Lazy[T]:
     """
