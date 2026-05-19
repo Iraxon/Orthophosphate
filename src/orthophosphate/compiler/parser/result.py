@@ -1,6 +1,5 @@
 """
-A purely functional system for handling
-errors
+A purely functional system for PEG parsing
 """
 
 from collections.abc import Callable
@@ -10,7 +9,7 @@ from ..utils.frozeniter import FrozenIter, get, next_frozen
 from .parse_result_guts.failure import Failure
 from .parse_result_guts.success import Success
 
-type ParseResult[T, SRC] = Success[T, SRC] | Failure[SRC]
+type ParseResult[T, SRC] = Success[T, SRC] | Failure
 
 type Parser[T, SRC] = Callable[[FrozenIter[SRC]], ParseResult[T, SRC]]
 """
@@ -23,14 +22,14 @@ def success[T, S](v: T, src: FrozenIter[S]) -> Success[T, S]:
     return Success(v, src)
 
 
-def failure[SRC](msg: str | tuple[str, ...], src: FrozenIter[SRC]) -> Failure[SRC]:
-    return Failure((msg,) if isinstance(msg, str) else msg, src)
+def failure(msg: str | tuple[str, ...]) -> Failure:
+    return Failure((msg,) if isinstance(msg, str) else msg)
 
 
 @overload
 def is_successful[T, SRC](result: Success[T, SRC]) -> Literal[True]: ...
 @overload
-def is_successful[SRC](result: Failure[SRC]) -> Literal[False]: ...
+def is_successful[SRC](result: Failure) -> Literal[False]: ...
 
 
 def is_successful[T, SRC](result: ParseResult[T, SRC]) -> bool:
@@ -51,14 +50,26 @@ def map_result[T, R, SRC](
             return f
 
 
-def flat_map_result[T, R, SRC](
-    result: ParseResult[T, SRC], fn: Callable[[T], ParseResult[R, SRC]]
-) -> ParseResult[R, SRC]:
-    match result:
-        case Success(v, _):
-            return fn(v)
-        case Failure() as f:
-            return f
+# def flat_map_result[T, R, SRC](
+#     result: ParseResult[T, SRC], fn: Callable[[T], ParseResult[R, SRC]]
+# ) -> ParseResult[R, SRC]:
+#     match result:
+#         case Success(v, _):
+#             return fn(v)
+#         case Failure() as f:
+#             return f
+
+# Error message utils
+
+type ErrorMessageProvider[SRC] = Callable[[FrozenIter[SRC]], str]
+
+
+def EMPTY_ERROR[SRC](src: FrozenIter[SRC]) -> str:
+    """
+    Useful for structural calls that don't
+    represent another unit of meaning
+    """
+    return ""
 
 
 def chain_map[T, R, SRC](
@@ -67,32 +78,16 @@ def chain_map[T, R, SRC](
     return lambda src: map_result(parser(src), fn)
 
 
-def chain_flat_map[T, R, SRC](
-    parser: Parser[T, SRC], fn: Callable[[T], ParseResult[R, SRC]]
-) -> Parser[R, SRC]:
-    return lambda src: flat_map_result(parser(src), fn)
-
-
-# def error[T, SRC](
-#     msg: str, context: ParseContext, result: ParseResult[T] | None = None
-# ) -> Failure:
-
-#     other_errors: tuple[IndividualError, ...]
-#     match result:
-#         case Success() | None:
-#             other_errors = tuple()
-#         case Failure(oe):
-#             other_errors = oe
-#         case _:
-#             assert_never()
-
-#     return Failure(other_errors + ((msg, context),))
-
-# Parser combinators
+# def chain_flat_map[T, R, SRC](
+#     parser: Parser[T, SRC], fn: Callable[[T], ParseResult[R, SRC]]
+# ) -> Parser[R, SRC]:
+#     return lambda src: flat_map_result(parser(src), fn)
 
 
 def _alternative_raw[T, SRC](
-    src: FrozenIter[SRC], *alternatives: Parser[T, SRC]
+    src: FrozenIter[SRC],
+    error_msg: ErrorMessageProvider[SRC],
+    *alternatives: Parser[T, SRC],
 ) -> ParseResult[T, SRC]:
     """
     Parsing expression grammar ordered choice operator
@@ -102,19 +97,21 @@ def _alternative_raw[T, SRC](
 
     for alt in alternatives:
         match alt(src):
-            case Success(v, src):
-                return Success(v, src)
-            case Failure() as f:
-                failure_errors.extend(f.errors)
-    return failure(tuple(failure_errors), src)
+            case Success(v, new_src):
+                return Success(v, new_src)
+            case Failure(errors):
+                failure_errors.extend(errors)
+    return failure(error_msg(src)).with_reasons(tuple(failure_errors))
 
 
-def alternative[T, SRC](*alternatives: Parser[T, SRC]) -> Parser[T, SRC]:
+def alternative[T, SRC](
+    error_msg: ErrorMessageProvider[SRC], *alternatives: Parser[T, SRC]
+) -> Parser[T, SRC]:
     """
     Parsing expression grammar ordered choice operator
     """
 
-    return lambda src: _alternative_raw(src, *alternatives)
+    return lambda src: _alternative_raw(src, error_msg, *alternatives)
 
 
 def _chain_2_raw[T, U, R, SRC](
@@ -122,6 +119,7 @@ def _chain_2_raw[T, U, R, SRC](
     collector: Callable[[T, U], R],
     first: Parser[T, SRC],
     second: Parser[U, SRC],
+    error_msg: ErrorMessageProvider[SRC],
 ) -> ParseResult[R, SRC]:
 
     src_cursor = src
@@ -132,15 +130,15 @@ def _chain_2_raw[T, U, R, SRC](
             first_val = v
             src_cursor = src
         case Failure() as f:
-            return f
+            return f.elaborate_on(error_msg(src))
 
     second_val: U
     match second(src_cursor):
-        case Success(v, src):
+        case Success(v, new_src):
             second_val = v
-            src_cursor = src
+            src_cursor = new_src
         case Failure() as f:
-            return f
+            return f.elaborate_on(error_msg(src))
 
     return success(collector(first_val, second_val), src_cursor)
 
@@ -148,12 +146,13 @@ def _chain_2_raw[T, U, R, SRC](
 # Begin chain implementations
 
 
-def chain[T, U, R, SRC](
+def chain2[T, U, R, SRC](
     function: Callable[[T, U], R],
     first: Parser[T, SRC],
     second: Parser[U, SRC],
+    error_msg: ErrorMessageProvider[SRC] = EMPTY_ERROR,
 ) -> Parser[R, SRC]:
-    return lambda src: _chain_2_raw(src, function, first, second)
+    return lambda src: _chain_2_raw(src, function, first, second, error_msg)
 
 
 def chain3[T, U, V, R, SRC](
@@ -161,11 +160,13 @@ def chain3[T, U, V, R, SRC](
     first: Parser[T, SRC],
     second: Parser[U, SRC],
     third: Parser[V, SRC],
+    error_msg: ErrorMessageProvider[SRC] = EMPTY_ERROR,
 ) -> Parser[R, SRC]:
-    return chain(
+    return chain2(
         lambda fs, t: function(*fs, t),
-        chain(lambda f, s: (f, s), first, second),
+        chain2(lambda f, s: (f, s), first, second, EMPTY_ERROR),
         third,
+        error_msg,
     )
 
 
@@ -175,11 +176,13 @@ def chain4[T, U, V, W, R, SRC](
     second: Parser[U, SRC],
     third: Parser[V, SRC],
     fourth: Parser[W, SRC],
+    error_msg: ErrorMessageProvider[SRC] = EMPTY_ERROR,
 ) -> Parser[R, SRC]:
-    return chain(
+    return chain2(
         lambda fs, tf: function(*fs, *tf),
-        chain(lambda f, s: (f, s), first, second),
-        chain(lambda t, f: (t, f), third, fourth),
+        chain2(lambda f, s: (f, s), first, second, EMPTY_ERROR),
+        chain2(lambda t, f: (t, f), third, fourth, EMPTY_ERROR),
+        error_msg,
     )
 
 
@@ -188,10 +191,8 @@ def chain4[T, U, V, W, R, SRC](
 
 def _repeat_sequence_raw[T, SRC](
     src: FrozenIter[SRC],
-    end_token_predicate: Callable[[SRC], bool],
     parser: Parser[T, SRC],
-    allow_empty_sequence: bool = False,
-    allow_eof: bool = False,
+    allow_eof: bool,
 ) -> ParseResult[tuple[T, ...], SRC]:
 
     r_val: list[T] = []
@@ -205,53 +206,34 @@ def _repeat_sequence_raw[T, SRC](
             else:
                 return eof_failure(current_src)
 
-        if end_token_predicate(get(current_src)):
-            break
-
         match parser(current_src):
-            case Success() as s:
-                r_val.append(s.value)
-            case Failure() as f:
-                return f
-        current_src = next_frozen(current_src)
-
-    if not allow_empty_sequence and len(r_val) == 0:
-        return failure(f"Empty sequence", src)
+            case Success(v, new_src):
+                if new_src is current_src:
+                    raise ValueError(
+                        f"Success without advancing: {parser} at {current_src}"
+                    )
+                r_val.append(v)
+                current_src = new_src
+            case Failure():
+                break
 
     return success(tuple(r_val), current_src)
 
 
 def repeat_sequence[T, SRC](
-    end_token_predicate: Callable[[SRC], bool],
     parser: Parser[T, SRC],
+    error_msg: ErrorMessageProvider[SRC],
     *,
     allow_empty_sequence: bool = False,
     allow_eof: bool = False,
 ) -> Parser[tuple[T, ...], SRC]:
-    return lambda src: _repeat_sequence_raw(
-        src, end_token_predicate, parser, allow_empty_sequence, allow_eof
-    )
+    def repeat_sequence_parser(src: FrozenIter[SRC]) -> ParseResult[tuple[T, ...], SRC]:
+        return _repeat_sequence_raw(src, parser, allow_eof)
 
-
-def repeat_sequence_bracketed[T, SRC](
-    beginning_token_predicate: Callable[[SRC], bool],
-    end_token_predicate: Callable[[SRC], bool],
-    parser: Parser[T, SRC],
-    *,
-    allow_empty_sequence: bool = False,
-    allow_eof: bool = False,
-) -> Parser[tuple[T, ...], SRC]:
-    return chain(
-        return_second_arg,
-        match_one(
-            beginning_token_predicate, error_msg=f"No opening symbol for sequence"
-        ),
-        repeat_sequence(
-            end_token_predicate,
-            parser,
-            allow_empty_sequence=allow_empty_sequence,
-            allow_eof=allow_eof,
-        ),
+    if allow_empty_sequence:
+        return repeat_sequence_parser
+    return chain2(
+        lambda first, rest: (first,) + rest, parser, repeat_sequence_parser, error_msg
     )
 
 
@@ -261,10 +243,10 @@ def _optional_raw[T, SRC](
 ) -> ParseResult[T | None, SRC]:
 
     match option(src):
-        case Success(v, src):
-            return Success(v, src)
-        case Failure() as f:
-            return success(None, f.src_iter)
+        case Success(v, s_src):
+            return Success(v, s_src)
+        case Failure():
+            return success(None, src)
 
 
 def optional[T, SRC](
@@ -276,24 +258,22 @@ def optional[T, SRC](
 def _negate_raw[T, SRC](
     src: FrozenIter[SRC],
     parser: Parser[T, SRC],
-    msg: str | Callable[[Success[T, SRC]], str],
+    error_msg: ErrorMessageProvider[SRC],
     value: T,
 ) -> ParseResult[T, SRC]:
     match parser(src):
-        case Success() as s:
-            return failure(msg(s) if callable(msg) else msg, src)
+        case Success():
+            return failure(error_msg(src))
         case Failure():
             return success(value, src)
 
 
 def negate[T, SRC](
     parser: Parser[T, SRC],
-    msg: (
-        str | Callable[[Success[T, SRC]], str]
-    ) = lambda s: f"Should not have succeeded: {s}",
+    error_msg: ErrorMessageProvider[SRC],
     value: T = None,
 ) -> Parser[T, SRC]:
-    return lambda src: _negate_raw(src, parser, msg, value)
+    return lambda src: _negate_raw(src, parser, error_msg, value)
 
 
 # Atomic parser
@@ -302,23 +282,37 @@ def negate[T, SRC](
 def _match_one_raw[SRC](
     src: FrozenIter[SRC],
     predicate: Callable[[SRC], bool],
-    error_msg: str | Callable[[SRC], str] = lambda t: f"Token {t} did not match",
+    error_msg: ErrorMessageProvider[SRC],
 ) -> ParseResult[SRC, SRC]:
+    # print(f"SRC-start {src}")
     match get(src):
         case None:
             return eof_failure(src)
         case t if predicate(t):
             return success(t, next_frozen(src))
-        case t:
-            return failure(error_msg(t) if callable(error_msg) else error_msg, src)
+        case _:
+            return failure(error_msg(src) if callable(error_msg) else error_msg)
 
 
 def match_one[SRC](
     predicate: Callable[[SRC], bool],
     *,
-    error_msg: str | Callable[[SRC], str] = lambda t: f"Token {t} did not match",
+    error_msg: ErrorMessageProvider[SRC],
 ) -> Parser[SRC, SRC]:
     return lambda src: _match_one_raw(src, predicate, error_msg)
+
+
+def override_error_message[T, SRC](
+    parser: Parser[T, SRC], error_msg: ErrorMessageProvider[SRC]
+) -> Parser[T, SRC]:
+    def parser_overridden(src: FrozenIter[SRC]) -> ParseResult[T, SRC]:
+        match parser(src):
+            case Failure():
+                return failure(error_msg(src))
+            case Success() as s:
+                return s
+
+    return parser_overridden
 
 
 # Util
@@ -328,9 +322,13 @@ def empty_string_match[SRC](src: FrozenIter[SRC]) -> Success[None, SRC]:
     return success(None, src)
 
 
-def eof_failure[SRC](src: FrozenIter[SRC]) -> Failure[SRC]:
-    return failure(f"Unexpcted end of input", src)
+def eof_failure[SRC](src: FrozenIter[SRC]) -> Failure:
+    return failure(f"Unexpected end of input at {src}")
 
 
-def return_second_arg[T](_: object, second: T) -> T:
+def return_second_arg[T](_: object, second: T, *___: object) -> T:
     return second
+
+
+def return_third_arg[T](_: object, __: object, third: T = None, *____: object) -> T:
+    return third
