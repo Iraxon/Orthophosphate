@@ -47,5 +47,11 @@ class Token:
             raise ValueError(f"Expected {type}, which {self} is not")
         return self
 
-    def __repr__(self):
-        return f"Token(type={self.type}, value={self.value})"
+    def __repr__(self) -> str:
+        match self.type, self.value:
+            case TokenType.NEWLINE, _:
+                return str(TokenType.NEWLINE)
+            case TokenType.INDENT_DEDENT, i:
+                return i
+            case _:
+                return f"({self.type}, {self.value})"
