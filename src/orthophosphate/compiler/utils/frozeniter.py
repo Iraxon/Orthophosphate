@@ -7,6 +7,7 @@ type FrozenIter[T] = IterCons[T] | None
 
 type IterCons[T] = tuple[T, Lazy[FrozenIter[T]]]
 
+
 def next_frozen[T](frozeniter: FrozenIter[T]) -> FrozenIter[T]:
     match frozeniter:
         case (_, next_lazy):
@@ -49,11 +50,19 @@ def iter_of_frozeniter[T](frozeniter: FrozenIter[T]) -> Iterator[T]:
         yield next[0]
         next = next[1]()
 
-def display[T](frozeniter: FrozenIter[T], maxsize: int = 1000000, open_lazies: bool = False) -> str:
+
+def display[T](
+    frozeniter: FrozenIter[T], maxsize: int = 1000000, open_lazies: bool = False
+) -> str:
     if maxsize <= 0:
         return "..."
     match frozeniter:
         case None:
             return "NIL"
-        case (item, _) as cons:
+        case (item, next_lazy) as cons:
+            if (
+                next_lazy.unevaluated()
+                and not open_lazies
+            ):
+                return "... (Unevaluated)"
             return f"{item} : {display(next_frozen(cons), maxsize - 1, open_lazies)}"
