@@ -4,10 +4,6 @@ Orthophosphate (OPO4) is a domain-specific language and a compiler for that lang
 
 The Orthophosphate compiler has four passes: a lexer (tokenizer), a parser, a post-parser, and a generator. It follows the same architecture as modern compilers for general purpose languages.
 
-## Using Orthophosphate
-
-Orthophosphate is still under construction and not yet ready for use.
-
 ## License
 
 All of the code in this repository is free and open source software under the MIT License.
