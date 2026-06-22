@@ -39,7 +39,11 @@ class ConcreteApplicationNode(_DisplaysAsNode):
     args: tuple[ConcreteExprNode, ...]
 
     @classmethod
-    def of(cls, *terms: *tuple[ConcreteExprNode, *tuple[ConcreteExprNode, ...]]) -> Self:
+    def of(
+        cls, *terms: *tuple[ConcreteExprNode, *tuple[ConcreteExprNode, ...]]
+    ) -> Self:
+        if len(terms) == 0:
+            return cls("EMPTY", tuple())
         return cls(terms[0], terms[1:])
 
 
@@ -55,6 +59,7 @@ class PyLiteralNode[T: (int, str)](_DisplaysAsNode):
 @dataclass(frozen=True)
 class ListLiteralNode(_DisplaysAsNode):
     content: "tuple[ConcreteExprNode, ...]"
+
 
 @cache
 def _render_contents(
@@ -82,6 +87,7 @@ def _render_contents(
 
         case ListLiteralNode() as l:
             return ("List Literal", l.content)
+
 
 @cache
 def _display_node(node: ParseTreeNode | str, pre: str = "") -> str:
