@@ -1,7 +1,7 @@
 import os
 import typing
 
-from .parser.alt_parser import parse_program as parse
+from .parser import parser
 from .tokenizer import Tokenizer as tokenizer
 from .datapack_generator import datapack_generator as dg
 
@@ -26,7 +26,7 @@ def partial_compile(src_file_path: str, do_prints: bool=True) -> dg.DataPack:
     if do_prints:
         print(PRINT_SEPARATOR)
         print("\n".join(str(token) for token in tokens))
-    ast = parse(tokens)
+    ast = parser.parse(tokens)
 
     if do_prints:
         print(PRINT_SEPARATOR)

@@ -5,7 +5,7 @@ A purely functional system for PEG parsing
 from collections.abc import Callable
 from typing import Literal, overload
 
-from ..utils.frozeniter import FrozenIter, display, get, next_frozen
+from ..utils.frozeniter import FrozenIter, get, next_frozen
 from ..utils.inline_print import inline_print
 from .parse_result_guts.failure import Failure
 from .parse_result_guts.success import Success
@@ -20,12 +20,11 @@ on success and an unchanged one on failure
 
 
 def success[T, S](v: T, src: FrozenIter[S]) -> Success[T, S]:
-    print(f"    Success({v}, {display(src, maxsize=2, open_lazies=2)})")
     return Success(v, src)
 
 
 def failure(msg: str | tuple[str, ...]) -> Failure:
-    return inline_print(Failure((msg,) if isinstance(msg, str) else msg), prefix="    ")
+    return Failure((msg,) if isinstance(msg, str) else msg)
 
 
 @overload
@@ -194,7 +193,6 @@ def chain4[T, U, V, W, R, SRC](
 def _repeat_sequence_raw[T, SRC](
     src: FrozenIter[SRC],
     parser: Parser[T, SRC],
-    allow_empty_sequence: bool,
     allow_eof: bool,
 ) -> ParseResult[tuple[T, ...], SRC]:
 
@@ -213,13 +211,11 @@ def _repeat_sequence_raw[T, SRC](
             case Success(v, new_src):
                 if new_src is current_src:
                     raise ValueError(
-                        f"Success without advancing: {parser} at {display(current_src)}"
+                        f"Success without advancing: {parser} at {current_src}"
                     )
                 r_val.append(v)
                 current_src = new_src
-            case Failure() as f:
-                if len(r_val) == 0 and not allow_empty_sequence:
-                    return f.elaborate_on(f"No items in sequence at {display(src)}")
+            case Failure():
                 break
 
     return success(tuple(r_val), current_src)
@@ -233,8 +229,12 @@ def repeat_sequence[T, SRC](
     allow_eof: bool = False,
 ) -> Parser[tuple[T, ...], SRC]:
     def repeat_sequence_parser(src: FrozenIter[SRC]) -> ParseResult[tuple[T, ...], SRC]:
-        return _repeat_sequence_raw(src, parser, allow_empty_sequence, allow_eof)
+        return _repeat_sequence_raw(src, parser, allow_eof)
 
+    if allow_empty_sequence:
+        return override_error_message(
+            repeat_sequence_parser, lambda src: f"No items in sequence at {src}"
+        )
     return chain2(
         lambda first, rest: (first,) + rest, parser, repeat_sequence_parser, error_msg
     )
