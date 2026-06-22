@@ -52,7 +52,7 @@ def iter_of_frozeniter[T](frozeniter: FrozenIter[T]) -> Iterator[T]:
 
 
 def display[T](
-    frozeniter: FrozenIter[T], maxsize: int = 1000000, open_lazies: bool = False
+    frozeniter: FrozenIter[T], maxsize: int = 10, open_lazies: int = 1
 ) -> str:
     if maxsize <= 0:
         return "..."
@@ -60,9 +60,8 @@ def display[T](
         case None:
             return "NIL"
         case (item, next_lazy) as cons:
-            if (
-                next_lazy.unevaluated()
-                and not open_lazies
-            ):
+            if next_lazy.unevaluated() and open_lazies <= 0:
                 return "... (Unevaluated)"
-            return f"{item} : {display(next_frozen(cons), maxsize - 1, open_lazies)}"
+            return (
+                f"{item} : {display(next_frozen(cons), maxsize - 1, open_lazies - 1)}"
+            )
