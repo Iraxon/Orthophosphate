@@ -1,9 +1,18 @@
+f(x 1 2)
+
+f
+    x 0
+    y b(2)
+    z
+        1
+        2
+
 def tag fn
 
     list
-        param tag_type str
-        param name str
-        param content List(str)
+        param1 tag_type str
+        param2 name str
+        param3 content List(str)
 
     cast TagFile(tag_type)
         file name content
