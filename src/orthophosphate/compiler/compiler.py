@@ -2,7 +2,7 @@ import os
 import typing
 
 from .datapack_generator import datapack_generator as dg
-from .parser.cyk_parser import parse as parse
+from .parser.multistage_parser import parse as parse
 from .tokenizer import Tokenizer as tokenizer
 
 
