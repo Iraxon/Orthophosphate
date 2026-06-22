@@ -8,7 +8,6 @@ class TokenType(enum.Enum):
     PUNC = enum.auto()
     INT = enum.auto()
     STR = enum.auto()
-    LITERAL = enum.auto()
     SELECTOR = enum.auto()
     OP = enum.auto()
     NEWLINE = enum.auto()
@@ -50,8 +49,8 @@ class Token:
     def __repr__(self) -> str:
         match self.type, self.value:
             case TokenType.NEWLINE, _:
-                return str(TokenType.NEWLINE)
+                return TokenType.NEWLINE.name
             case TokenType.INDENT_DEDENT, i:
                 return i
             case _:
-                return f"{str(self.type)} {str(self.value)}"
+                return f"{self.type.name} {str(self.value)}"
