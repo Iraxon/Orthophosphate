@@ -22,7 +22,7 @@ class _DisplaysAsNode:
 
     @override
     def __repr__(self) -> str:
-        return str(self)
+        return _inline_display(cast(ParseTreeNode, self))
 
 
 @dataclass(frozen=True)
@@ -131,8 +131,12 @@ def _inline_display(node: ParseTreeNode | str) -> str:
         case str(s):
             return s
 
-        case ConcreteApplicationNode(head, args):
+        case node:
+            head, args = _render_contents(node)
             return f"{_inline_display(head)}({" ".join(_inline_display(arg) for arg in args)})"
 
-        case _:
-            return _display_node(node)
+        # case ConcreteApplicationNode(head, args):
+        #     return f"{_inline_display(head)}({" ".join(_inline_display(arg) for arg in args)})"
+
+        # case _:
+        #     return _display_node(node)
