@@ -20,6 +20,10 @@ class _DisplaysAsNode:
     def __str__(self) -> str:
         return _display_node(cast(ParseTreeNode, self))
 
+    @override
+    def __repr__(self) -> str:
+        return str(self)
+
 
 @dataclass(frozen=True)
 class ProgramNode(_DisplaysAsNode):
@@ -83,7 +87,7 @@ def _render_contents(
             return (head if isinstance(head, str) else _inline_display(head), a.args)
 
         case PyLiteralNode() as p:
-            return (f"Literal {str(p.type)} {str(p.value)}", tuple())
+            return (f"{str(p.value)}", tuple())
 
         case ListLiteralNode() as l:
             return ("List Literal", l.content)
