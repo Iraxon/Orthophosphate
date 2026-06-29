@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import cache
 from typing import Protocol, Self, cast, override
 
-type AnyExprNode = AnyMultilineExpr | AnyInlineExpr | ListLiteral
+type AnyExprNode = AnyMultilineExpr | AnyInlineExpr | InlineListLiteral
 """
 A node on the parse tree that stands for a real expression
 """
@@ -39,6 +39,10 @@ class ParseTreeNode(Protocol):
 @dataclass(frozen=True)
 class Program(ParseTreeNode):
     content: Sequence[AnyExprNode]
+
+    @override
+    def get_render_contents(self):
+        return ("program", self.content)
 
 
 @dataclass(frozen=True)
@@ -84,7 +88,7 @@ class InlineExpr(AnyInlineExpr):
 
 
 @dataclass(frozen=True)
-class BottomLiteralNode(AnyInlineExpr):
+class SimpleLiteralOrVarNode(AnyInlineExpr):
     value: int | str
 
     @override
@@ -93,18 +97,31 @@ class BottomLiteralNode(AnyInlineExpr):
 
 
 @dataclass(frozen=True)
-class Name(BottomLiteralNode):
+class Name(SimpleLiteralOrVarNode):
     value: str
 
 
 @dataclass(frozen=True)
-class IntLiteral(BottomLiteralNode):
+class IntLiteral(SimpleLiteralOrVarNode):
     value: int
 
 
 @dataclass(frozen=True)
-class StrLiteral(BottomLiteralNode):
+class StrLiteral(SimpleLiteralOrVarNode):
     value: str
+
+
+@dataclass(frozen=True)
+class InlineListLiteral(AnyInlineExpr):
+    content: Sequence[AnyInlineExpr]
+
+    @override
+    def get_render_contents(self):
+        return ("list", self.content)
+
+    @override
+    def inline_display(self) -> str:
+        return f"[{" ".join(arg.inline_display() for arg in self.content)}]"
 
 
 @dataclass(frozen=True)
