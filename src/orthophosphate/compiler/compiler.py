@@ -27,12 +27,11 @@ def partial_compile(src_file_path: str, do_prints: bool = True) -> dg.DataPack:
     tokens = tokenizer.tokenize(src)
 
     if do_prints:
-        print(PRINT_SEPARATOR)
         print("\n".join(str(token) for token in tokens))
+        print(PRINT_SEPARATOR)
     ast = parse(tokens)
 
     if do_prints:
-        print(PRINT_SEPARATOR)
         print(ast)
         print(PRINT_SEPARATOR)
 
