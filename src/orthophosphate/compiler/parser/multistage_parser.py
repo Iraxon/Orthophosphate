@@ -1,18 +1,19 @@
-from collections.abc import Callable, Iterable, Sequence
+from abc import abstractmethod
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
-from typing import Any, Never, Self
+from typing import Never, Protocol, Self, override
 
 from ..tokenizer.token import IndentType, Token, TokenType
 from .parse_tree2 import (
     AnyInlineExpr,
     AnyMultilineExpr,
-    InlineExpr,
-    ParenthesizedInlineExprSeq,
-    IntLiteral,
     ListLiteral,
+    Program,
+    SimpleLiteralOrVarNode,
+    InlineExpr,
+    IntLiteral,
+    InlineListLiteral,
     MultilineExpr,
-    NewlineInlineExprSeq,
-    MultilineExprSeq,
     Name,
     ParseTreeNode,
     StrLiteral,
@@ -22,141 +23,312 @@ type IntermediaryParseResult = Token | ParseTreeNode
 
 
 @dataclass(frozen=True)
+class PrependList[T]:
+
+    item: T
+    next: Self | None
+
+    def __iter__(self) -> Iterator[T]:
+        current = self
+        while current is not None:
+            yield current.item
+            current = current.next
+
+
+@dataclass(frozen=True)
 class ParseStack:
     previous: Self | None
-    current: IntermediaryParseResult
+    item: IntermediaryParseResult
 
     def pop(self) -> tuple[IntermediaryParseResult, Self | None]:
-        return self.current, self.previous
+        return self.item, self.previous
 
     def push(self, result: IntermediaryParseResult):
         return type(self)(self, result)
 
     shift = push
 
+    def __iter__(self) -> Iterator[IntermediaryParseResult]:
+        def reverse_iterator() -> Iterator[IntermediaryParseResult]:
+            current = self
+            while current is not None:
+                yield current.item
+                current = current.previous
 
-def reduce_literals(
-    literal: IntermediaryParseResult,
-    *_: Any,
-) -> IntermediaryParseResult | None:
-    if isinstance(literal, Token):
-        if literal.type is TokenType.INT:
-            return IntLiteral(int(literal.value))
-        if literal.type is TokenType.STR:
-            return StrLiteral(literal.value)
-        if literal.type is TokenType.NAME:
-            return Name(literal.value)
-    return None
+        return reversed(tuple(reverse_iterator()))
+
+    def __len__(self) -> int:
+        l = 0
+        current = self
+        while current is not None:
+            l += 1
+            current = current.previous
+        return l
 
 
-def reduce_inline_expr_seq(
-    first: IntermediaryParseResult,
-    second: IntermediaryParseResult,
-    *_: Any,
-) -> IntermediaryParseResult | None:
+class ReductionRule(Protocol):
+    @staticmethod
+    @abstractmethod
+    def apply(stack: ParseStack) -> ParseStack | None:
+        raise NotImplementedError
 
-    if isinstance(first, AnyInlineExpr):
-        if isinstance(second, ParenthesizedInlineExprSeq) or isinstance(
-            second, NewlineInlineExprSeq
+
+def chain_2_rules(
+    first: type[ReductionRule], second: type[ReductionRule]
+) -> type[ReductionRule]:
+    class ChainedRule(ReductionRule):
+        @staticmethod
+        @override
+        def apply(stack: ParseStack) -> ParseStack | None:
+            r1 = first.apply(stack)
+            if r1 is None:
+                return second.apply(stack)
+            return r1
+
+    return ChainedRule
+
+
+def chain_rules(*rules: type[ReductionRule]) -> type[ReductionRule]:
+    """
+    Two or more args are required.
+    """
+    current = rules[0]
+    for arg in rules[1:]:
+        current = chain_2_rules(current, arg)
+    return current
+
+
+class ReduceLiterals(ReductionRule):
+    @staticmethod
+    @override
+    def apply(stack: ParseStack) -> ParseStack | None:
+        last, chopped_stack = stack.pop()
+        new_last: SimpleLiteralOrVarNode
+
+        if isinstance(last, Token):
+            if last.type is TokenType.INT:
+                new_last = IntLiteral(int(last.value))
+            elif last.type is TokenType.STR:
+                new_last = StrLiteral(last.value)
+            elif last.type is TokenType.NAME:
+                new_last = Name(last.value)
+            else:
+                return None
+            return ParseStack(chopped_stack, new_last)
+
+        return None
+
+
+class ReduceListLiteral(ReductionRule):
+    @staticmethod
+    @override
+    def apply(stack: ParseStack) -> ParseStack | None:
+        last, current_stack = stack.pop()
+
+        if (
+            isinstance(last, Token)
+            and last.matches(TokenType.PUNC, "]")
+            and current_stack is not None
         ):
-            return second.prepend(first)
-        elif isinstance(second, Token):
-            if second.matches(TokenType.PUNC, ")"):
-                return ParenthesizedInlineExprSeq(first, None)
-            elif second.type is TokenType.NEWLINE:
-                return NewlineInlineExprSeq(first, None)
-    return None
+            items: PrependList[AnyMultilineExpr] | None = None
+            while True:
+                if current_stack is None:
+                    return None
+                current_item, current_stack = current_stack.pop()
+
+                if isinstance(current_item, Token) and current_item.matches(
+                    TokenType.PUNC, "["
+                ):
+                    break
+                elif isinstance(current_item, AnyMultilineExpr):
+                    items = PrependList(current_item, items)
+                else:
+                    return None
+
+            return ParseStack(
+                current_stack,
+                ListLiteral(tuple(items) if items is not None else ()),
+            )
+        return None
 
 
-def reduce_multiline_expr_seq(
-    first: IntermediaryParseResult, second: IntermediaryParseResult, *_: Any
-) -> IntermediaryParseResult | None:
-    if isinstance(first, AnyMultilineExpr):
-        if isinstance(second, MultilineExprSeq):
-            return second.prepend(first)
-        elif isinstance(second, Token) and (
-            second.matches(TokenType.PUNC, "]")
-            or second.matches(TokenType.INDENT_DEDENT, IndentType.DEDENT)
+class ReduceInlineListLiteral(ReductionRule):
+    @staticmethod
+    @override
+    def apply(stack: ParseStack) -> ParseStack | None:
+        last, current_stack = stack.pop()
+
+        if (
+            isinstance(last, Token)
+            and last.matches(TokenType.PUNC, "]")
+            and current_stack is not None
         ):
-            return MultilineExprSeq(first, None)
-    return None
+            items: PrependList[AnyInlineExpr] | None = None
+            while True:
+                if current_stack is None:
+                    return None
+                current_item, current_stack = current_stack.pop()
+                if isinstance(current_item, Token) and current_item.matches(
+                    TokenType.PUNC, "["
+                ):
+                    break
+                elif isinstance(current_item, AnyInlineExpr):
+                    items = PrependList(current_item, items)
+                else:
+                    return None
+
+            return ParseStack(
+                current_stack,
+                InlineListLiteral(tuple(items) if items is not None else ()),
+            )
+        return None
 
 
-def reduce_list(
-    left_paren: IntermediaryParseResult,
-    contents: IntermediaryParseResult,
-    *_: Any,
-) -> IntermediaryParseResult | None:
-    if (
-        isinstance(left_paren, Token)
-        and left_paren.matches(TokenType.PUNC, "[")
-        and isinstance(contents, MultilineExprSeq)
-    ):
-        return ListLiteral(tuple(contents))
-    return None
+class ReduceInlineExpr(ReductionRule):
+    @staticmethod
+    @override
+    def apply(stack: ParseStack) -> ParseStack | None:
+        last, current_stack = stack.pop()
+
+        if (
+            isinstance(last, Token)
+            and last.matches(TokenType.PUNC, ")")
+            and current_stack is not None
+        ):
+            items: PrependList[AnyInlineExpr] | None = None
+            while True:
+                if current_stack is None:
+                    return None
+                current_item, current_stack = current_stack.pop()
+                if isinstance(current_item, Token) and current_item.matches(
+                    TokenType.PUNC, "("
+                ):
+                    break
+                elif isinstance(current_item, AnyInlineExpr):
+                    items = PrependList(current_item, items)
+                else:
+                    return None
+
+            head, current_stack = current_stack.pop()
+            if isinstance(head, AnyInlineExpr):
+                return ParseStack(
+                    current_stack,
+                    InlineExpr(head, tuple(items) if items is not None else ()),
+                )
+        return None
 
 
-def reduce_inline_expr(
-    first: IntermediaryParseResult,
-    left_paren: IntermediaryParseResult,
-    args: IntermediaryParseResult,
-    *_: Any,
-) -> IntermediaryParseResult | None:
-    if (
-        isinstance(first, AnyInlineExpr)
-        and isinstance(left_paren, Token)
-        and left_paren.matches(TokenType.PUNC, "(")
-        and isinstance(args, ParenthesizedInlineExprSeq)
-    ):
-        return InlineExpr(first, tuple(args))
-    return None
+class ReduceSimpleExpr(ReductionRule):
+
+    @override
+    @staticmethod
+    def apply(stack: ParseStack) -> ParseStack | None:
+        last, current_stack = stack.pop()
+
+        if (
+            isinstance(last, Token)
+            and last.type is TokenType.NEWLINE
+            and current_stack is not None
+        ):
+            items: PrependList[AnyInlineExpr] | None = None
+            inner_current_stack = current_stack
+            while True:
+                if inner_current_stack is None:
+                    break
+                current_item, inner_current_stack = inner_current_stack.pop()
+                if isinstance(current_item, AnyInlineExpr):
+                    items = PrependList(current_item, items)
+                    current_stack = inner_current_stack
+                else:
+                    break
+
+            if items is None:
+                return None
+
+            return ParseStack(
+                current_stack,
+                MultilineExpr(tuple(items), ()),
+            )
+        return None
 
 
-def reduce_expr_with_indented_args(
-    inline_args: IntermediaryParseResult,
-    indent: IntermediaryParseResult,
-    indented_args: IntermediaryParseResult,
-    *_: Any,
-) -> IntermediaryParseResult | None:
-    if (
-        isinstance(inline_args, ParenthesizedInlineExprSeq)
-        and isinstance(indent, Token)
-        and indent.matches(TokenType.INDENT_DEDENT, IndentType.INDENT)
-        and isinstance(indented_args, MultilineExprSeq)
-    ):
-        return MultilineExpr(tuple(inline_args), tuple(indented_args))
-    return None
+class ReduceMultilineExpr(ReductionRule):
+    @staticmethod
+    @override
+    def apply(stack: ParseStack) -> ParseStack | None:
+        last, current_stack = stack.pop()
 
+        if (
+            isinstance(last, Token)
+            and last.matches(TokenType.INDENT_DEDENT, IndentType.DEDENT)
+            and current_stack is not None
+        ):
+            items: PrependList[AnyMultilineExpr] | None = None
+            while True:
+                if current_stack is None:
+                    return None
+                current_item, current_stack = current_stack.pop()
+                if isinstance(current_item, Token) and current_item.matches(
+                    TokenType.INDENT_DEDENT, IndentType.INDENT
+                ):
+                    break
+                elif isinstance(current_item, AnyMultilineExpr):
+                    items = PrependList(current_item, items)
+                else:
+                    return None
 
-reductions: Sequence[
-    tuple[
-        Callable[
-            [*tuple[IntermediaryParseResult, ...]], IntermediaryParseResult | None
-        ],
-        int,
-    ]
-] = (
-    (reduce_literals, 1),
-    (reduce_inline_expr_seq, 2),
-    (reduce_list, 3),
-    (reduce_inline_expr, 4),
-    (reduce_multiline_expr_seq, 2),
-    (reduce_expr_with_indented_args, 5),
+            head, current_stack = current_stack.pop()
+            if isinstance(head, MultilineExpr) and len(head.args) == 0:
+                return ParseStack(
+                    current_stack,
+                    (
+                        MultilineExpr(head.inline_args, tuple(items))
+                        if items is not None
+                        else head
+                    ),
+                )
+        return None
+
+class ReduceProgram(ReductionRule):
+    @staticmethod
+    @override
+    def apply(stack: ParseStack) -> ParseStack | None:
+        last, current_stack = stack.pop()
+
+        if (
+            isinstance(last, Token)
+            and last.matches(TokenType.PUNC, "EOF")
+            and current_stack is not None
+        ):
+            items: PrependList[AnyMultilineExpr] | None = None
+            while True:
+                if current_stack is None:
+                    return None
+                current_item, current_stack = current_stack.pop()
+                if isinstance(current_item, Token) and current_item.matches(
+                    TokenType.PUNC, "file_start"
+                ):
+                    break
+                elif isinstance(current_item, AnyMultilineExpr):
+                    items = PrependList(current_item, items)
+                else:
+                    return None
+
+            return ParseStack(
+                current_stack,
+                Program(tuple(items) if items is not None else ()),
+            )
+        return None
+
+reductions = chain_rules(
+    ReduceLiterals,
+    ReduceInlineExpr,
+    ReduceInlineListLiteral,
+    ReduceSimpleExpr,
+    ReduceMultilineExpr,
+    ReduceListLiteral,
+    ReduceProgram
 )
-
-
-def apply_reductions(
-    parse_stack: ParseStack,
-) -> ParseStack | None:
-
-    for reduction, length in reductions:
-        if len(parse_stack) >= length:
-            last = parse_stack[-length:]
-            result = reduction(*last)
-            if result is not None:
-                return (*parse_stack[:-length], result)
-
-    return None
 
 
 def display_intermediate_result(r: IntermediaryParseResult) -> str:
@@ -165,26 +337,36 @@ def display_intermediate_result(r: IntermediaryParseResult) -> str:
     return str(r)
 
 
+def display_parse_stack(stack: ParseStack, max: int | None = None) -> None:
+    if max is None:
+        max = 10**10
+    full_display = " : ".join(display_intermediate_result(result) for result in stack)
+    if len(full_display) <= max:
+        print(full_display)
+    else:
+        print(f"{full_display[:max]} [...] ")
+    type_display = " : ".join(type(result).__name__ for result in stack)
+    print(f"   (Types) {type_display}\n")
+
+
 def parse(src: Iterable[Token]) -> Never:
-    parse_stack: ParseStack = tuple()
+    parse_stack: ParseStack | None = None
     print(parse_stack)
     for token in src:
-        parse_stack = parse_stack.shift(token)
-        if len(s := " : ".join(map(display_intermediate_result, parse_stack))) < 400:
-            print(s)
+
+        parse_stack = ParseStack(parse_stack, token)
+        display_parse_stack(parse_stack)
+
+        inner_stack = parse_stack
+
         while True:
-            inner_parse_stack = apply_reductions(parse_stack)
-            if inner_parse_stack is None:
+            inner_stack = reductions.apply(inner_stack)
+            if inner_stack is None:
                 break
             else:
-                if (
-                    len(
-                        s := " : ".join(
-                            map(display_intermediate_result, inner_parse_stack)
-                        )
-                    )
-                    < 400
-                ):
-                    print(s)
-                parse_stack = inner_parse_stack
+                parse_stack = inner_stack
+                display_parse_stack(parse_stack)
+
+    print(len(parse_stack) if parse_stack is not None else 0)
+
     raise NotImplementedError(f"See the so-far-implemented output above traceback.")
