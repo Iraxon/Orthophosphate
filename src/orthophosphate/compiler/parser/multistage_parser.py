@@ -208,7 +208,8 @@ class ReduceInlineExpr(ReductionRule):
                     items = PrependList(current_item, items)
                 else:
                     return None
-
+            if current_stack is None:
+                return None
             head, current_stack = current_stack.pop()
             if isinstance(head, AnyInlineExpr):
                 return ParseStack(
@@ -276,6 +277,9 @@ class ReduceMultilineExpr(ReductionRule):
                     items = PrependList(current_item, items)
                 else:
                     return None
+
+            if current_stack is None:
+                return None
 
             head, current_stack = current_stack.pop()
             if isinstance(head, MultilineExpr) and len(head.args) == 0:
