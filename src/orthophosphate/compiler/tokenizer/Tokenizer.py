@@ -5,9 +5,7 @@ from .token import Token, TokenType, IndentType
 
 
 def tokenize(input: str) -> tuple[Token, ...]:
-    return strip_trailing_newline(
-        normalize_indents(remove_blank_lines(raw_tokenize(input)))
-    )
+    return final_step(normalize_indents(remove_blank_lines(raw_tokenize(input))))
 
 
 BLANK_LINE_CONTENT = frozenset({TokenType.NEWLINE, TokenType.INDENT_DEDENT})
@@ -38,6 +36,12 @@ def _split_into_lines(raw: Iterable[Token]) -> Iterator[tuple[Token, ...]]:
 
 
 def normalize_indents(raw: Iterable[Token]) -> Iterator[Token]:
+    """
+    Reduces all ocurrences of things like `indent indent ... dedent dedent`
+    to just `indent ... dedent`
+
+    Also gets rid of all ocurrences of zero-content `indent dedent` or nested variations
+    """
 
     indentation_delta: int = 0
 
@@ -59,15 +63,29 @@ def normalize_indents(raw: Iterable[Token]) -> Iterator[Token]:
 
             yield t
 
+    # Add trailing dedents to return to zero indentation
+    indent_type = IndentType.INDENT if indentation_delta > 0 else IndentType.DEDENT
+    for _ in range(abs(indentation_delta)):
+        yield Token(TokenType.INDENT_DEDENT, indent_type)
+    indentation_delta = 0
 
-def strip_trailing_newline(raw: Iterable[Token]) -> tuple[Token, ...]:
 
-    as_tuple = tuple(raw)
+def final_step(raw: Iterable[Token]) -> tuple[Token, ...]:
+    """
+    Add file start and end tokens. Make a tuple of the result.
+    """
 
-    if as_tuple[-2].type == TokenType.NEWLINE:
-        return as_tuple[:-2] + as_tuple[-1:]
+    # Note that this logic may be incorrect, if you
+    # are here to uncomment it.
 
-    return as_tuple
+    # Make sure a trailing newline would actually
+    # appear at -2, taking into account the trailing
+    # dedents
+
+    # if as_tuple[-2].type == TokenType.NEWLINE:
+    #     return as_tuple[:-2] + as_tuple[-1:]
+
+    return (Token(TokenType.PUNC, "file_start"), *raw, Token(TokenType.PUNC, "EOF"))
 
 
 TOKENS: tuple[tuple[str, str], ...] = (
@@ -91,8 +109,6 @@ TOKEN_REGEX = re.compile(
 
 
 def raw_tokenize(input: str) -> Iterator[Token]:
-
-    yield Token(TokenType.PUNC, "file_start")
 
     line_start = 0
     line_num = 1
@@ -157,8 +173,6 @@ def raw_tokenize(input: str) -> Iterator[Token]:
                 raise ValueError(
                     f"Unexpected character '{lexeme}' at line {line_num} col {col_num} (categorized {type_string})"
                 )
-
-    yield Token(TokenType.PUNC, "EOF")
 
 
 def count_newlines(s: str) -> int:
