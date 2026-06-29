@@ -1,5 +1,9 @@
 f(x 1 2)
 
+f x
+    y
+    z
+
 f
     x 0
     y b(2)
@@ -26,7 +30,7 @@ def inc fn(int int sum(_ 1))
 
 def tag fn
     [type name content]
-    cast TagFile(type) file name content
+    cast TagFile(type) file(name content)
 
 # test(thing)(thing2)
 
