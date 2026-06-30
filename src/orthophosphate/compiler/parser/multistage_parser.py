@@ -1,23 +1,24 @@
 from abc import abstractmethod
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
-from typing import Never, Protocol, Self, override
+from typing import Protocol, Self, override
 
 from ..tokenizer.token import IndentType, Token, TokenType
 from .parse_tree2 import (
     AnyInlineExpr,
     AnyMultilineExpr,
-    ListLiteral,
-    Program,
-    SimpleLiteralOrVarNode,
     InlineExpr,
-    IntLiteral,
     InlineListLiteral,
+    IntLiteral,
+    ListLiteral,
     MultilineExpr,
     Name,
     ParseTreeNode,
+    Program,
+    SimpleLiteralOrVarNode,
     StrLiteral,
 )
+from .term_graph import Term
 
 type IntermediaryParseResult = Token | ParseTreeNode
 
@@ -293,6 +294,7 @@ class ReduceMultilineExpr(ReductionRule):
                 )
         return None
 
+
 class ReduceProgram(ReductionRule):
     @staticmethod
     @override
@@ -324,6 +326,7 @@ class ReduceProgram(ReductionRule):
             )
         return None
 
+
 reductions = chain_rules(
     ReduceLiterals,
     ReduceInlineExpr,
@@ -331,7 +334,7 @@ reductions = chain_rules(
     ReduceSimpleExpr,
     ReduceMultilineExpr,
     ReduceListLiteral,
-    ReduceProgram
+    ReduceProgram,
 )
 
 
@@ -353,7 +356,7 @@ def display_parse_stack(stack: ParseStack, max: int | None = None) -> None:
     print(f"   (Types) {type_display}\n")
 
 
-def parse(src: Iterable[Token]) -> Never:
+def parse(src: Iterable[Token]) -> Term:
     parse_stack: ParseStack | None = None
     print(parse_stack)
     for token in src:
@@ -373,4 +376,12 @@ def parse(src: Iterable[Token]) -> Never:
 
     print(len(parse_stack) if parse_stack is not None else 0)
 
-    raise NotImplementedError(f"See the so-far-implemented output above traceback.")
+    r = post_parse(parse_stack)
+    print(r)
+    return r
+
+
+def post_parse(stack: ParseStack | None) -> Term:
+    if stack is not None and stack.previous is None and isinstance(stack.item, Program):
+        return stack.item.to_term()
+    raise ValueError(f"Failed parse")

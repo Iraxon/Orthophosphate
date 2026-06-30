@@ -1,8 +1,17 @@
 from abc import abstractmethod
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from functools import cache
 from typing import Protocol, Self, cast, override
+
+from .term_graph import (
+    FunctionCallTerm,
+    IntTerm,
+    ProgramTerm,
+    ReferenceTerm,
+    StrTerm,
+    Term,
+)
 
 type AnyExprNode = AnyMultilineExpr | AnyInlineExpr | InlineListLiteral
 """
@@ -26,6 +35,10 @@ class ParseTreeNode(Protocol):
     def get_render_contents(self) -> "tuple[str, Sequence[ParseTreeNode | str]]":
         raise NotImplementedError
 
+    @abstractmethod
+    def to_term(self) -> Term:
+        raise NotImplementedError
+
     def inline_display(self) -> str:
         head, args = self.get_render_contents()
         if len(args) > 0:
@@ -38,11 +51,15 @@ class ParseTreeNode(Protocol):
 
 @dataclass(frozen=True)
 class Program(ParseTreeNode):
-    content: Sequence[AnyExprNode]
+    content: "Sequence[AnyMultilineExpr]"
 
     @override
     def get_render_contents(self):
         return ("program", self.content)
+
+    @override
+    def to_term(self):
+        return ProgramTerm(tuple(item.to_term() for item in self.content))
 
 
 @dataclass(frozen=True)
@@ -59,6 +76,12 @@ class MultilineExpr(AnyMultilineExpr):
         combined = (*self.inline_args, r"/n", *self.args)
         return (_inline_display(combined[0]), combined[1:])
 
+    @override
+    def to_term(self):
+        combined = (*self.inline_args, *self.args)
+        combined_terms = tuple(item.to_term() for item in combined)
+        return FunctionCallTerm.of_tuple(combined_terms)
+
 
 @dataclass(frozen=True)
 class ListLiteral(AnyMultilineExpr):
@@ -71,6 +94,12 @@ class ListLiteral(AnyMultilineExpr):
     @override
     def inline_display(self) -> str:
         return f"[{" ".join(arg.inline_display() for arg in self.content)}]"
+
+    @override
+    def to_term(self):
+        return FunctionCallTerm(
+            ReferenceTerm("opo4:list"), tuple(item.to_term() for item in self.content)
+        )
 
 
 @dataclass(frozen=True)
@@ -86,6 +115,12 @@ class InlineExpr(AnyInlineExpr):
     def get_render_contents(self):
         return (self.head.inline_display(), self.contents)
 
+    @override
+    def to_term(self):
+        return FunctionCallTerm(
+            self.head.to_term(), tuple(item.to_term() for item in self.contents)
+        )
+
 
 @dataclass(frozen=True)
 class SimpleLiteralOrVarNode(AnyInlineExpr):
@@ -100,15 +135,27 @@ class SimpleLiteralOrVarNode(AnyInlineExpr):
 class Name(SimpleLiteralOrVarNode):
     value: str
 
+    @override
+    def to_term(self):
+        return ReferenceTerm(self.value)
+
 
 @dataclass(frozen=True)
 class IntLiteral(SimpleLiteralOrVarNode):
     value: int
 
+    @override
+    def to_term(self):
+        return IntTerm(self.value)
+
 
 @dataclass(frozen=True)
 class StrLiteral(SimpleLiteralOrVarNode):
     value: str
+
+    @override
+    def to_term(self):
+        return StrTerm(self.value)
 
 
 @dataclass(frozen=True)
@@ -122,6 +169,12 @@ class InlineListLiteral(AnyInlineExpr):
     @override
     def inline_display(self) -> str:
         return f"[{" ".join(arg.inline_display() for arg in self.content)}]"
+
+    @override
+    def to_term(self):
+        return FunctionCallTerm(
+            ReferenceTerm("opo4:list"), tuple(item.to_term() for item in self.content)
+        )
 
 
 @dataclass(frozen=True)
@@ -141,70 +194,6 @@ class AnyNodeSeq(ParseTreeNode):
     @override
     def inline_display(self) -> str:
         return f"<{" ".join(arg.inline_display() for arg in iter(self))}>"
-
-
-@dataclass(frozen=True)
-class MultilineExprSeq(AnyNodeSeq, Iterable[AnyMultilineExpr]):
-    content: AnyMultilineExpr
-    next: Self | None
-
-    def prepend(self, content: AnyMultilineExpr) -> Self:
-        return type(self)(content, self)
-
-    @override
-    def __iter__(self) -> Iterator[AnyMultilineExpr]:
-        current = self
-        while current is not None:
-            yield current.content
-            current = current.next
-
-
-@dataclass(frozen=True)
-class ParenthesizedInlineExprSeq(AnyNodeSeq, Iterable[AnyInlineExpr]):
-    content: AnyInlineExpr
-    next: Self | None
-
-    def prepend(self, content: AnyInlineExpr) -> Self:
-        return type(self)(content, self)
-
-    @override
-    def __iter__(self) -> Iterator[AnyInlineExpr]:
-        current = self
-        while current is not None:
-            yield current.content
-            current = current.next
-
-
-@dataclass(frozen=True)
-class NewlineInlineExprSeq(AnyNodeSeq, AnyMultilineExpr, Iterable[AnyInlineExpr]):
-    """
-    A multiline expr without indented args.
-    Unlike an inline expr, this ends in a newline
-    and may have multiple inline args.
-    """
-
-    content: AnyInlineExpr
-    next: Self | None
-
-    def add_indented_args(
-        self, indented_args: Sequence[AnyMultilineExpr]
-    ) -> MultilineExpr:
-        return MultilineExpr(tuple(self), indented_args)
-
-    def prepend(self, content: AnyInlineExpr) -> Self:
-        return type(self)(content, self)
-
-    @override
-    def get_render_contents(self):
-        args = tuple(self)
-        return (_inline_display(args[0]), args[1:])
-
-    @override
-    def __iter__(self) -> Iterator[AnyInlineExpr]:
-        current = self
-        while current is not None:
-            yield current.content
-            current = current.next
 
 
 @cache
