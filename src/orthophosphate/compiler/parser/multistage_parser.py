@@ -18,7 +18,7 @@ from .parse_tree2 import (
     SimpleLiteralOrVarNode,
     StrLiteral,
 )
-from .term_graph import Term
+from .term_graph import ProgramTerm
 
 type IntermediaryParseResult = Token | ParseTreeNode
 
@@ -356,7 +356,7 @@ def display_parse_stack(stack: ParseStack, max: int | None = None) -> None:
     print(f"   (Types) {type_display}\n")
 
 
-def parse(src: Iterable[Token]) -> Term:
+def inner_parse(src: Iterable[Token]) -> ParseStack | None:
     parse_stack: ParseStack | None = None
     print(parse_stack)
     for token in src:
@@ -375,13 +375,16 @@ def parse(src: Iterable[Token]) -> Term:
                 display_parse_stack(parse_stack)
 
     print(len(parse_stack) if parse_stack is not None else 0)
+    return parse_stack
 
-    r = post_parse(parse_stack)
+
+def parse(src: Iterable[Token]) -> ProgramTerm:
+    r = post_parse(inner_parse(src))
     print(r)
     return r
 
 
-def post_parse(stack: ParseStack | None) -> Term:
+def post_parse(stack: ParseStack | None) -> ProgramTerm:
     if stack is not None and stack.previous is None and isinstance(stack.item, Program):
         return stack.item.to_term()
     raise ValueError(f"Failed parse")
