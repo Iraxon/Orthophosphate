@@ -8,8 +8,13 @@ Currently working.
 
 Currently working.
 
-Add post-parse to convert to an ASG.
+## Post-parse
+
+Currently working.
 
 ## Datapack Generator
 
-Waiting on parser work.
+1. Add generation for parts common to all datapacks
+2. Add generation for arbitrary text files at any path from root
+3. Support .mcfunction files specifically
+4. Support .json files specifically
