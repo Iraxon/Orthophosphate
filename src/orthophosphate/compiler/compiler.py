@@ -36,6 +36,10 @@ def partial_compile(src_file_path: str, do_prints: bool = True) -> dg.DataPack:
         print(PRINT_SEPARATOR)
 
     directory_rep = dg.generate_datapack(ast, source_file_name)
+
+    if do_prints:
+        print(directory_rep)
+
     return directory_rep
 
 
@@ -50,7 +54,8 @@ def compile(
 
     directory_rep = partial_compile(src_file_path=src_file_path, do_prints=do_prints)
 
-    if destination_file_path is None:
+    # if destination_file_path is None:
+    if True:
         print(directory_rep)
     else:
         dg.write_to_files(directory_rep, destination_file_path)
