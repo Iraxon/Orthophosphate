@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Protocol, Self, override
 
 from ..tokenizer.token import IndentType, Token, TokenType
-from .parse_tree2 import (
+from .parse_tree import (
     AnyInlineExpr,
     AnyMultilineExpr,
     InlineExpr,
