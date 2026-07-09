@@ -44,12 +44,14 @@ def normalize_indents(raw: Iterable[Token]) -> Iterator[Token]:
     """
 
     indentation_delta: int = 0
+    current_indentation_level: int = 0
 
     for t in raw:
 
         if t.type == TokenType.INDENT_DEDENT:
             # Store indents away as an integer change in indentation
             indentation_delta += 1 if t.value == IndentType.INDENT else -1
+            current_indentation_level += 1 if t.value == IndentType.INDENT else -1
 
         else:
 
@@ -64,10 +66,11 @@ def normalize_indents(raw: Iterable[Token]) -> Iterator[Token]:
             yield t
 
     # Add trailing dedents to return to zero indentation
-    indent_type = IndentType.INDENT if indentation_delta > 0 else IndentType.DEDENT
-    for _ in range(abs(indentation_delta)):
+    indent_type = (
+        IndentType.INDENT if current_indentation_level < 0 else IndentType.DEDENT
+    )
+    for _ in range(abs(current_indentation_level)):
         yield Token(TokenType.INDENT_DEDENT, indent_type)
-    indentation_delta = 0
 
 
 def final_step(raw: Iterable[Token]) -> tuple[Token, ...]:

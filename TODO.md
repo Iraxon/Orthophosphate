@@ -4,6 +4,8 @@
 
 Currently working.
 
+1. Look into handling of trailing dedents. function_experimentation.opo4 seems not to parse.
+
 ## Parser
 
 Currently working.
