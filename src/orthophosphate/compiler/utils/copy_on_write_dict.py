@@ -20,3 +20,8 @@ class COWDict[K, V](Mapping[K, V]):
         copy = self._dict.copy()
         copy[k] = v
         return type(self)(copy)
+
+    def update(self, other: dict[K, V] | Self) -> Self:
+        copy = self._dict.copy()
+        copy.update(other)
+        return type(self)(copy)
