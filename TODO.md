@@ -14,11 +14,12 @@ Currently working.
 
 Currently working.
 
-## Orthophosphate
+## Orthophosphate Language
 
 1. Implement eval as a method for Term classes to reduce .opo4 code to data pack parts.
+2. Support .mcfunction files specifically
+3. Support .json files specifically
 
 ## Datapack Generator
 
-1. Support .mcfunction files specifically
-2. Support .json files specifically
+1. Implement writing to real files
