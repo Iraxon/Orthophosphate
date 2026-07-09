@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
+from typing import cast
 
 
 class _NoValue(Enum):
@@ -31,7 +32,7 @@ class Lazy[T]:
     def __eq__(self, other: object) -> bool:
         if isinstance(other, type(self)):
             return self() == other()
-        return False
+        return self() == other
 
     def __hash__(self):
         return hash(self())
@@ -39,13 +40,22 @@ class Lazy[T]:
 
 def lazy_of[T](supplier: Callable[[], T]) -> Lazy[T]:
     """
-    Makes a lazy value from the given supplier; the lazy value
-    uses the supplier the first time it is called, then uses
-    a cached value if called more
-
-    :param supplier: A supplier/constructor with no args
-    :type supplier: Callable[[], T]
-    :return: A lazy value from that supplier
-    :rtype: Callable[[], T]
+    Make a lazy value from the given supplier. The lazy value
+    uses the supplier the first time it is called, then
+    a cached value if called more.
     """
     return Lazy(supplier)
+
+
+def lazy_of_value[T](value: T) -> Lazy[T]:
+    """
+    Make a lazy value from a given, already-known value
+    for compatability with logic that requires it.
+    """
+
+    # First, make a lazy with no supplier
+    l = Lazy(None) # pyright: ignore[reportUnknownVariableType, reportArgumentType]
+
+    # Then, set its cached value to the given one so it'll provide that.
+    l._cached_value = value  # pyright: ignore[reportPrivateUsage]
+    return cast(Lazy[T], l)
