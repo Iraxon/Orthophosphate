@@ -19,8 +19,11 @@ def generate_datapack(ast: ProgramTerm, pack_name: str) -> DataPack:
                 "description": "Built with Orthophosphate",
                 "pack_format": 15,  # 1.20.1
             }
-        }
+        },
+        indent=2,
     )
+    ast = ast.eval()
+    print(ast.display_node())
     for child in ast.top_level_exprs:
         assert isinstance(child, FunctionCallTerm)
         if child.head == ReferenceTerm("file"):
