@@ -16,8 +16,8 @@ Currently working.
 
 ## Orthophosphate Language
 
-1. Add builtin for .mcfunction files
-2. Add builtin for .json files
+1. Add builtin Orthophosphate term for .mcfunction files
+2. Add builtin term for .json files
 
 ## Datapack Generator
 
