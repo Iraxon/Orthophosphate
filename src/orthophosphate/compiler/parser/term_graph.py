@@ -203,10 +203,9 @@ class BuiltinTerm[T: LiteralString](Term):
     def render_contents(self):
         return self.builtin_id, ()
 
-
-let = BuiltinTerm("let")
+file = BuiltinTerm("file")
 fn = BuiltinTerm("fn")
-
+let = BuiltinTerm("let")
 
 def to_lazy(dict: Mapping[str, Term]) -> Context:
     return COWDict({k: lazy_of_value(v) for k, v in dict.items()})
@@ -214,8 +213,9 @@ def to_lazy(dict: Mapping[str, Term]) -> Context:
 
 DEFAULT_CONTEXT: Context = to_lazy(
     {
-        "fn": fn,
-        "let": let, # Unused at present
+        "file": file,  # file behavior is handled by the datapack generator
+        "fn": fn,  # fn is not yet implemented
+        "let": let,
     }
 )
 

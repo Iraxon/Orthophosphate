@@ -1,6 +1,7 @@
-from dataclasses import dataclass
 import json
-from ..parser.term_graph import FunctionCallTerm, ReferenceTerm, ProgramTerm
+from dataclasses import dataclass
+
+from ..parser.term_graph import FunctionCallTerm, ProgramTerm, file
 
 
 @dataclass(frozen=True)
@@ -26,7 +27,7 @@ def generate_datapack(ast: ProgramTerm, pack_name: str) -> DataPack:
     print(ast.display_node())
     for child in ast.top_level_exprs:
         assert isinstance(child, FunctionCallTerm)
-        if child.head == ReferenceTerm("file"):
+        if child.head == file:
             args = child.args
             assert len(args) == 2
             files[args[0].render_contents()[0]] = args[1].render_contents()[0]
