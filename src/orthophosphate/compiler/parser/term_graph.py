@@ -1,11 +1,15 @@
 from abc import abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass
+from enum import Enum
 from functools import cache
-from typing import LiteralString, Never, Protocol, Self, override
+from typing import TYPE_CHECKING, LiteralString, Never, Protocol, Self, final, override
 
 from ..utils.copy_on_write_dict import COWDict
 from ..utils.lazy_value import Lazy, lazy_of, lazy_of_value
+
+# Throughout this file, the suffix "ue" is used to denote
+# a Term that has not been evaluated.
 
 type Opo4Primitive = int | str
 
@@ -15,83 +19,120 @@ A decription of what variable bindings
 exist at a given point in evaluation
 """
 
+if TYPE_CHECKING:
 
-@dataclass(frozen=True)
-class Term(Protocol):
+    class Term(Protocol):
 
-    @abstractmethod
-    def render_contents(self) -> "tuple[str, tuple[Term, ...]]":
-        raise NotImplementedError
+        @abstractmethod
+        def render_contents(self) -> "tuple[str, tuple[Term, ...]]":
+            raise NotImplementedError
 
-    def _eval_step(self, env: Context) -> "Term | None":
-        """
-        If the term can be simplified, return the result. If not,
-        return None.
-        """
+        def _eval_step(self, env: Context) -> "Term | None":
+            """
+            If the term can be simplified, return the result. If not,
+            return None.
+            """
+            raise RuntimeError("Stub method")
 
-        return None
+        def eval(self, env: Context | None = None) -> "Term":
+            """
+            Reduce the term as much as possible.
+            """
+            raise RuntimeError("Stub method")
 
-    def eval(self, env: Context | None = None) -> "Term":
-        """
-        Reduce the term as much as possible.
-        """
+        def display_node_inline(self) -> str:
+            """
+            Provides a nice readable string rep
+            of the Node without nesting
+            """
+            raise RuntimeError("Stub method")
 
-        env = get_context(env)
+        def display_node(self, pre: str = "") -> str:
+            """
+            Provides a nice readable string
+            rep of the Node with nesting
 
-        current = self
-        current_env = env
+            This function is recursive and
+            dangerous to the sanity of anyone
+            who works on it
+            """
+            raise RuntimeError("Stub method")
 
-        while True:
-            next = current._eval_step(current_env)
-            if next is None:
-                return current
-            else:
-                current = next
+else:
 
-    @cache
-    def display_node_inline(self) -> str:
-        """
-        Provides a nice readable string rep
-        of the Node without nesting
-        """
-        header, children = self.render_contents()
-        if len(children) > 0:
-            args_str = " ".join(child.display_node_inline() for child in children)
-            return f"{header}({args_str})"
-        return f"{header}"
+    @dataclass(frozen=True)
+    class Term:
 
-    @cache
-    def display_node(self, pre: str = "") -> str:
-        """
-        Provides a nice readable string
-        rep of the Node with nesting
+        def _eval_step(self, env: Context) -> "Term | None":
+            """
+            If the term can be simplified, return the result. If not,
+            return None.
+            """
 
-        This function is recursive and
-        dangerous to the sanity of anyone
-        who works on it
-        """
-        header, children = self.render_contents()
+            return None
 
-        render_contents: tuple[str, ...] = tuple(
-            child.display_node(pre + ("║ " if i < len(children) - 1 else "  "))
-            for i, child in enumerate(children)
-        )
+        def eval(self, env: Context | None = None) -> "Term":
+            """
+            Reduce the term as much as possible.
+            """
 
-        return f"{'' if pre == '' else'═'} {header}\n" + "".join(
-            (
-                f"{pre}╠{element}"  # Normal case
-                if i < len(render_contents) - 1
-                else f"{pre}╚{element}"  # Last element
+            env = get_context(env)
+
+            current = self
+            current_env = env
+
+            while True:
+                next = current._eval_step(current_env)
+                if next is None:
+                    return current
+                else:
+                    current = next
+
+        @cache
+        def display_node_inline(self) -> str:
+            """
+            Provides a nice readable string rep
+            of the Node without nesting
+            """
+            header, children = self.render_contents()
+            if len(children) > 0:
+                args_str = " ".join(child.display_node_inline() for child in children)
+                return f"{header}({args_str})"
+            return header
+
+        @cache
+        def display_node(self, pre: str = "") -> str:
+            """
+            Provides a nice readable string
+            rep of the Node with nesting
+
+            This function is recursive and
+            dangerous to the sanity of anyone
+            who works on it
+            """
+            header, children = self.render_contents()
+
+            render_contents: tuple[str, ...] = tuple(
+                child.display_node(pre + ("║ " if i < len(children) - 1 else "  "))
+                for i, child in enumerate(children)
             )
-            for i, element in enumerate(render_contents)
-        )
 
-    @override
-    def __str__(self):
-        return self.display_node()
+            return f"{'' if pre == '' else'═'} {header}\n" + "".join(
+                (
+                    f"{pre}╠{element}"  # Normal case
+                    if i < len(render_contents) - 1
+                    else f"{pre}╚{element}"  # Last element
+                )
+                for i, element in enumerate(render_contents)
+            )
+
+        @override
+        def __str__(self):
+            return self.display_node()
 
 
 @dataclass(frozen=True)
+@final
 class ProgramTerm(Term):
     top_level_exprs: tuple[Term, ...]
 
@@ -105,7 +146,7 @@ class ProgramTerm(Term):
         Reduce the term as much as possible.
         """
         env = get_context(env)
-        return ProgramTerm(tuple(expr.eval() for expr in self.top_level_exprs))
+        return ProgramTerm(tuple(expr_ue.eval() for expr_ue in self.top_level_exprs))
 
     @override
     def render_contents(self):
@@ -113,6 +154,7 @@ class ProgramTerm(Term):
 
 
 @dataclass(frozen=True)
+@final
 class FunctionCallTerm(Term):
     head: Term
     args: tuple[Term, ...]
@@ -123,19 +165,25 @@ class FunctionCallTerm(Term):
 
     @override
     def _eval_step(self, env: Context):
-        head = self.head.eval()
-        args = self.args
+        head_ue = self.head
+        args_ue = self.args
+
+        head = head_ue._eval_step(env)
+        if head is not None:
+            return FunctionCallTerm(head, args_ue)
+        else:
+            head = head_ue
 
         if head == let:
             # Term of term let(name, value, body)
 
-            if len(args) != 3:
+            if len(args_ue) != 3:
                 raise ValueError(
-                    f"Incorrect number of arguments for let expression: {len(args)}\n"
-                    + "\n".join(str(arg) for arg in args)
+                    f"Incorrect number of arguments for let expression: {len(args_ue)}\n"
+                    + "\n".join(str(arg) for arg in args_ue)
                 )
 
-            name_unevaluated, value_unevaluated, body_unevaluated = args
+            name_ue, value_ue, body_ue = args_ue
 
             # Name can be either a reference term, used unevaluated,
             # or a different expression that evaluates to
@@ -143,19 +191,30 @@ class FunctionCallTerm(Term):
 
             name: str
 
-            if isinstance(name_unevaluated, ReferenceTerm):
-                name = name_unevaluated.name
+            if isinstance(name_ue, ReferenceTerm):
+                name = name_ue.name
             else:
-                name_evaled = name_unevaluated.eval(env)
+                name_evaled = name_ue.eval(env)
                 if isinstance(name_evaled, StrTerm):
                     name = name_evaled.value
                 else:
-                    raise ValueError(
-                        f"Invalid assignment target for let: {name_unevaluated}"
-                    )
+                    raise ValueError(f"Invalid assignment target for let: {name_ue}")
 
-            value_lazy = lazy_of(lambda: value_unevaluated.eval(env))
-            return body_unevaluated.eval(env.set(name, value_lazy))
+            value_lazy = lazy_of(lambda: value_ue.eval(env))
+            return body_ue.eval(env.set(name, value_lazy))
+
+        elif head == mcfunction:
+            path_ue, *cmds_ue = args_ue
+            file_content = "\n".join(
+                cmd_ue.eval(env).display_node_inline() for cmd_ue in cmds_ue
+            )
+            return FunctionCallTerm(
+                file,
+                (
+                    path_ue.eval(env),
+                    StrTerm(file_content),
+                ),
+            )
 
         return None
 
@@ -165,6 +224,7 @@ class FunctionCallTerm(Term):
 
 
 @dataclass(frozen=True)
+@final
 class ReferenceTerm(Term):
     name: str
 
@@ -178,6 +238,7 @@ class ReferenceTerm(Term):
 
 
 @dataclass(frozen=True)
+@final
 class IntTerm(Term):
     value: int
 
@@ -187,6 +248,7 @@ class IntTerm(Term):
 
 
 @dataclass(frozen=True)
+@final
 class StrTerm(Term):
     value: str
 
@@ -196,27 +258,33 @@ class StrTerm(Term):
 
 
 @dataclass(frozen=True)
-class BuiltinTerm[T: LiteralString](Term):
+class _BuiltinTermPrivateImpl[T: LiteralString | str](Term):
     builtin_id: T
 
-    @override
-    def render_contents(self):
+    def render_contents(self) -> tuple[T, tuple[()]]:
         return self.builtin_id, ()
 
-file = BuiltinTerm("file")
-fn = BuiltinTerm("fn")
-let = BuiltinTerm("let")
+
+@final
+class BuiltinTerm(_BuiltinTermPrivateImpl[str], Enum):
+    FILE = "file"  # file behavior is handled by the datapack generator
+    FN = "fn"  # fn is not yet implemented
+    LET = "let"
+    MCFUNCTION = "mcfunction"
+
+
+file = BuiltinTerm.FILE
+fn = BuiltinTerm.FN
+let = BuiltinTerm.LET
+mcfunction = BuiltinTerm.MCFUNCTION
+
 
 def to_lazy(dict: Mapping[str, Term]) -> Context:
     return COWDict({k: lazy_of_value(v) for k, v in dict.items()})
 
 
 DEFAULT_CONTEXT: Context = to_lazy(
-    {
-        "file": file,  # file behavior is handled by the datapack generator
-        "fn": fn,  # fn is not yet implemented
-        "let": let,
-    }
+    {builtin.builtin_id: builtin for builtin in BuiltinTerm}
 )
 
 

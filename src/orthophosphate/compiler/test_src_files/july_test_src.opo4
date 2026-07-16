@@ -1,3 +1,7 @@
 file
-    "/data/functions/core/mcfunction"
+    "/data/functions/core.mcfunction"
     "say Hello world!"
+
+mcfunction "/data/functions/advanced.mcfunction"
+    "say Hello World! but from a fancier function"
+    "say Second cmd"
