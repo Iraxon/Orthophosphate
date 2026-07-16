@@ -27,16 +27,24 @@ if TYPE_CHECKING:
         def render_contents(self) -> "tuple[str, tuple[Term, ...]]":
             raise NotImplementedError
 
-        def _eval_step(self, env: Context) -> "Term | None":
+        def eval_step(self, env: Context) -> "Term | None":
             """
             If the term can be simplified, return the result. If not,
             return None.
             """
             raise RuntimeError("Stub method")
 
-        def eval(self, env: Context | None = None) -> "Term":
+        def eval(self) -> "Term":
             """
             Reduce the term as much as possible.
+            The default context is assumed.
+            """
+            raise RuntimeError("Stub method")
+
+        def eval_with_env(self, env: Context) -> "Term":
+            """
+            Reduce the term as much as possible.
+            The provided context is used.
             """
             raise RuntimeError("Stub method")
 
@@ -71,12 +79,13 @@ else:
 
             return None
 
-        def eval(self, env: Context | None = None) -> "Term":
+        def eval(self) -> "Term":
+            return self.eval_with_env(DEFAULT_CONTEXT)
+
+        def eval_with_env(self, env: Context) -> "Term":
             """
             Reduce the term as much as possible.
             """
-
-            env = get_context(env)
 
             current = self
             current_env = env
@@ -137,16 +146,25 @@ class ProgramTerm(Term):
     top_level_exprs: tuple[Term, ...]
 
     @override
-    def _eval_step(self, env: Context) -> Never:
+    def eval_step(self, env: Context) -> Never:
         raise NotImplementedError
 
     @override
-    def eval(self, env: Context | None = None):
+    def eval_with_env(self, env: Context):
         """
         Reduce the term as much as possible.
         """
-        env = get_context(env)
-        return ProgramTerm(tuple(expr_ue.eval() for expr_ue in self.top_level_exprs))
+        return ProgramTerm(
+            tuple(expr_ue.eval_with_env(env) for expr_ue in self.top_level_exprs)
+        )
+
+    if TYPE_CHECKING:
+
+        # The type checker doesn't know on its own
+        # that eval always returns a ProgramTerm
+
+        @override
+        def eval(self) -> "ProgramTerm": ...
 
     @override
     def render_contents(self):
@@ -164,11 +182,11 @@ class FunctionCallTerm(Term):
         return cls(t[0], t[1:])
 
     @override
-    def _eval_step(self, env: Context):
+    def eval_step(self, env: Context):
         head_ue = self.head
         args_ue = self.args
 
-        head = head_ue._eval_step(env)
+        head = head_ue.eval_step(env)
         if head is not None:
             return FunctionCallTerm(head, args_ue)
         else:
@@ -194,24 +212,24 @@ class FunctionCallTerm(Term):
             if isinstance(name_ue, ReferenceTerm):
                 name = name_ue.name
             else:
-                name_evaled = name_ue.eval(env)
+                name_evaled = name_ue.eval_with_env(env)
                 if isinstance(name_evaled, StrTerm):
                     name = name_evaled.value
                 else:
                     raise ValueError(f"Invalid assignment target for let: {name_ue}")
 
-            value_lazy = lazy_of(lambda: value_ue.eval(env))
-            return body_ue.eval(env.set(name, value_lazy))
+            value_lazy = lazy_of(lambda: value_ue.eval_with_env(env))
+            return body_ue.eval_with_env(env.set(name, value_lazy))
 
         elif head == mcfunction:
             path_ue, *cmds_ue = args_ue
             file_content = "\n".join(
-                cmd_ue.eval(env).display_node_inline() for cmd_ue in cmds_ue
+                cmd_ue.eval_with_env(env).display_node_inline() for cmd_ue in cmds_ue
             )
             return FunctionCallTerm(
                 file,
                 (
-                    path_ue.eval(env),
+                    path_ue.eval_with_env(env),
                     StrTerm(file_content),
                 ),
             )
@@ -229,7 +247,7 @@ class ReferenceTerm(Term):
     name: str
 
     @override
-    def _eval_step(self, env: Context):
+    def eval_step(self, env: Context):
         return env.get(self.name, lambda: None)()
 
     @override
@@ -286,9 +304,3 @@ def to_lazy(dict: Mapping[str, Term]) -> Context:
 DEFAULT_CONTEXT: Context = to_lazy(
     {builtin.builtin_id: builtin for builtin in BuiltinTerm}
 )
-
-
-def get_context(maybe_context: Context | None) -> Context:
-    if maybe_context is None:
-        return DEFAULT_CONTEXT
-    return maybe_context
