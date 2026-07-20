@@ -1,5 +1,7 @@
 import json
 from dataclasses import dataclass
+from os import makedirs
+from os.path import dirname, join
 
 from ..parser.term_graph import FunctionCallTerm, ProgramTerm, file
 
@@ -10,7 +12,6 @@ class DataPack:
     """
     Mapping of file paths to contents
     """
-
 
 def generate_datapack(ast: ProgramTerm, pack_name: str) -> DataPack:
     files: dict[str, str] = {}
@@ -23,16 +24,16 @@ def generate_datapack(ast: ProgramTerm, pack_name: str) -> DataPack:
         },
         indent=2,
     )
-    ast = ast.eval()
-    print(ast.display_node())
-    for child in ast.top_level_exprs:
-        assert isinstance(child, FunctionCallTerm)
-        if child.head == file:
-            args = child.args
+    ast_evaled = ast.eval_default()
+    print(ast_evaled.display_node())
+    for tle in ast_evaled.top_level_exprs:
+        assert isinstance(tle, FunctionCallTerm)
+        if tle.head == file:
+            args = tle.args
             assert len(args) == 2
             files[args[0].render_contents()[0]] = args[1].render_contents()[0]
         else:
-            raise ValueError(f"Could not understand top-level term:\n{child}")
+            raise ValueError(f"Could not understand top-level term:\n{tle}")
     return DataPack(files)
 
 
@@ -43,7 +44,10 @@ def write_to_files(pack: DataPack, target_path: str | None) -> None:
             print(content)
             print("---------")
         else:
-            # with open(path.join(target_path, path), "x") as f:
-            #     f.write(content)
-            # Commented out because it is untested
-            raise NotImplementedError
+
+            full_path = join(target_path, path)
+
+            makedirs(dirname(full_path), exist_ok=True)
+
+            with open(full_path, "w") as f:
+                f.write(content)

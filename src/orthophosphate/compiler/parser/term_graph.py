@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
 from functools import cache
-from typing import TYPE_CHECKING, LiteralString, Never, Protocol, Self, final, override
+from typing import TYPE_CHECKING, LiteralString, Self, final, override
 
 from ..utils.copy_on_write_dict import COWDict
 from ..utils.lazy_value import Lazy, lazy_of, lazy_of_value
@@ -19,125 +19,114 @@ A decription of what variable bindings
 exist at a given point in evaluation
 """
 
+
+# To prevent metaclass conflicts at runtime
+# while ensuring @abstractmethod annotations
+# are checked statically
+
 if TYPE_CHECKING:
-
-    class Term(Protocol):
-
-        @abstractmethod
-        def render_contents(self) -> "tuple[str, tuple[Term, ...]]":
-            raise NotImplementedError
-
-        def eval_step(self, env: Context) -> "Term | None":
-            """
-            If the term can be simplified, return the result. If not,
-            return None.
-            """
-            raise RuntimeError("Stub method")
-
-        def eval(self) -> "Term":
-            """
-            Reduce the term as much as possible.
-            The default context is assumed.
-            """
-            raise RuntimeError("Stub method")
-
-        def eval_with_env(self, env: Context) -> "Term":
-            """
-            Reduce the term as much as possible.
-            The provided context is used.
-            """
-            raise RuntimeError("Stub method")
-
-        def display_node_inline(self) -> str:
-            """
-            Provides a nice readable string rep
-            of the Node without nesting
-            """
-            raise RuntimeError("Stub method")
-
-        def display_node(self, pre: str = "") -> str:
-            """
-            Provides a nice readable string
-            rep of the Node with nesting
-
-            This function is recursive and
-            dangerous to the sanity of anyone
-            who works on it
-            """
-            raise RuntimeError("Stub method")
-
+    from typing import Protocol as StaticProtocol
 else:
+    StaticProtocol = object
 
-    @dataclass(frozen=True)
-    class Term:
 
-        def _eval_step(self, env: Context) -> "Term | None":
-            """
-            If the term can be simplified, return the result. If not,
-            return None.
-            """
+@dataclass(frozen=True)
+class Term(StaticProtocol):
 
-            return None
+    @abstractmethod
+    def render_contents(self) -> "tuple[str, tuple[Term, ...]]":
+        raise NotImplementedError
 
-        def eval(self) -> "Term":
-            return self.eval_with_env(DEFAULT_CONTEXT)
+    @abstractmethod
+    def eval(self, env: Context) -> "Term":
+        raise NotImplementedError
 
-        def eval_with_env(self, env: Context) -> "Term":
-            """
-            Reduce the term as much as possible.
-            """
+    def eval_default(self) -> "Term":
+        return self.eval(DEFAULT_CONTEXT)
 
-            current = self
-            current_env = env
+    @cache
+    def display_node_inline(self) -> str:
+        """
+        Provides a nice readable string rep
+        of the Node without nesting
+        """
+        header, children = self.render_contents()
+        if len(children) > 0:
+            args_str = " ".join(child.display_node_inline() for child in children)
+            return f"{header}({args_str})"
+        return header
 
-            while True:
-                next = current._eval_step(current_env)
-                if next is None:
-                    return current
-                else:
+    @cache
+    def display_node(self, pre: str = "") -> str:
+        """
+        Provides a nice readable string
+        rep of the Node with nesting
+
+        This function is recursive and
+        dangerous to the sanity of anyone
+        who works on it
+        """
+        header, children = self.render_contents()
+
+        render_contents: tuple[str, ...] = tuple(
+            child.display_node(pre + ("║ " if i < len(children) - 1 else "  "))
+            for i, child in enumerate(children)
+        )
+
+        return f"{'' if pre == '' else'═'} {header}\n" + "".join(
+            (
+                f"{pre}╠{element}"  # Normal case
+                if i < len(render_contents) - 1
+                else f"{pre}╚{element}"  # Last element
+            )
+            for i, element in enumerate(render_contents)
+        )
+
+    @override
+    def __str__(self):
+        return self.display_node()
+
+
+@dataclass(frozen=True)
+class SteppedEvaluationTerm(Term):
+
+    @abstractmethod
+    def _eval_step(self, env: Context) -> "Term | None":
+        """
+        If the term can be simplified, return the result. If not,
+        return None.
+        """
+        raise NotImplementedError
+
+    @override
+    def eval(self, env: Context) -> "Term":
+        """
+        Reduce the term as much as possible.
+        """
+
+        current: SteppedEvaluationTerm = self
+        current_env = env
+
+        print(current)
+
+        while True:
+            next = current._eval_step(current_env)
+            print(current)
+            if next is None:
+                return current
+            else:
+                if isinstance(next, SteppedEvaluationTerm):
                     current = next
+                else:
+                    return next.eval(env)
 
-        @cache
-        def display_node_inline(self) -> str:
-            """
-            Provides a nice readable string rep
-            of the Node without nesting
-            """
-            header, children = self.render_contents()
-            if len(children) > 0:
-                args_str = " ".join(child.display_node_inline() for child in children)
-                return f"{header}({args_str})"
-            return header
 
-        @cache
-        def display_node(self, pre: str = "") -> str:
-            """
-            Provides a nice readable string
-            rep of the Node with nesting
+@dataclass(frozen=True)
+class IrreducibleTerm(Term):
 
-            This function is recursive and
-            dangerous to the sanity of anyone
-            who works on it
-            """
-            header, children = self.render_contents()
-
-            render_contents: tuple[str, ...] = tuple(
-                child.display_node(pre + ("║ " if i < len(children) - 1 else "  "))
-                for i, child in enumerate(children)
-            )
-
-            return f"{'' if pre == '' else'═'} {header}\n" + "".join(
-                (
-                    f"{pre}╠{element}"  # Normal case
-                    if i < len(render_contents) - 1
-                    else f"{pre}╚{element}"  # Last element
-                )
-                for i, element in enumerate(render_contents)
-            )
-
-        @override
-        def __str__(self):
-            return self.display_node()
+    @override
+    def eval(self, env: COWDict[str, Lazy[Term]]):
+        return self
 
 
 @dataclass(frozen=True)
@@ -146,17 +135,9 @@ class ProgramTerm(Term):
     top_level_exprs: tuple[Term, ...]
 
     @override
-    def eval_step(self, env: Context) -> Never:
-        raise NotImplementedError
+    def eval(self, env: Context) -> "ProgramTerm":
 
-    @override
-    def eval_with_env(self, env: Context):
-        """
-        Reduce the term as much as possible.
-        """
-        return ProgramTerm(
-            tuple(expr_ue.eval_with_env(env) for expr_ue in self.top_level_exprs)
-        )
+        return ProgramTerm(tuple(expr_ue.eval(env) for expr_ue in self.top_level_exprs))
 
     if TYPE_CHECKING:
 
@@ -164,7 +145,7 @@ class ProgramTerm(Term):
         # that eval always returns a ProgramTerm
 
         @override
-        def eval(self) -> "ProgramTerm": ...
+        def eval_default(self) -> "ProgramTerm": ...
 
     @override
     def render_contents(self):
@@ -182,17 +163,16 @@ class FunctionCallTerm(Term):
         return cls(t[0], t[1:])
 
     @override
-    def eval_step(self, env: Context):
+    def eval(self, env: Context) -> Term:
         head_ue = self.head
         args_ue = self.args
 
-        head = head_ue.eval_step(env)
-        if head is not None:
-            return FunctionCallTerm(head, args_ue)
-        else:
-            head = head_ue
+        head = head_ue.eval(env)
 
-        if head == let:
+        if head == file:
+            return FunctionCallTerm(file, tuple(arg_ue.eval(env) for arg_ue in args_ue))
+
+        elif head == let:
             # Term of term let(name, value, body)
 
             if len(args_ue) != 3:
@@ -212,29 +192,29 @@ class FunctionCallTerm(Term):
             if isinstance(name_ue, ReferenceTerm):
                 name = name_ue.name
             else:
-                name_evaled = name_ue.eval_with_env(env)
+                name_evaled = name_ue.eval(env)
                 if isinstance(name_evaled, StrTerm):
                     name = name_evaled.value
                 else:
                     raise ValueError(f"Invalid assignment target for let: {name_ue}")
 
-            value_lazy = lazy_of(lambda: value_ue.eval_with_env(env))
-            return body_ue.eval_with_env(env.set(name, value_lazy))
+            value_lazy = lazy_of(lambda: value_ue.eval(env))
+            return body_ue.eval(env.set(name, value_lazy))
 
         elif head == mcfunction:
             path_ue, *cmds_ue = args_ue
             file_content = "\n".join(
-                cmd_ue.eval_with_env(env).display_node_inline() for cmd_ue in cmds_ue
+                cmd_ue.eval(env).display_node_inline() for cmd_ue in cmds_ue
             )
             return FunctionCallTerm(
                 file,
                 (
-                    path_ue.eval_with_env(env),
+                    path_ue.eval(env),
                     StrTerm(file_content),
                 ),
             )
 
-        return None
+        return self
 
     @override
     def render_contents(self):
@@ -243,21 +223,21 @@ class FunctionCallTerm(Term):
 
 @dataclass(frozen=True)
 @final
-class ReferenceTerm(Term):
+class ReferenceTerm(SteppedEvaluationTerm):
     name: str
 
     @override
-    def eval_step(self, env: Context):
+    def _eval_step(self, env: Context):
         return env.get(self.name, lambda: None)()
 
     @override
     def render_contents(self):
-        return self.name, ()
+        return f"{self.name} (ref)", ()
 
 
 @dataclass(frozen=True)
 @final
-class IntTerm(Term):
+class IntTerm(IrreducibleTerm):
     value: int
 
     @override
@@ -267,16 +247,16 @@ class IntTerm(Term):
 
 @dataclass(frozen=True)
 @final
-class StrTerm(Term):
+class StrTerm(IrreducibleTerm):
     value: str
 
     @override
     def render_contents(self):
-        return self.value, ()
+        return f'"{self.value}"', ()
 
 
 @dataclass(frozen=True)
-class _BuiltinTermPrivateImpl[T: LiteralString | str](Term):
+class _BuiltinTermPrivateImpl[T: LiteralString | str](IrreducibleTerm):
     builtin_id: T
 
     def render_contents(self) -> tuple[T, tuple[()]]:
