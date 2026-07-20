@@ -1,7 +1,8 @@
-file
-    "/data/functions/core.mcfunction"
-    "say Hello world!"
+mcfunction "/data/example/functions/core.mcfunction"
+    "say Hello World!"
+    "scoreboard objectives add example.time dummy"
+    "scoreboard players add $ example.time 1"
 
-mcfunction "/data/functions/advanced.mcfunction"
-    "say Hello World! but from a fancier function"
-    "say Second cmd"
+file
+    "/docs/example/core.mcfunction"
+    "This is an example of a custom file in the pack."
