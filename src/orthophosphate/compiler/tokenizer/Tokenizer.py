@@ -110,7 +110,6 @@ TOKEN_REGEX = re.compile(
     "|".join(rf"(?P<{name}>{pattern})" for name, pattern in TOKENS)
 )
 
-
 def raw_tokenize(input: str) -> Iterator[Token]:
 
     line_start = 0
