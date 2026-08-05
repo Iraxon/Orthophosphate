@@ -29,7 +29,6 @@ if TYPE_CHECKING:
 else:
     StaticProtocol = object
 
-
 @dataclass(frozen=True)
 class Term(StaticProtocol):
 
